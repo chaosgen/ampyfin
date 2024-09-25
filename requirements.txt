@@ -1,3 +1,4 @@
 polygon-api-client
 pymongo
 certifi
+alpaca-py
