@@ -1,4 +1,4 @@
-POLYGON_API_KEY = 'MSsWH8UWDe_WjKHei3snPvxfezzDsvYV'
-FINANCIAL_PREP_API_KEY= 'Scbitfo0qOuY4MTMjbqe6SRQjHjM7UAe'
-MONGO_DB_USER = 'yeonho50'
-MONGO_DB_PASS = '1234567890'
+POLYGON_API_KEY = "your_polygon_api_key"
+FINANCIAL_PREP_API_KEY = "your_fmp_api_key"
+MONGO_DB_USER = "your_mongo_user"
+MONGO_DB_PASS = "your_mongo_password"
