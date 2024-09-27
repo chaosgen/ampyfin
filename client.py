@@ -245,11 +245,6 @@ def main():
 
             # Ensure sufficient cash ratio
             
-            
-            
-            
-            
-            
             # Loop through each ticker to apply trading strategies
             for ticker in ndaq_tickers:
                 # Fetch historical data for the ticker
@@ -267,13 +262,13 @@ def main():
                 asset_info = asset_collection.find_one({'symbol': ticker})
                 last_trade_time = asset_info['most_recent_time'] if asset_info else None
                 portfolio_qty = asset_info['qty'] if asset_info else 0.0
-                
+                """
                 # Check if the last trade time was within the last 24 hours
                 if last_trade_time and datetime.now() - last_trade_time < timedelta(hours=24):
                     logging.info(f"Trade for {ticker} was recently executed. Skipping.")
                     
                     continue
-                
+                """
                 # Trading strategy logic based on current market conditions
                 market_decision = trading_strategies.combined_trading_strategy(ticker, current_price, historical_data, float(account.cash), portfolio_qty, account.portfolio_value)
                 decision = market_decision[0]
