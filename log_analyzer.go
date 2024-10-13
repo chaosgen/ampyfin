@@ -1,8 +1,9 @@
-// commit2.go
+// commit4.go
 package main
 
 import (
 	"bufio"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -10,13 +11,26 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
-// LogLevel represents different log levels
-var LogLevels = []string{"INFO", "ERROR", "DEBUG", "WARN"}
+// LogEntry represents a log entry structure
+type LogEntry struct {
+	Line      string `json:"line"`
+	Timestamp string `json:"timestamp"`
+	Level     string `json:"level"`
+}
 
-// AnalyzeLogs analyzes logs with log level filtering and pagination
+var (
+	userTokens      = map[string]string{"user1": "password1"} // Simple user store
+	requestCount    = make(map[string]int)
+	requestMutex    sync.Mutex
+	requestLimit    = 100
+	timeWindow      = time.Minute
+)
+
+// AnalyzeLogs analyzes logs with time range and pagination
 func analyzeLogs(queries []string, logLevel string, limit int, offset int, startTime, endTime time.Time) ([]LogEntry, int, error) {
 	file, err := os.Open("system.log")
 	if err != nil {
@@ -84,14 +98,79 @@ func extractTimestamp(line string) string {
 	return ""
 }
 
+// Export logs to CSV
+func exportLogsToCSV(entries []LogEntry, filename string) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	// Write header
+	writer.Write([]string{"Timestamp", "Level", "Line"})
+
+	// Write log entries
+	for _, entry := range entries {
+		writer.Write([]string{entry.Timestamp, entry.Level, entry.Line})
+	}
+	return nil
+}
+
+// User authentication
+func authenticate(username, password string) bool {
+	if pass, ok := userTokens[username]; ok {
+		return pass == password
+	}
+	return false
+}
+
+// Rate limiting
+func isRateLimited(userIP string) bool {
+	requestMutex.Lock()
+	defer requestMutex.Unlock()
+
+	if count, ok := requestCount[userIP]; ok && count >= requestLimit {
+		return true
+	}
+
+	requestCount[userIP]++
+	time.AfterFunc(timeWindow, func() {
+		requestMutex.Lock()
+		defer requestMutex.Unlock()
+		requestCount[userIP]--
+	})
+	return false
+}
+
 func main() {
 	http.HandleFunc("/logs", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		userIP := r.RemoteAddr
+		if isRateLimited(userIP) {
+			http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
+			return
+		}
+
+		username, password, ok := r.BasicAuth()
+		if !ok || !authenticate(username, password) {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
 		queries := r.URL.Query()["q"]
 		logLevel := r.URL.Query().Get("level")
 		limitStr := r.URL.Query().Get("limit")
 		offsetStr := r.URL.Query().Get("offset")
 		startTimeStr := r.URL.Query().Get("start")
 		endTimeStr := r.URL.Query().Get("end")
+		export := r.URL.Query().Get("export")
 
 		if len(queries) == 0 {
 			http.Error(w, "Query parameter 'q' is required", http.StatusBadRequest)
@@ -147,6 +226,16 @@ func main() {
 			return
 		}
 
+		if export == "true" {
+			err := exportLogsToCSV(results, "exported_logs.csv")
+			if err != nil {
+				http.Error(w, "Failed to export logs", http.StatusInternalServerError)
+				return
+			}
+			w.Write([]byte("Logs exported successfully to exported_logs.csv"))
+			return
+		}
+
 		// Return results as JSON
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -158,3 +247,4 @@ func main() {
 	log.Println("Starting Log Analyzer server on :8083")
 	log.Fatal(http.ListenAndServe(":8083", nil))
 }
+
