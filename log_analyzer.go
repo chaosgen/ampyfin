@@ -1,4 +1,3 @@
-// commit4.go
 package main
 
 import (
@@ -28,6 +27,7 @@ var (
 	requestMutex    sync.Mutex
 	requestLimit    = 100
 	timeWindow      = time.Minute
+	logLevels       = []string{"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
 )
 
 // AnalyzeLogs analyzes logs with time range and pagination
