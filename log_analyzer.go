@@ -1,4 +1,4 @@
-// commit1.go
+// commit2.go
 package main
 
 import (
@@ -13,14 +13,10 @@ import (
 	"time"
 )
 
-// LogEntry represents a log entry structure
-type LogEntry struct {
-	Line      string `json:"line"`
-	Timestamp string `json:"timestamp"`
-	Level     string `json:"level"`
-}
+// LogLevel represents different log levels
+var LogLevels = []string{"INFO", "ERROR", "DEBUG", "WARN"}
 
-// AnalyzeLogs analyzes logs with time range and pagination
+// AnalyzeLogs analyzes logs with log level filtering and pagination
 func analyzeLogs(queries []string, logLevel string, limit int, offset int, startTime, endTime time.Time) ([]LogEntry, int, error) {
 	file, err := os.Open("system.log")
 	if err != nil {
@@ -70,7 +66,7 @@ func analyzeLogs(queries []string, logLevel string, limit int, offset int, start
 	return results[offset:end], matchCount, nil
 }
 
-// Extract log level (modify based on your log format)
+// Extract log level
 func extractLogLevel(line string) string {
 	parts := strings.Split(line, " ")
 	if len(parts) > 2 {
@@ -79,7 +75,7 @@ func extractLogLevel(line string) string {
 	return ""
 }
 
-// Extract timestamp (modify based on your log format)
+// Extract timestamp
 func extractTimestamp(line string) string {
 	parts := strings.Split(line, " ")
 	if len(parts) > 1 {
