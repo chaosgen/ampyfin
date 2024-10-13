@@ -1,3 +1,4 @@
+// commit1.go
 package main
 
 import (
@@ -7,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -20,7 +20,7 @@ type LogEntry struct {
 	Level     string `json:"level"`
 }
 
-// Function to analyze logs with added features
+// AnalyzeLogs analyzes logs with time range and pagination
 func analyzeLogs(queries []string, logLevel string, limit int, offset int, startTime, endTime time.Time) ([]LogEntry, int, error) {
 	file, err := os.Open("system.log")
 	if err != nil {
@@ -47,8 +47,7 @@ func analyzeLogs(queries []string, logLevel string, limit int, offset int, start
 		}
 
 		for _, query := range queries {
-			matched, _ := regexp.MatchString(query, line)
-			if matched {
+			if strings.Contains(line, query) {
 				results = append(results, LogEntry{Line: line, Level: extractLogLevel(line), Timestamp: timestamp})
 				matchCount++
 				break
