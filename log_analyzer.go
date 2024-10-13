@@ -10,24 +10,26 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // LogEntry represents a log entry structure
 type LogEntry struct {
 	Line      string `json:"line"`
-	Timestamp string `json:"timestamp"` // Assuming logs have a timestamp
-	Level     string `json:"level"`     // Assuming logs have a level (INFO, WARN, ERROR)
+	Timestamp string `json:"timestamp"`
+	Level     string `json:"level"`
 }
 
-// Function to analyze logs
-func analyzeLogs(queries []string, logLevel string, limit int, offset int) ([]LogEntry, error) {
+// Function to analyze logs with added features
+func analyzeLogs(queries []string, logLevel string, limit int, offset int, startTime, endTime time.Time) ([]LogEntry, int, error) {
 	file, err := os.Open("system.log")
 	if err != nil {
-		return nil, fmt.Errorf("error opening log file: %w", err)
+		return nil, 0, fmt.Errorf("error opening log file: %w", err)
 	}
 	defer file.Close()
 
 	var results []LogEntry
+	var matchCount int
 	scanner := bufio.NewScanner(file)
 
 	for scanner.Scan() {
@@ -38,38 +40,39 @@ func analyzeLogs(queries []string, logLevel string, limit int, offset int) ([]Lo
 			continue
 		}
 
+		timestamp := extractTimestamp(line)
+		logTime, err := time.Parse("2006-01-02 15:04:05", timestamp) // Adjust format as per your log's timestamp
+		if err != nil || logTime.Before(startTime) || logTime.After(endTime) {
+			continue
+		}
+
 		for _, query := range queries {
-			// Use regex for more flexible matching
 			matched, _ := regexp.MatchString(query, line)
 			if matched {
-				// Extract log level and timestamp if needed
-				level := extractLogLevel(line) // Function to extract log level
-				timestamp := extractTimestamp(line) // Function to extract timestamp
-
-				results = append(results, LogEntry{Line: line, Level: level, Timestamp: timestamp})
+				results = append(results, LogEntry{Line: line, Level: extractLogLevel(line), Timestamp: timestamp})
+				matchCount++
 				break
 			}
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("error reading log file: %w", err)
+		return nil, 0, fmt.Errorf("error reading log file: %w", err)
 	}
 
 	// Implement pagination
 	if offset > len(results) {
-		return []LogEntry{}, nil
+		return []LogEntry{}, 0, nil
 	}
 	end := offset + limit
 	if end > len(results) {
 		end = len(results)
 	}
-	return results[offset:end], nil
+	return results[offset:end], matchCount, nil
 }
 
-// Dummy function to extract log level from a line (modify as per your log format)
+// Extract log level (modify based on your log format)
 func extractLogLevel(line string) string {
-	// Example log format: "2024-01-01 12:00:00 INFO: Log message"
 	parts := strings.Split(line, " ")
 	if len(parts) > 2 {
 		return parts[2]
@@ -77,9 +80,8 @@ func extractLogLevel(line string) string {
 	return ""
 }
 
-// Dummy function to extract timestamp from a line (modify as per your log format)
+// Extract timestamp (modify based on your log format)
 func extractTimestamp(line string) string {
-	// Example log format: "2024-01-01 12:00:00 INFO: Log message"
 	parts := strings.Split(line, " ")
 	if len(parts) > 1 {
 		return parts[0] + " " + parts[1]
@@ -93,6 +95,8 @@ func main() {
 		logLevel := r.URL.Query().Get("level")
 		limitStr := r.URL.Query().Get("limit")
 		offsetStr := r.URL.Query().Get("offset")
+		startTimeStr := r.URL.Query().Get("start")
+		endTimeStr := r.URL.Query().Get("end")
 
 		if len(queries) == 0 {
 			http.Error(w, "Query parameter 'q' is required", http.StatusBadRequest)
@@ -120,8 +124,29 @@ func main() {
 			}
 		}
 
+		// Parse time range if provided
+		startTime := time.Time{}
+		endTime := time.Now()
+
+		if startTimeStr != "" {
+			var err error
+			startTime, err = time.Parse("2006-01-02T15:04:05", startTimeStr) // Expecting ISO 8601 format
+			if err != nil {
+				http.Error(w, "Invalid start time format", http.StatusBadRequest)
+				return
+			}
+		}
+		if endTimeStr != "" {
+			var err error
+			endTime, err = time.Parse("2006-01-02T15:04:05", endTimeStr) // Expecting ISO 8601 format
+			if err != nil {
+				http.Error(w, "Invalid end time format", http.StatusBadRequest)
+				return
+			}
+		}
+
 		// Analyze logs with the provided queries
-		results, err := analyzeLogs(queries, logLevel, limit, offset)
+		results, matchCount, err := analyzeLogs(queries, logLevel, limit, offset, startTime, endTime)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -129,7 +154,10 @@ func main() {
 
 		// Return results as JSON
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(results)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"count":  matchCount,
+			"results": results,
+		})
 	})
 
 	log.Println("Starting Log Analyzer server on :8083")
