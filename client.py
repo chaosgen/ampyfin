@@ -240,44 +240,50 @@ def main():
                 call_ndaq_100()
                 ndaq_tickers = get_ndaq_tickers()
             account = trading_client.get_account()
-            buying_power = float(account.cash)
-            portfolio_value = float(account.portfolio_value)
+            
 
             # Ensure sufficient cash ratio
             
             # Loop through each ticker to apply trading strategies
             for ticker in ndaq_tickers:
-                # Fetch historical data for the ticker
-                historical_data = trading_strategies.get_historical_data(ticker, data_client)
-
-                
-                # Get the latest price - works
-                ticker_yahoo = yf.Ticker(ticker)
-                data = ticker_yahoo.history()
-                current_price = data['Close'].iloc[-1]
-                
+                decision = None
+                buying_power = float(account.cash)
+                portfolio_value = float(account.portfolio_value)
                 cash_to_portfolio_ratio = buying_power / portfolio_value
+                quantity = None
+                try:
+                    # Fetch historical data for the ticker
+                    historical_data = trading_strategies.get_historical_data(ticker, data_client)
 
-                # Fetch last trade time from MongoDB
-                asset_info = asset_collection.find_one({'symbol': ticker})
-                last_trade_time = asset_info['most_recent_time'] if asset_info else None
-                portfolio_qty = asset_info['qty'] if asset_info else 0.0
-                """
-                # Check if the last trade time was within the last 24 hours
-                if last_trade_time and datetime.now() - last_trade_time < timedelta(hours=24):
-                    logging.info(f"Trade for {ticker} was recently executed. Skipping.")
                     
-                    continue
-                """
-                # Trading strategy logic based on current market conditions
-                market_decision = trading_strategies.combined_trading_strategy(ticker, current_price, historical_data, float(account.cash), portfolio_qty, account.portfolio_value)
-                decision = market_decision[0]
-                quantity = market_decision[1]
-                """
-                quantity is not giving reasonable yet
-                """
-                
-                
+                    # Get the latest price - works
+                    ticker_yahoo = yf.Ticker(ticker)
+                    data = ticker_yahoo.history()
+                    current_price = data['Close'].iloc[-1]
+                    
+                    
+
+                    # Fetch last trade time from MongoDB
+                    asset_info = asset_collection.find_one({'symbol': ticker})
+                    last_trade_time = asset_info['most_recent_time'] if asset_info else None
+                    portfolio_qty = asset_info['qty'] if asset_info else 0.0
+                    """
+                    # Check if the last trade time was within the last 24 hours
+                    if last_trade_time and datetime.now() - last_trade_time < timedelta(hours=24):
+                        logging.info(f"Trade for {ticker} was recently executed. Skipping.")
+                        
+                        continue
+                    """
+                    # Trading strategy logic based on current market conditions
+                    market_decision = trading_strategies.random_forest_strategy(ticker, current_price, historical_data, float(account.cash), portfolio_qty, account.portfolio_value)
+                    decision = market_decision[0]
+                    quantity = market_decision[1]
+                    """
+                    quantity is not giving reasonable yet
+                    """
+                except:
+                    print(f"No data for {ticker} either in data retrieval or yahoo")
+                    
                 if decision == "buy":
                     if cash_to_portfolio_ratio > 0.4:
                         logging.warning("Cash to portfolio ratio is below 0.4, delaying trades.")
@@ -289,8 +295,7 @@ def main():
                         logging.info(f"Executed SELL order for {ticker}: {order}")
                     else:
                         logging.warning(f"No shares to sell for {ticker}. Skipping sell.")
-                
-                
+                    
                 
 
             time.sleep(60)  # Sleep for 1 minute after trading
