@@ -4,3 +4,4 @@ certifi
 alpaca-py
 yfinance
 flask
+bson

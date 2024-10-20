@@ -1,6 +1,7 @@
 from flask import Flask, render_template, jsonify
 from pymongo import MongoClient
 import os
+from bson import ObjectId
 
 app = Flask(__name__)
 
@@ -16,6 +17,11 @@ def index():
 @app.route('/holdings')
 def get_holdings():
     holdings = list(db.asset_quantities.find())
+    
+    # Convert holdings to a serializable format
+    for holding in holdings:
+        holding['_id'] = str(holding['_id'])  # Convert ObjectId to string
+    
     return jsonify(holdings)
 
 if __name__ == '__main__':
