@@ -3,3 +3,4 @@ pymongo
 certifi
 alpaca-py
 yfinance
+flask
