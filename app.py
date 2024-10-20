@@ -20,5 +20,5 @@ def get_holdings():
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))  # Get the port from environment variable or default to 5000
-    app.run(host='0.0.0.0', port=port, debug=False)  # Bind to 0.0.0.0 to make it accessible externally
+    app.run(port=port, debug=False)  
 
