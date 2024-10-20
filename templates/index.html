@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Holdings</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .scrollable {
+            max-height: 200px; 
+            overflow-y: scroll;
+        }
+    </style>
+</head>
+<body>
+    <h1>My Holdings</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Quantity</th>
+                <th>Most Recent Trade</th>
+                <th>Most Recent Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for holding in holdings %}
+                <tr>
+                    <td>{{ holding.symbol }}</td>
+                    <td>{{ holding.qty }}</td>
+                    <td>{{ holding.most_recent_trade }}</td>
+                    <td>{{ holding.most_recent_time }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    
+</body>
+</html>
