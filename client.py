@@ -43,6 +43,7 @@ from alpaca.common.exceptions import APIError
 import trading_strategies
 import yfinance as yf
 import logging
+from collections import Counter
 
 # MongoDB connection string
 mongo_url = f"mongodb+srv://{MONGO_DB_USER}:{MONGO_DB_PASS}@cluster0.0qoxq.mongodb.net/?retryWrites=true&writeConcern=majority"
@@ -210,7 +211,34 @@ def market_status(client):
         return "error"
 
 
-# Main function that runs continuously, checking market status and executing trades or calculations
+def majority_decision_and_min_quantity(decisions_and_quantities):
+    """
+    Given a list of tuples with decisions ('buy', 'sell', 'hold') and corresponding quantities,
+    this function returns the majority decision and the minimum quantity among strategies that agree on the decision.
+
+    :param decisions_and_quantities: List of tuples [(decision, quantity), ...]
+    :return: Tuple of majority decision and corresponding minimum quantity
+    """
+    # Extract decisions and quantities
+    decisions = [dq[0] for dq in decisions_and_quantities]
+    quantities = [dq[1] for dq in decisions_and_quantities]
+    
+    # Count occurrences of each decision (buy, sell, hold)
+    decision_count = Counter(decisions)
+    
+    # Get the majority decision
+    majority_decision, count = decision_count.most_common(1)[0]
+
+    # Handle tie cases (if no clear majority)
+    if len([d for d, cnt in decision_count.items() if cnt == count]) > 1:
+        return "hold", 0  # In case of a tie, hold and set quantity to 0
+
+    # Get the minimum quantity among strategies that match the majority decision
+    min_quantity = min(q for d, q in decisions_and_quantities if d == majority_decision)
+    
+    return majority_decision, min_quantity
+
+
 def main():
     """
     Main function to control the workflow based on the market's status.
@@ -241,62 +269,55 @@ def main():
                 ndaq_tickers = get_ndaq_tickers()
             account = trading_client.get_account()
             
-
-            # Ensure sufficient cash ratio
-            
-            # Loop through each ticker to apply trading strategies
             for ticker in ndaq_tickers:
-                decision = None
+                decisions_and_quantities = []
                 buying_power = float(account.cash)
                 portfolio_value = float(account.portfolio_value)
                 cash_to_portfolio_ratio = buying_power / portfolio_value
-                quantity = None
+                
                 try:
                     # Fetch historical data for the ticker
                     historical_data = trading_strategies.get_historical_data(ticker, data_client)
 
-                    
-                    # Get the latest price - works
+                    # Get the latest price
                     ticker_yahoo = yf.Ticker(ticker)
                     data = ticker_yahoo.history()
                     current_price = data['Close'].iloc[-1]
-                    
-                    
 
                     # Fetch last trade time from MongoDB
                     asset_info = asset_collection.find_one({'symbol': ticker})
-                    last_trade_time = asset_info['most_recent_time'] if asset_info else None
                     portfolio_qty = asset_info['qty'] if asset_info else 0.0
-                    """
-                    # Check if the last trade time was within the last 24 hours
-                    if last_trade_time and datetime.now() - last_trade_time < timedelta(hours=24):
-                        logging.info(f"Trade for {ticker} was recently executed. Skipping.")
-                        
-                        continue
-                    """
-                    # Trading strategy logic based on current market conditions
-                    market_decision = trading_strategies.random_forest_strategy(ticker, current_price, historical_data, float(account.cash), portfolio_qty, account.portfolio_value)
-                    decision = market_decision[0]
-                    quantity = market_decision[1]
-                    """
-                    quantity is not giving reasonable yet
-                    """
-                except:
-                    print(f"No data for {ticker} either in data retrieval or yahoo")
+
+                    # Apply 5 trading strategies and collect their decisions and quantities
+                    for strategy in [trading_strategies.strategy1, trading_strategies.strategy2,
+                                     trading_strategies.strategy3, trading_strategies.strategy4, 
+                                     trading_strategies.strategy5]:
+                        decision, quantity = strategy(ticker, current_price, historical_data, 
+                                                      buying_power, portfolio_qty, portfolio_value)
+                        decisions_and_quantities.append((decision, quantity))
+
+                    # Determine the majority decision and minimum quantity
+                    decision, quantity = majority_decision_and_min_quantity(decisions_and_quantities)
+
+                    # Execute the trade based on the decision and quantity
+                    if decision == "buy":
+                        if cash_to_portfolio_ratio > 0.4:
+                            logging.warning("Cash to portfolio ratio is below 0.4, delaying trades.")
+                        else:
+                            order = place_order(trading_client, ticker, OrderSide.BUY, qty=quantity)
+                            logging.info(f"Executed BUY order for {ticker}: {order}")
                     
-                if decision == "buy":
-                    if cash_to_portfolio_ratio > 0.4:
-                        logging.warning("Cash to portfolio ratio is below 0.4, delaying trades.")
-                        order = place_order(trading_client, ticker, OrderSide.BUY, qty=1)    
-                        logging.info(f"Executed BUY order for {ticker}: {order}")
-                elif decision == "sell":
-                    if portfolio_qty > 0:  # Only sell if holding shares
-                        order = place_order(trading_client, ticker, OrderSide.SELL, qty=1)
-                        logging.info(f"Executed SELL order for {ticker}: {order}")
+                    elif decision == "sell":
+                        if portfolio_qty > 0:  # Only sell if holding shares
+                            order = place_order(trading_client, ticker, OrderSide.SELL, qty=quantity)
+                            logging.info(f"Executed SELL order for {ticker}: {order}")
+                        else:
+                            logging.warning(f"No shares to sell for {ticker}. Skipping sell.")
                     else:
-                        logging.warning(f"No shares to sell for {ticker}. Skipping sell.")
-                    
+                        logging.info(f"Holding for {ticker}, no action taken.")
                 
+                except Exception as e:
+                    logging.error(f"Error processing {ticker}: {e}")
 
             time.sleep(60)  # Sleep for 1 minute after trading
 
@@ -311,9 +332,7 @@ def main():
 
         elif status == "closed":
             logging.info("Market is closed. Performing post-market analysis.")
-            # Here you could call any post-market analysis functions
             time.sleep(60)
-
         else:
             logging.error("An error occurred while checking market status.")
             time.sleep(60)  # Wait before retrying
