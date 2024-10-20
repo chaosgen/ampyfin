@@ -19,4 +19,4 @@ def get_holdings():
     return jsonify(holdings)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
