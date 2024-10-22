@@ -211,32 +211,35 @@ def market_status(client):
         return "error"
 
 
+
 def majority_decision_and_min_quantity(decisions_and_quantities):
     """
     Given a list of tuples with decisions ('buy', 'sell', 'hold') and corresponding quantities,
-    this function returns the majority decision and the minimum quantity among strategies that agree on the decision.
+    this function returns a buy decision if there are 2 or more buys, a sell decision if there are 2 or more sells,
+    and a hold decision otherwise. It also returns the minimum quantity among strategies that agree on the decision.
 
     :param decisions_and_quantities: List of tuples [(decision, quantity), ...]
-    :return: Tuple of majority decision and corresponding minimum quantity
+    :return: Tuple of decision and corresponding minimum quantity
     """
     # Extract decisions and quantities
     decisions = [dq[0] for dq in decisions_and_quantities]
-    quantities = [dq[1] for dq in decisions_and_quantities]
     
     # Count occurrences of each decision (buy, sell, hold)
     decision_count = Counter(decisions)
     
-    # Get the majority decision
-    majority_decision, count = decision_count.most_common(1)[0]
-
-    # Handle tie cases (if no clear majority)
-    if len([d for d, cnt in decision_count.items() if cnt == count]) > 1:
-        return "hold", 0  # In case of a tie, hold and set quantity to 0
-
-    # Get the minimum quantity among strategies that match the majority decision
-    min_quantity = min(q for d, q in decisions_and_quantities if d == majority_decision)
+    # Check for buy decision (2 or more buys)
+    if decision_count['buy'] >= 2:
+        min_quantity = min(q for d, q in decisions_and_quantities if d == 'buy')
+        return 'buy', min_quantity
     
-    return majority_decision, min_quantity
+    # Check for sell decision (2 or more sells)
+    elif decision_count['sell'] >= 2:
+        min_quantity = min(q for d, q in decisions_and_quantities if d == 'sell')
+        return 'sell', min_quantity
+    
+    # If neither buy nor sell has 2 or more votes, hold
+    else:
+        return 'hold', 0
 
 
 def main():
@@ -275,6 +278,8 @@ def main():
                 portfolio_value = float(account.portfolio_value)
                 cash_to_portfolio_ratio = buying_power / portfolio_value
                 
+                
+                
                 try:
                     # Fetch historical data for the ticker
                     historical_data = trading_strategies.get_historical_data(ticker, data_client)
@@ -289,11 +294,12 @@ def main():
                     portfolio_qty = asset_info['qty'] if asset_info else 0.0
 
                     # Apply 5 trading strategies and collect their decisions and quantities
-                    for strategy in [trading_strategies.strategy1, trading_strategies.strategy2,
-                                     trading_strategies.strategy3, trading_strategies.strategy4, 
-                                     trading_strategies.strategy5]:
-                        decision, quantity = strategy(ticker, current_price, historical_data, 
+                    for strategy in [trading_strategies.mean_reversion_strategy, trading_strategies.momentum_strategy,
+                                     trading_strategies.bollinger_bands_strategy, trading_strategies.rsi_strategy, 
+                                     trading_strategies.macd_strategy]:
+                        decision, quantity, _ = strategy(ticker, current_price, historical_data, 
                                                       buying_power, portfolio_qty, portfolio_value)
+                        
                         decisions_and_quantities.append((decision, quantity))
 
                     # Determine the majority decision and minimum quantity
@@ -301,7 +307,7 @@ def main():
 
                     # Execute the trade based on the decision and quantity
                     if decision == "buy":
-                        if cash_to_portfolio_ratio > 0.4:
+                        if cash_to_portfolio_ratio < 0.4 or buying_power <= 0:
                             logging.warning("Cash to portfolio ratio is below 0.4, delaying trades.")
                         else:
                             order = place_order(trading_client, ticker, OrderSide.BUY, qty=quantity)
