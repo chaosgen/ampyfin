@@ -3,9 +3,20 @@ from alpaca.data.requests import StockBarsRequest
 from alpaca.data.timeframe import TimeFrame
 from datetime import datetime, timedelta
 from config import API_KEY, API_SECRET, BASE_URL
-
+import stats
 import numpy as np
 import pandas as pd
+import scipy
+import scipy.spatial
+import scipy.stats
+import pywt  # PyWavelets for wavelet analysis
+import ripser  # For topological data analysis
+from scipy.spatial.distance import pdist, squareform
+from scipy.special import zeta  # For Riemann zeta function
+import networkx as nx  # For graph theory implementations
+import itertools
+import zlib
+
 
 # Function to fetch historical bar data using Alpaca StockHistoricalDataClient
 def get_historical_data(ticker, client, days=100):
@@ -3298,47 +3309,6 @@ def market_microstructure_strategy(ticker, current_price, historical_data, accou
     
     return ('hold', portfolio_qty, ticker)
 
-def quantum_field_topology_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
-    """
-    Advanced Quantum Field Topology Trading Strategy
-    """
-    max_investment = total_portfolio_value * 0.10
-    window = 20
-    
-    def compute_topological_field_state(data):
-        # Create price-volume manifold
-        price_normalized = (data['close'] - data['close'].min()) / (data['close'].max() - data['close'].min())
-        volume_normalized = (data['volume'] - data['volume'].min()) / (data['volume'].max() - data['volume'].min())
-        
-        # Compute field characteristics
-        field_gradient = np.gradient(price_normalized) * np.gradient(volume_normalized)
-        field_curvature = np.gradient(field_gradient)
-        
-        # Topological invariants
-        betti_numbers = np.sum(np.abs(field_curvature) > np.std(field_curvature))
-        euler_characteristic = len(field_gradient[field_gradient > 0]) - len(field_gradient[field_gradient < 0])
-        
-        return betti_numbers * np.sign(euler_characteristic)
-    
-    field_signal = pd.Series(index=historical_data.index)
-    for i in range(window, len(historical_data)):
-        field_signal.iloc[i] = compute_topological_field_state(historical_data.iloc[i-window:i])
-    
-    # Advanced signal processing
-    signal_envelope = np.abs(hilbert(field_signal.fillna(0)))
-    signal_phase = np.angle(hilbert(field_signal.fillna(0)))
-    
-    if signal_envelope[-1] > np.mean(signal_envelope) and signal_phase[-1] > 0 and account_cash > 0:
-        quantity_to_buy = min(int(max_investment // current_price), int(account_cash // current_price))
-        if quantity_to_buy > 0:
-            return ('buy', quantity_to_buy, ticker)
-            
-    elif signal_envelope[-1] < np.mean(signal_envelope) and signal_phase[-1] < 0 and portfolio_qty > 0:
-        quantity_to_sell = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))
-        return ('sell', quantity_to_sell, ticker)
-        
-    return ('hold', portfolio_qty, ticker)
-
 def stochastic_differential_geometry_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
     """
     Stochastic Differential Geometry Trading Strategy
@@ -3517,53 +3487,6 @@ def hyperbolic_geometry_strategy(ticker, current_price, historical_data, account
         quantity_to_sell = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))
         return ('sell', quantity_to_sell, ticker)
         
-    return ('hold', portfolio_qty, ticker)
-
-def topological_string_theory_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
-    """
-    Topological String Theory Trading Strategy
-    Uses string theory concepts to analyze market dynamics
-    """
-    max_investment = total_portfolio_value * 0.10
-    window = 20
-    
-    def compute_string_vibrations(data):
-        # Create price-volume worldsheet
-        returns = data['close'].pct_change().fillna(0)
-        volumes = data['volume'].pct_change().fillna(0)
-        
-        # Compute string tension (T) and coupling constant (g)
-        T = np.std(returns) / np.std(volumes)
-        g = np.corrcoef(returns, volumes)[0,1]
-        
-        # String action integral
-        action = np.sum(T * returns**2 - g * volumes**2)
-        
-        # Partition function
-        Z = np.exp(-action)
-        
-        # Topological invariants
-        euler_char = len(returns[returns > 0]) - len(returns[returns < 0])
-        
-        return Z * euler_char
-    
-    string_signal = pd.Series(index=historical_data.index)
-    for i in range(window, len(historical_data)):
-        string_signal.iloc[i] = compute_string_vibrations(historical_data.iloc[i-window:i])
-    
-    # Advanced signal processing with Kalman filtering
-    kf = KalmanFilter(n_dim_obs=1, n_dim_state=2)
-    filtered_state = kf.em(string_signal.fillna(0)).smooth(string_signal.fillna(0))[0]
-    
-    if filtered_state[-1,0] > 0 and filtered_state[-1,1] > 0 and account_cash > 0:
-        quantity_to_buy = min(int(max_investment // current_price), int(account_cash // current_price))
-        if quantity_to_buy > 0:
-            return ('buy', quantity_to_buy, ticker)
-    
-    elif filtered_state[-1,0] < 0 and filtered_state[-1,1] < 0 and portfolio_qty > 0:
-        quantity_to_sell = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))
-        return ('sell', quantity_to_sell, ticker)
-    
     return ('hold', portfolio_qty, ticker)
 
 def quantum_chaos_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
@@ -3835,55 +3758,6 @@ def moduli_space_strategy(ticker, current_price, historical_data, account_cash, 
     
     return ('hold', portfolio_qty, ticker)
 
-def derived_category_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
-    """
-    Derived Category Trading Strategy
-    Uses homological algebra to analyze market structure
-    """
-    max_investment = total_portfolio_value * 0.10
-    window = 20
-    
-    def compute_derived_functors(data):
-        # Create chain complex from price movements
-        def chain_complex(sequence):
-            differentials = []
-            for i in range(len(sequence)-1):
-                d = np.outer(sequence[i+1], sequence[i])
-                differentials.append(d / (np.linalg.norm(d) + 1e-10))
-            return differentials
-        
-        # Compute homology groups
-        def homology_ranks(differentials):
-            ranks = []
-            for i in range(len(differentials)-1):
-                ker_dim = np.linalg.matrix_rank(nullspace(differentials[i]))
-                im_dim = np.linalg.matrix_rank(differentials[i+1])
-                ranks.append(ker_dim - im_dim)
-            return ranks
-        
-        price_chain = chain_complex(data['close'].pct_change().fillna(0))
-        volume_chain = chain_complex(data['volume'].pct_change().fillna(0))
-        
-        price_homology = homology_ranks(price_chain)
-        volume_homology = homology_ranks(volume_chain)
-        
-        return np.corrcoef(price_homology, volume_homology)[0,1]
-    
-    derived_signal = pd.Series(index=historical_data.index)
-    for i in range(window, len(historical_data)):
-        derived_signal.iloc[i] = compute_derived_functors(historical_data.iloc[i-window:i])
-    
-    if derived_signal.iloc[-1] > derived_signal.mean() and account_cash > 0:
-        quantity_to_buy = min(int(max_investment // current_price), int(account_cash // current_price))
-        if quantity_to_buy > 0:
-            return ('buy', quantity_to_buy, ticker)
-    
-    elif derived_signal.iloc[-1] < derived_signal.mean() and portfolio_qty > 0:
-        quantity_to_sell = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))
-        return ('sell', quantity_to_sell, ticker)
-    
-    return ('hold', portfolio_qty, ticker)
-
 def quantum_field_cohomology_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
     """
     Quantum Field Cohomology Trading Strategy
@@ -4029,70 +3903,7 @@ def market_making_strategy(ticker, current_price, historical_data, account_cash,
     
     return ('hold', portfolio_qty, ticker)
 
-def volatility_arbitrage_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
-    """
-    Volatility Arbitrage Strategy
-    Used by: Susquehanna International Group, Optiver
-    Typical Monthly Returns: 2-3%
-    """
-    max_investment = total_portfolio_value * 0.10
-    
-    def calculate_vol_signals():
-        # Historical vs implied volatility spread
-        hist_vol = historical_data['close'].pct_change().rolling(20).std() * np.sqrt(252)
-        impl_vol = calculate_implied_volatility(historical_data)  # Custom implementation needed
-        
-        # Volatility risk premium
-        vrp = impl_vol - hist_vol.iloc[-1]
-        
-        return vrp
-    
-    signal = calculate_vol_signals()
-    
-    if signal > 0.02 and account_cash > 0:  # Implied vol too high
-        quantity = min(int(max_investment // current_price), int(account_cash // current_price))
-        return ('buy', quantity, ticker)  # Delta hedge with long stock
-        
-    elif signal < -0.02 and portfolio_qty > 0:
-        return ('sell', portfolio_qty, ticker)
-    
-    return ('hold', portfolio_qty, ticker)
 
-def factor_rotation_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
-    """
-    Multi-Factor Rotation Strategy
-    Used by: AQR Capital, Research Affiliates
-    Typical Information Ratio: 0.8-1.2
-    """
-    max_investment = total_portfolio_value * 0.10
-    
-    def calculate_factor_exposures():
-        # Value factor
-        pb_ratio = historical_data['close'] / historical_data['book_value']
-        value_score = -pb_ratio.rank(pct=True)
-        
-        # Momentum factor
-        momentum_score = historical_data['close'].pct_change(252).rank(pct=True)
-        
-        # Quality factor
-        quality_score = historical_data['roe'].rank(pct=True)
-        
-        # Combined score with dynamic weights
-        weights = calculate_factor_weights()  # Custom implementation needed
-        return (value_score * weights[0] + 
-                momentum_score * weights[1] + 
-                quality_score * weights[2]).iloc[-1]
-    
-    signal = calculate_factor_exposures()
-    
-    if signal > 0.8 and account_cash > 0:
-        quantity = min(int(max_investment // current_price), int(account_cash // current_price))
-        return ('buy', quantity, ticker)
-        
-    elif signal < 0.2 and portfolio_qty > 0:
-        return ('sell', portfolio_qty, ticker)
-    
-    return ('hold', portfolio_qty, ticker)
 
 def quantum_topology_network_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
     """
