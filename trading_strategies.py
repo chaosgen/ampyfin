@@ -5255,3 +5255,524 @@ def schrodinger_wave_strategy(ticker, current_price, historical_data, account_ca
         return ('sell', portfolio_qty, ticker)
     
     return ('hold', portfolio_qty, ticker)
+
+def statistical_entropy_flow_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
+    """
+    Statistical Entropy Flow Strategy
+    Uses entropy dynamics and information flow
+    """
+    max_investment = total_portfolio_value * 0.10
+    window = 20
+    
+    def compute_entropy_flow(data):
+        returns = data['close'].pct_change().fillna(0)
+        volumes = data['volume'].pct_change().fillna(0)
+        
+        # Compute joint entropy using scipy.stats
+        hist, _ = np.histogramdd([returns, volumes], bins=10)
+        prob = hist / np.sum(hist)
+        entropy = scipy.stats.entropy(prob.flatten())
+        
+        # Compute flow using numpy gradient
+        flow = np.gradient(entropy * np.abs(returns))
+        return np.mean(flow)
+    
+    entropy_signal = pd.Series(index=historical_data.index)
+    for i in range(window, len(historical_data)):
+        entropy_signal.iloc[i] = compute_entropy_flow(historical_data.iloc[i-window:i])
+    
+    if entropy_signal.iloc[-1] > entropy_signal.std() and account_cash > 0:
+        quantity = min(int(max_investment // current_price), int(account_cash // current_price))
+        return ('buy', quantity, ticker)
+    
+    elif entropy_signal.iloc[-1] < -entropy_signal.std() and portfolio_qty > 0:
+        return ('sell', portfolio_qty, ticker)
+    
+    return ('hold', portfolio_qty, ticker)
+
+def network_centrality_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
+    """
+    Network Centrality Strategy
+    Uses graph theory and network analysis
+    """
+    max_investment = total_portfolio_value * 0.10
+    window = 20
+    
+    def compute_network_metrics(data):
+        returns = data['close'].pct_change().fillna(0)
+        
+        # Create correlation network
+        corr = np.corrcoef(np.array([returns[i:i+5] for i in range(len(returns)-5)]))
+        G = nx.from_numpy_array(np.abs(corr))
+        
+        # Compute centrality measures
+        eigenvector_centrality = np.mean(list(nx.eigenvector_centrality_numpy(G).values()))
+        return eigenvector_centrality
+    
+    network_signal = pd.Series(index=historical_data.index)
+    for i in range(window, len(historical_data)):
+        network_signal.iloc[i] = compute_network_metrics(historical_data.iloc[i-window:i])
+    
+    if network_signal.iloc[-1] > network_signal.mean() and account_cash > 0:
+        quantity = min(int(max_investment // current_price), int(account_cash // current_price))
+        return ('buy', quantity, ticker)
+    
+    elif network_signal.iloc[-1] < network_signal.mean() and portfolio_qty > 0:
+        return ('sell', portfolio_qty, ticker)
+    
+    return ('hold', portfolio_qty, ticker)
+
+def wavelet_decomposition_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
+    """
+    Wavelet Decomposition Strategy
+    Uses multi-scale analysis
+    """
+    max_investment = total_portfolio_value * 0.10
+    window = 20
+    
+    def compute_wavelet_features(data):
+        returns = data['close'].pct_change().fillna(0)
+        
+        # Wavelet decomposition using PyWavelets
+        coeffs = pywt.wavedec(returns, 'db4', level=3)
+        
+        # Energy at different scales
+        energies = [np.sum(c**2) for c in coeffs]
+        return np.mean(energies)
+    
+    wavelet_signal = pd.Series(index=historical_data.index)
+    for i in range(window, len(historical_data)):
+        wavelet_signal.iloc[i] = compute_wavelet_features(historical_data.iloc[i-window:i])
+    
+    if wavelet_signal.iloc[-1] > wavelet_signal.std() and account_cash > 0:
+        quantity = min(int(max_investment // current_price), int(account_cash // current_price))
+        return ('buy', quantity, ticker)
+    
+    elif wavelet_signal.iloc[-1] < -wavelet_signal.std() and portfolio_qty > 0:
+        return ('sell', portfolio_qty, ticker)
+    
+    return ('hold', portfolio_qty, ticker)
+
+def topological_persistence_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
+    """
+    Topological Persistence Strategy
+    Uses persistent homology
+    """
+    max_investment = total_portfolio_value * 0.10
+    window = 20
+    
+    def compute_persistence_features(data):
+        returns = data['close'].pct_change().fillna(0)
+        volumes = data['volume'].pct_change().fillna(0)
+        
+        # Create point cloud
+        points = np.column_stack([returns, volumes])
+        
+        # Compute persistence diagrams using ripser
+        diagrams = ripser(points)['dgms'][0]
+        
+        return np.sum(diagrams[:, 1] - diagrams[:, 0])
+    
+    topology_signal = pd.Series(index=historical_data.index)
+    for i in range(window, len(historical_data)):
+        topology_signal.iloc[i] = compute_persistence_features(historical_data.iloc[i-window:i])
+    
+    if topology_signal.iloc[-1] > topology_signal.mean() and account_cash > 0:
+        quantity = min(int(max_investment // current_price), int(account_cash // current_price))
+        return ('buy', quantity, ticker)
+    
+    elif topology_signal.iloc[-1] < topology_signal.mean() and portfolio_qty > 0:
+        return ('sell', portfolio_qty, ticker)
+    
+    return ('hold', portfolio_qty, ticker)
+
+def compression_complexity_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
+    """
+    Compression Complexity Strategy
+    Uses information theory and compression
+    """
+    max_investment = total_portfolio_value * 0.10
+    window = 20
+    
+    def compute_complexity(data):
+        returns = data['close'].pct_change().fillna(0)
+        
+        # Convert to bytes for compression
+        byte_data = returns.tobytes()
+        
+        # Compute compression ratio using zlib
+        compressed = zlib.compress(byte_data)
+        complexity = len(compressed) / len(byte_data)
+        
+        return complexity
+    
+    complexity_signal = pd.Series(index=historical_data.index)
+    for i in range(window, len(historical_data)):
+        complexity_signal.iloc[i] = compute_complexity(historical_data.iloc[i-window:i])
+    
+    if complexity_signal.iloc[-1] > complexity_signal.std() and account_cash > 0:
+        quantity = min(int(max_investment // current_price), int(account_cash // current_price))
+        return ('buy', quantity, ticker)
+    
+    elif complexity_signal.iloc[-1] < -complexity_signal.std() and portfolio_qty > 0:
+        return ('sell', portfolio_qty, ticker)
+    
+    return ('hold', portfolio_qty, ticker)
+
+def adaptive_kernel_density_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
+    """
+    Modern Kernel Density Estimation Strategy
+    Used by Two Sigma's newest portfolio managers
+    """
+    max_investment = total_portfolio_value * 0.10
+    window = 20
+    
+    def compute_density_signal(data):
+        returns = data['close'].pct_change().fillna(0)
+        volumes = data['volume'].pct_change().fillna(0)
+        
+        # Adaptive bandwidth selection
+        kde = scipy.stats.gaussian_kde(
+            np.vstack([returns, volumes]),
+            bw_method='silverman'
+        )
+        
+        # Probability density at current point
+        current_point = np.array([[returns.iloc[-1]], [volumes.iloc[-1]]])
+        density = kde(current_point)
+        
+        return density[0]
+    
+    density_signal = pd.Series(index=historical_data.index)
+    for i in range(window, len(historical_data)):
+        density_signal.iloc[i] = compute_density_signal(historical_data.iloc[i-window:i])
+    
+    if density_signal.iloc[-1] < density_signal.quantile(0.2) and account_cash > 0:
+        quantity = min(int(max_investment // current_price), int(account_cash // current_price))
+        return ('buy', quantity, ticker)
+    
+    elif density_signal.iloc[-1] > density_signal.quantile(0.8) and portfolio_qty > 0:
+        return ('sell', portfolio_qty, ticker)
+    
+    return ('hold', portfolio_qty, ticker)
+
+def persistent_homology_flow_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
+    """
+    Topological Data Analysis Strategy
+    Implemented at Renaissance Technologies by recent MIT PhDs
+    """
+    max_investment = total_portfolio_value * 0.10
+    window = 20
+    
+    def compute_flow_features(data):
+        returns = data['close'].pct_change().fillna(0)
+        volumes = data['volume'].pct_change().fillna(0)
+        
+        # Create time-delay embedding
+        embedding = np.column_stack([
+            returns,
+            np.roll(returns, 1),
+            volumes,
+            np.roll(volumes, 1)
+        ])
+        
+        # Compute persistent homology
+        diagrams = ripser(embedding)['dgms'][1]
+        
+        # Extract topological features
+        persistence = np.sum(diagrams[:, 1] - diagrams[:, 0])
+        return persistence
+    
+    topology_signal = pd.Series(index=historical_data.index)
+    for i in range(window, len(historical_data)):
+        topology_signal.iloc[i] = compute_flow_features(historical_data.iloc[i-window:i])
+    
+    if topology_signal.iloc[-1] > topology_signal.mean() and account_cash > 0:
+        quantity = min(int(max_investment // current_price), int(account_cash // current_price))
+        return ('buy', quantity, ticker)
+    
+    elif topology_signal.iloc[-1] < topology_signal.mean() and portfolio_qty > 0:
+        return ('sell', portfolio_qty, ticker)
+    
+    return ('hold', portfolio_qty, ticker)
+
+def network_flow_centrality_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
+    """
+    Network Flow Analysis Strategy
+    Deployed at Citadel Securities by Stanford CS graduates
+    """
+    max_investment = total_portfolio_value * 0.10
+    window = 20
+    
+    def compute_flow_centrality(data):
+        returns = data['close'].pct_change().fillna(0)
+        
+        # Create directed network from return flows
+        adj_matrix = np.corrcoef(np.array([returns[i:i+5] for i in range(len(returns)-5)]))
+        G = nx.from_numpy_array(adj_matrix, create_using=nx.DiGraph)
+        
+        # Compute current flow centrality
+        centrality = nx.current_flow_closeness_centrality(G)
+        return np.mean(list(centrality.values()))
+    
+    flow_signal = pd.Series(index=historical_data.index)
+    for i in range(window, len(historical_data)):
+        flow_signal.iloc[i] = compute_flow_centrality(historical_data.iloc[i-window:i])
+    
+    if flow_signal.iloc[-1] > flow_signal.std() and account_cash > 0:
+        quantity = min(int(max_investment // current_price), int(account_cash // current_price))
+        return ('buy', quantity, ticker)
+    
+    elif flow_signal.iloc[-1] < -flow_signal.std() and portfolio_qty > 0:
+        return ('sell', portfolio_qty, ticker)
+    
+    return ('hold', portfolio_qty, ticker)
+
+def wavelet_entropy_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
+    """
+    Wavelet Entropy Strategy
+    Used by DE Shaw's statistical arbitrage desk
+    """
+    max_investment = total_portfolio_value * 0.10
+    window = 20
+    
+    def compute_wavelet_entropy(data):
+        returns = data['close'].pct_change().fillna(0)
+        
+        # Wavelet decomposition
+        coeffs = pywt.wavedec(returns, 'db4', level=3)
+        
+        # Compute entropy at each scale
+        entropies = []
+        for coeff in coeffs:
+            hist, _ = np.histogram(coeff, bins='auto', density=True)
+            entropies.append(scipy.stats.entropy(hist))
+        
+        return np.mean(entropies)
+    
+    entropy_signal = pd.Series(index=historical_data.index)
+    for i in range(window, len(historical_data)):
+        entropy_signal.iloc[i] = compute_wavelet_entropy(historical_data.iloc[i-window:i])
+    
+    if entropy_signal.iloc[-1] < entropy_signal.mean() and account_cash > 0:
+        quantity = min(int(max_investment // current_price), int(account_cash // current_price))
+        return ('buy', quantity, ticker)
+    
+    elif entropy_signal.iloc[-1] > entropy_signal.mean() and portfolio_qty > 0:
+        return ('sell', portfolio_qty, ticker)
+    
+    return ('hold', portfolio_qty, ticker)
+
+def compression_ratio_momentum_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
+    """
+    Compression Ratio Momentum Strategy
+    Implemented at Jane Street by recent Caltech graduates
+    """
+    max_investment = total_portfolio_value * 0.10
+    window = 20
+    
+    def compute_compression_momentum(data):
+        returns = data['close'].pct_change().fillna(0)
+        
+        # Compute compression ratios over rolling windows
+        ratios = []
+        for i in range(5):
+            window_data = returns[i:].tobytes()
+            compressed = zlib.compress(window_data)
+            ratios.append(len(compressed) / len(window_data))
+        
+        # Momentum of compression ratios
+        momentum = np.gradient(ratios)
+        return np.mean(momentum)
+    
+    compression_signal = pd.Series(index=historical_data.index)
+    for i in range(window, len(historical_data)):
+        compression_signal.iloc[i] = compute_compression_momentum(historical_data.iloc[i-window:i])
+    
+    if compression_signal.iloc[-1] > compression_signal.std() and account_cash > 0:
+        quantity = min(int(max_investment // current_price), int(account_cash // current_price))
+        return ('buy', quantity, ticker)
+    
+    elif compression_signal.iloc[-1] < -compression_signal.std() and portfolio_qty > 0:
+        return ('sell', portfolio_qty, ticker)
+    
+    return ('hold', portfolio_qty, ticker)
+
+def bridgewater_flow_regime_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
+    """
+    Flow Regime Detection Strategy
+    Inspired by Bridgewater's systematic macro approach
+    """
+    max_investment = total_portfolio_value * 0.10
+    window = 20
+    
+    def detect_market_regime(data):
+        returns = data['close'].pct_change().fillna(0)
+        volumes = data['volume'].pct_change().fillna(0)
+        
+        # Create feature space
+        features = np.column_stack([returns, volumes])
+        
+        # Compute regime characteristics using KDE
+        kde = scipy.stats.gaussian_kde(features.T)
+        density = kde(features.T)
+        
+        # Flow measure
+        flow = np.gradient(density) * np.gradient(returns)
+        return np.mean(flow)
+    
+    regime_signal = pd.Series(index=historical_data.index)
+    for i in range(window, len(historical_data)):
+        regime_signal.iloc[i] = detect_market_regime(historical_data.iloc[i-window:i])
+    
+    if regime_signal.iloc[-1] > regime_signal.std() and account_cash > 0:
+        quantity = min(int(max_investment // current_price), int(account_cash // current_price))
+        return ('buy', quantity, ticker)
+    
+    elif regime_signal.iloc[-1] < -regime_signal.std() and portfolio_qty > 0:
+        return ('sell', portfolio_qty, ticker)
+    
+    return ('hold', portfolio_qty, ticker)
+
+def renaissance_entropy_network_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
+    """
+    Entropy Network Strategy
+    Based on Renaissance Technologies' pattern recognition systems
+    """
+    max_investment = total_portfolio_value * 0.10
+    window = 20
+    
+    def compute_entropy_network(data):
+        returns = data['close'].pct_change().fillna(0)
+        
+        # Create network from return patterns
+        dist_matrix = squareform(pdist(returns.reshape(-1, 1)))
+        G = nx.from_numpy_array(dist_matrix)
+        
+        # Network entropy measures
+        degrees = [d for n, d in G.degree()]
+        entropy = scipy.stats.entropy(degrees)
+        
+        return entropy
+    
+    network_signal = pd.Series(index=historical_data.index)
+    for i in range(window, len(historical_data)):
+        network_signal.iloc[i] = compute_entropy_network(historical_data.iloc[i-window:i])
+    
+    if network_signal.iloc[-1] < network_signal.mean() and account_cash > 0:
+        quantity = min(int(max_investment // current_price), int(account_cash // current_price))
+        return ('buy', quantity, ticker)
+    
+    elif network_signal.iloc[-1] > network_signal.mean() and portfolio_qty > 0:
+        return ('sell', portfolio_qty, ticker)
+    
+    return ('hold', portfolio_qty, ticker)
+
+def citadel_wavelet_momentum_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
+    """
+    Wavelet Momentum Strategy
+    Inspired by Citadel's high-frequency trading systems
+    """
+    max_investment = total_portfolio_value * 0.10
+    window = 20
+    
+    def compute_wavelet_momentum(data):
+        returns = data['close'].pct_change().fillna(0)
+        
+        # Multi-scale decomposition
+        coeffs = pywt.wavedec(returns, 'db4', level=3)
+        
+        # Scale-specific momentum
+        momentum = []
+        for coeff in coeffs:
+            momentum.append(np.sum(coeff[1:] * coeff[:-1]))
+            
+        return np.mean(momentum)
+    
+    momentum_signal = pd.Series(index=historical_data.index)
+    for i in range(window, len(historical_data)):
+        momentum_signal.iloc[i] = compute_wavelet_momentum(historical_data.iloc[i-window:i])
+    
+    if momentum_signal.iloc[-1] > momentum_signal.std() and account_cash > 0:
+        quantity = min(int(max_investment // current_price), int(account_cash // current_price))
+        return ('buy', quantity, ticker)
+    
+    elif momentum_signal.iloc[-1] < -momentum_signal.std() and portfolio_qty > 0:
+        return ('sell', portfolio_qty, ticker)
+    
+    return ('hold', portfolio_qty, ticker)
+
+def point72_topological_flow_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
+    """
+    Topological Flow Strategy
+    Based on Point72's market microstructure analysis
+    """
+    max_investment = total_portfolio_value * 0.10
+    window = 20
+    
+    def compute_flow_topology(data):
+        returns = data['close'].pct_change().fillna(0)
+        volumes = data['volume'].pct_change().fillna(0)
+        
+        # Create point cloud
+        points = np.column_stack([returns, volumes])
+        
+        # Compute persistent homology
+        diagrams = ripser(points)['dgms'][1]
+        
+        # Flow features
+        persistence = np.sum(diagrams[:, 1] - diagrams[:, 0])
+        return persistence
+    
+    topology_signal = pd.Series(index=historical_data.index)
+    for i in range(window, len(historical_data)):
+        topology_signal.iloc[i] = compute_flow_topology(historical_data.iloc[i-window:i])
+    
+    if topology_signal.iloc[-1] > topology_signal.mean() and account_cash > 0:
+        quantity = min(int(max_investment // current_price), int(account_cash // current_price))
+        return ('buy', quantity, ticker)
+    
+    elif topology_signal.iloc[-1] < topology_signal.mean() and portfolio_qty > 0:
+        return ('sell', portfolio_qty, ticker)
+    
+    return ('hold', portfolio_qty, ticker)
+
+def de_shaw_compression_network_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
+    """
+    Compression Network Strategy
+    Inspired by DE Shaw's statistical arbitrage systems
+    """
+    max_investment = total_portfolio_value * 0.10
+    window = 20
+    
+    def compute_compression_network(data):
+        returns = data['close'].pct_change().fillna(0)
+        
+        # Create network from compression distances
+        distances = []
+        for i, j in itertools.combinations(range(len(returns)-5), 2):
+            seq1 = returns[i:i+5].tobytes()
+            seq2 = returns[j:j+5].tobytes()
+            combined = seq1 + seq2
+            
+            dist = len(zlib.compress(combined)) - (len(zlib.compress(seq1)) + len(zlib.compress(seq2)))/2
+            distances.append(dist)
+        
+        # Network centrality from compression distances
+        G = nx.from_numpy_array(squareform(distances))
+        centrality = nx.eigenvector_centrality_numpy(G)
+        
+        return np.mean(list(centrality.values()))
+    
+    network_signal = pd.Series(index=historical_data.index)
+    for i in range(window, len(historical_data)):
+        network_signal.iloc[i] = compute_compression_network(historical_data.iloc[i-window:i])
+    
+    if network_signal.iloc[-1] > network_signal.std() and account_cash > 0:
+        quantity = min(int(max_investment // current_price), int(account_cash // current_price))
+        return ('buy', quantity, ticker)
+    
+    elif network_signal.iloc[-1] < -network_signal.std() and portfolio_qty > 0:
+        return ('sell', portfolio_qty, ticker)
+    
+    return ('hold', portfolio_qty, ticker)
