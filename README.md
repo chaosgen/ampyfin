@@ -19,9 +19,9 @@ The bot is configured for paper trading by default, allowing you to test and ref
 
 The bot incorporates a ranking system for 95 trading algorithms, each starting with a base score of 1000. These rankings are updated based on the profitability of the algorithms’ hypothetical trades. The system uses a coefficient calculated as:
 
-\[
+$$
 \left( \frac{e^e}{e^2 - 1} \right)^{2i}
-\]
+$$
 
 where \(i\) is the inverse of the algorithm's ranking, with the highest-ranked algorithm having \(i = 95\). The coefficients influence the decision weights of each algorithm, creating a dynamic system where the most profitable algorithms contribute more heavily to the bot's overall trading decisions. This ranking system is key to optimizing trades as market conditions change.
 
