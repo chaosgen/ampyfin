@@ -638,450 +638,661 @@ def chande_momentum_strategy(ticker, current_price, historical_data, account_cas
     
    return action, quantity, ticker
 
-def dema_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
-    """
-    Double Exponential Moving Average Strategy
-    """
-    max_investment = total_portfolio_value * 0.10
-    period = 20
+def dema_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):  
+   """  
+   Double Exponential Moving Average Strategy  
+   """  
+   max_investment = total_portfolio_value * 0.10  
+   period = 20  
     
-    # Calculate DEMA
-    ema = historical_data['close'].ewm(span=period, adjust=False).mean()
-    ema_of_ema = ema.ewm(span=period, adjust=False).mean()
-    dema = 2 * ema - ema_of_ema
+   # Calculate DEMA  
+   ema = historical_data['close'].ewm(span=period, adjust=False).mean()  
+   ema_of_ema = ema.ewm(span=period, adjust=False).mean()  
+   dema = 2 * ema - ema_of_ema  
     
-    if current_price > dema.iloc[-1] and dema.iloc[-1] > dema.iloc[-2] and account_cash > 0:
-        quantity_to_buy = min(int(max_investment // current_price), int(account_cash // current_price))
-        if quantity_to_buy > 0:
-            return ('buy', quantity_to_buy, ticker)
-    
-    elif current_price < dema.iloc[-1] and dema.iloc[-1] < dema.iloc[-2] and portfolio_qty > 0:
-        quantity_to_sell = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))
-        return ('sell', quantity_to_sell, ticker)
-    
-    return ('hold', portfolio_qty, ticker)
+   # Calculate sentiment score  
+   if current_price > dema.iloc[-1] and dema.iloc[-1] > dema.iloc[-2]:  
+      sentiment = 80 + min(20, (current_price - dema.iloc[-1]) / dema.iloc[-1] * 100)  
+   elif current_price < dema.iloc[-1] and dema.iloc[-1] < dema.iloc[-2]:  
+      sentiment = 20 - min(20, (dema.iloc[-1] - current_price) / dema.iloc[-1] * 100)  
+   else:  
+      sentiment = 50  
+  
+   # Determine action and quantity based on sentiment  
+   if sentiment >= 81:  
+      action = "strong buy"  
+      quantity = min(int(max_investment // current_price), int(account_cash // current_price))  
+   elif 61 <= sentiment <= 80:  
+      action = "buy"  
+      quantity = min(int(max_investment // current_price * 0.5), int(account_cash // current_price))  
+   elif 41 <= sentiment <= 60:  
+      action = "hold"  
+      quantity = 0  
+   elif 21 <= sentiment <= 40:  
+      action = "sell"  
+      quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))  
+   else:  
+      action = "strong sell"  
+      quantity = portfolio_qty  
+  
+   return action, quantity, ticker
 
-def price_channel_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
-    """
-    Price Channel Breakout Strategy
-    """
-    max_investment = total_portfolio_value * 0.10
-    period = 20
+def price_channel_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):  
+   """  
+   Price Channel Breakout Strategy  
+   """  
+   max_investment = total_portfolio_value * 0.10  
+   period = 20  
     
-    upper_channel = historical_data['high'].rolling(window=period).max()
-    lower_channel = historical_data['low'].rolling(window=period).min()
+   upper_channel = historical_data['high'].rolling(window=period).max()  
+   lower_channel = historical_data['low'].rolling(window=period).min()  
     
-    if current_price > upper_channel.iloc[-2] and account_cash > 0:
-        quantity_to_buy = min(int(max_investment // current_price), int(account_cash // current_price))
-        if quantity_to_buy > 0:
-            return ('buy', quantity_to_buy, ticker)
+   if current_price > upper_channel.iloc[-2]:  
+      sentiment = 90  # Strong buy  
+      quantity = min(int(max_investment // current_price), int(account_cash // current_price))  
+      return 'strong buy', quantity, ticker  
+       
+   elif current_price < lower_channel.iloc[-2]:  
+      sentiment = 10  # Strong sell  
+      quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))  
+      return 'strong sell', quantity, ticker  
+       
+   else:  
+      mid_channel = (upper_channel.iloc[-2] + lower_channel.iloc[-2]) / 2  
+      if current_price > mid_channel:  
+        sentiment = 70  # Buy  
+        quantity = min(int(max_investment // current_price), int(account_cash // current_price))  
+        return 'buy', quantity, ticker  
+      elif current_price < mid_channel:  
+        sentiment = 30  # Sell  
+        quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))  
+        return 'sell', quantity, ticker  
+      else:  
+        sentiment = 50  # Hold  
+        return 'hold', 0, ticker  
+  
+def mass_index_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):  
+   """  
+   Mass Index Strategy for reversal detection  
+   """  
+   max_investment = total_portfolio_value * 0.10  
+   period = 25  
     
-    elif current_price < lower_channel.iloc[-2] and portfolio_qty > 0:
-        quantity_to_sell = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))
-        return ('sell', quantity_to_sell, ticker)
+   # Calculate Mass Index  
+   high_low = historical_data['high'] - historical_data['low']  
+   ema1 = high_low.ewm(span=9).mean()  
+   ema2 = ema1.ewm(span=9).mean()  
+   ratio = ema1 / ema2  
+   mass_index = ratio.rolling(window=period).sum()  
     
-    return ('hold', portfolio_qty, ticker)
+   if mass_index.iloc[-1] > 27 and mass_index.iloc[-2] < 27:  
+      sentiment = 85  # Strong buy  
+      quantity = min(int(max_investment // current_price), int(account_cash // current_price))  
+      return 'strong buy', quantity, ticker  
+    
+   elif mass_index.iloc[-1] < 26.5 and mass_index.iloc[-2] > 26.5:  
+      sentiment = 15  # Strong sell  
+      quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))  
+      return 'strong sell', quantity, ticker  
+    
+   else:  
+      if mass_index.iloc[-1] > 26.75:  
+        sentiment = 75  # Buy  
+        quantity = min(int(max_investment // current_price), int(account_cash // current_price))  
+        return 'buy', quantity, ticker  
+      elif mass_index.iloc[-1] < 26.75:  
+        sentiment = 35  # Sell  
+        quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))  
+        return 'sell', quantity, ticker  
+      else:  
+        sentiment = 50  # Hold  
+        return 'hold', 0, ticker
 
-def mass_index_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
-    """
-    Mass Index Strategy for reversal detection
-    """
-    max_investment = total_portfolio_value * 0.10
-    period = 25
-    ema_period = 9
+def vortex_indicator_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):  
+   """  
+   Vortex Indicator Strategy  
+   """  
+   max_investment = total_portfolio_value * 0.10  
+   window = 20  
     
-    # Calculate the Mass Index
-    high_low = historical_data['high'] - historical_data['low']
-    ema1 = high_low.ewm(span=ema_period).mean()
-    ema2 = ema1.ewm(span=ema_period).mean()
-    ratio = ema1 / ema2
-    mass_index = ratio.rolling(window=period).sum()
+   def calculate_vortex_indicator(data):  
+      high = data['high']  
+      low = data['low']  
+      close = data['close']  
+       
+      tr = np.maximum(high - low, np.abs(high - close.shift(1)), np.abs(low - close.shift(1)))  
+      vm_plus = np.abs(high - low.shift(1))  
+      vm_minus = np.abs(low - high.shift(1))  
+       
+      vi_plus = vm_plus.rolling(window=window).sum() / tr.rolling(window=window).sum()  
+      vi_minus = vm_minus.rolling(window=window).sum() / tr.rolling(window=window).sum()  
+       
+      return vi_plus, vi_minus  
+  
+   vi_plus, vi_minus = calculate_vortex_indicator(historical_data)  
     
-    if mass_index.iloc[-1] > 27 and mass_index.iloc[-2] < 27 and account_cash > 0:
-        quantity_to_buy = min(int(max_investment // current_price), int(account_cash // current_price))
-        if quantity_to_buy > 0:
-            return ('buy', quantity_to_buy, ticker)
+   # Calculate sentiment score  
+   sentiment = 50 + (vi_plus.iloc[-1] - vi_minus.iloc[-1]) * 100  
+   sentiment = max(1, min(100, sentiment))  # Ensure sentiment is between 1 and 100  
     
-    elif mass_index.iloc[-1] < 26.5 and mass_index.iloc[-2] > 26.5 and portfolio_qty > 0:
-        quantity_to_sell = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))
-        return ('sell', quantity_to_sell, ticker)
+   # Determine action and quantity based on sentiment  
+   if sentiment >= 81:  
+      action = "strong buy"  
+      quantity = min(int(max_investment // current_price), int(account_cash // current_price))  
+   elif 61 <= sentiment < 81:  
+      action = "buy"  
+      quantity = min(int(max_investment // current_price * 0.5), int(account_cash // current_price))  
+   elif 41 <= sentiment < 61:  
+      action = "hold"  
+      quantity = 0  
+   elif 21 <= sentiment < 41:  
+      action = "sell"  
+      quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))  
+   else:  
+      action = "strong sell"  
+      quantity = portfolio_qty  
     
-    return ('hold', portfolio_qty, ticker)
+   return action, quantity, ticker
+  
+def aroon_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):  
+   """  
+   Aroon Indicator Strategy  
+   """  
+   max_investment = total_portfolio_value * 0.10  
+   period = 25  
+    
+   # Calculate Aroon indicators  
+   rolling_high = historical_data['high'].rolling(period + 1)  
+   rolling_low = historical_data['low'].rolling(period + 1)  
+    
+   aroon_up = rolling_high.apply(lambda x: float(np.argmax(x)) / period * 100)  
+   aroon_down = rolling_low.apply(lambda x: float(np.argmin(x)) / period * 100)  
+    
+   # Calculate sentiment score  
+   aroon_diff = aroon_up.iloc[-1] - aroon_down.iloc[-1]  
+   sentiment_score = int(50 + aroon_diff / 2)  # Scale to 0-100  
+   sentiment_score = max(1, min(100, sentiment_score))  # Clamp to 1-100 range  
+    
+   # Determine action and quantity  
+   if sentiment_score > 80:  
+      action = "strong buy"  
+      quantity = min(int(max_investment // current_price), int(account_cash // current_price))  
+   elif sentiment_score > 60:  
+      action = "buy"  
+      quantity = min(int(max_investment // current_price * 0.5), int(account_cash // current_price))  
+   elif sentiment_score > 40:  
+      action = "hold"  
+      quantity = 0  
+   elif sentiment_score > 20:  
+      action = "sell"  
+      quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))  
+   else:  
+      action = "strong sell"  
+      quantity = portfolio_qty  
+    
+   return action, quantity, ticker
 
-def vortex_indicator_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
-    """
-    Vortex Indicator Strategy
-    """
-    max_investment = total_portfolio_value * 0.10
-    period = 14
+def ultimate_oscillator_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):  
+   """  
+   Ultimate Oscillator Strategy  
+   """  
+   max_investment = total_portfolio_value * 0.10  
+   window = 20  
     
-    # Calculate True Range
-    high_low = historical_data['high'] - historical_data['low']
-    high_close = abs(historical_data['high'] - historical_data['close'].shift())
-    low_close = abs(historical_data['low'] - historical_data['close'].shift())
-    tr = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
+   def calculate_ultimate_oscillator(data):  
+      # Calculate buying pressure and true range  
+      bp = data['close'] - pd.concat([data['low'],  
+                           data['close'].shift(1)], axis=1).min(axis=1)  
+      tr = pd.concat([data['high'] - data['low'],  
+                abs(data['high'] - data['close'].shift(1)),  
+                abs(data['low'] - data['close'].shift(1))], axis=1).max(axis=1)  
+       
+      # Calculate averages for different periods  
+      avg7 = bp.rolling(7).sum() / tr.rolling(7).sum()  
+      avg14 = bp.rolling(14).sum() / tr.rolling(14).sum()  
+      avg28 = bp.rolling(28).sum() / tr.rolling(28).sum()  
+       
+      # Calculate Ultimate Oscillator  
+      uo = 100 * ((4 * avg7 + 2 * avg14 + avg28) / (4 + 2 + 1))  
+       
+      return uo.iloc[-1]  
+  
+   uo = calculate_ultimate_oscillator(historical_data)  
     
-    # Calculate VM+ and VM-
-    vm_plus = abs(historical_data['high'] - historical_data['low'].shift())
-    vm_minus = abs(historical_data['low'] - historical_data['high'].shift())
+   # Calculate sentiment score  
+   if uo < 30:  
+      sentiment = int(20 + (uo / 30) * 20)  # 20-40  
+   elif uo > 70:  
+      sentiment = int(80 + ((uo - 70) / 30) * 20)  # 80-100  
+   else:  
+      sentiment = int(40 + ((uo - 30) / 40) * 40)  # 40-80  
+  
+   # Determine action and quantity  
+   if sentiment >= 81:  
+      action = "strong buy"  
+      quantity = min(int(max_investment // current_price), int(account_cash // current_price))  
+   elif 61 <= sentiment <= 80:  
+      action = "buy"  
+      quantity = min(int(max_investment // current_price), int(account_cash // current_price))  
+   elif 41 <= sentiment <= 60:  
+      action = "hold"  
+      quantity = 0  
+   elif 21 <= sentiment <= 40:  
+      action = "sell"  
+      quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))  
+   else:  
+      action = "strong sell"  
+      quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))  
+  
+   return action, quantity, ticker  
+  
+def trix_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):  
+   """  
+   TRIX Strategy: Triple Exponential Average  
+   """  
+   max_investment = total_portfolio_value * 0.10  
+   period = 15  
+   signal_period = 9  
     
-    # Calculate VI+ and VI-
-    vi_plus = vm_plus.rolling(period).sum() / tr.rolling(period).sum()
-    vi_minus = vm_minus.rolling(period).sum() / tr.rolling(period).sum()
+   # Calculate TRIX  
+   ema1 = historical_data['close'].ewm(span=period, adjust=False).mean()  
+   ema2 = ema1.ewm(span=period, adjust=False).mean()  
+   ema3 = ema2.ewm(span=period, adjust=False).mean()  
+   trix = 100 * (ema3 - ema3.shift(1)) / ema3.shift(1)  
+   signal = trix.rolling(window=signal_period).mean()  
     
-    if vi_plus.iloc[-1] > vi_minus.iloc[-1] and \
-       vi_plus.iloc[-2] <= vi_minus.iloc[-2] and account_cash > 0:
-        quantity_to_buy = min(int(max_investment // current_price), int(account_cash // current_price))
-        if quantity_to_buy > 0:
-            return ('buy', quantity_to_buy, ticker)
+   # Calculate sentiment score  
+   diff = trix.iloc[-1] - signal.iloc[-1]  
+   max_diff = trix.rolling(window=20).max().iloc[-1] - trix.rolling(window=20).min().iloc[-1]  
+   sentiment = int(50 + (diff / max_diff) * 50)  
+   sentiment = max(1, min(100, sentiment))  
+  
+   # Determine action and quantity  
+   if sentiment >= 81:  
+      action = "strong buy"  
+      quantity = min(int(max_investment // current_price), int(account_cash // current_price))  
+   elif 61 <= sentiment <= 80:  
+      action = "buy"  
+      quantity = min(int(max_investment // current_price), int(account_cash // current_price))  
+   elif 41 <= sentiment <= 60:  
+      action = "hold"  
+      quantity = 0  
+   elif 21 <= sentiment <= 40:  
+      action = "sell"  
+      quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))  
+   else:  
+      action = "strong sell"  
+      quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))  
+  
+   return action, quantity, ticker  
+  
+def kst_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):  
+   """  
+   Know Sure Thing (KST) Oscillator Strategy  
+   """  
+   max_investment = total_portfolio_value * 0.10  
+   window = 20  
+  
+   # ROC periods  
+   r1, r2, r3, r4 = 10, 15, 20, 30  
+   # SMA periods  
+   s1, s2, s3, s4 = 10, 10, 10, 15  
+  
+   # Calculate ROC values  
+   roc1 = historical_data['close'].diff(r1) / historical_data['close'].shift(r1) * 100  
+   roc2 = historical_data['close'].diff(r2) / historical_data['close'].shift(r2) * 100  
+   roc3 = historical_data['close'].diff(r3) / historical_data['close'].shift(r3) * 100  
+   roc4 = historical_data['close'].diff(r4) / historical_data['close'].shift(r4) * 100  
+  
+   # Calculate KST  
+   k1 = roc1.rolling(s1).mean()  
+   k2 = roc2.rolling(s2).mean()  
+   k3 = roc3.rolling(s3).mean()  
+   k4 = roc4.rolling(s4).mean()  
+  
+   kst = (k1 * 1) + (k2 * 2) + (k3 * 3) + (k4 * 4)  
+   signal = kst.rolling(9).mean()  
+  
+   # Calculate sentiment score  
+   sentiment = 50 + (kst.iloc[-1] - signal.iloc[-1]) * 10  
+   sentiment = max(1, min(100, sentiment))  # Ensure sentiment is between 1 and 100  
+  
+   # Determine action and quantity based on sentiment  
+   if sentiment >= 81:  
+      action = "strong buy"  
+      quantity = min(int(max_investment // current_price), int(account_cash // current_price))  
+   elif 61 <= sentiment < 81:  
+      action = "buy"  
+      quantity = min(int(max_investment // current_price), int(account_cash // current_price))  
+   elif 41 <= sentiment < 61:  
+      action = "hold"  
+      quantity = 0  
+   elif 21 <= sentiment < 41:  
+      action = "sell"  
+      quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))  
+   else:  
+      action = "strong sell"  
+      quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))  
+  
+   return action, quantity, ticker
+  
+def psar_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):  
+   """  
+   Parabolic SAR Strategy  
+   """  
+   max_investment = total_portfolio_value * 0.10  
+   af = 0.02  # Acceleration Factor  
+   max_af = 0.2  
     
-    elif vi_plus.iloc[-1] < vi_minus.iloc[-1] and \
-         vi_plus.iloc[-2] >= vi_minus.iloc[-2] and portfolio_qty > 0:
-        quantity_to_sell = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))
-        return ('sell', quantity_to_sell, ticker)
+   high = historical_data['high'].values  
+   low = historical_data['low'].values  
     
-    return ('hold', portfolio_qty, ticker)
+   # Initialize arrays  
+   psar = np.zeros(len(high))  
+   trend = np.zeros(len(high))  
+   ep = np.zeros(len(high))  
+   af_values = np.zeros(len(high))  
+    
+   # Set initial values  
+   trend[0] = 1 if high[0] > low[0] else -1  
+   ep[0] = high[0] if trend[0] == 1 else low[0]  
+   psar[0] = low[0] if trend[0] == 1 else high[0]  
+   af_values[0] = af  
+    
+   # Calculate PSAR  
+   for i in range(1, len(high)):  
+      psar[i] = psar[i-1] + af_values[i-1] * (ep[i-1] - psar[i-1])  
+       
+      if trend[i-1] == 1:  
+        if low[i] > psar[i]:  
+           trend[i] = 1  
+           if high[i] > ep[i-1]:  
+              ep[i] = high[i]  
+              af_values[i] = min(af_values[i-1] + af, max_af)  
+           else:  
+              ep[i] = ep[i-1]  
+              af_values[i] = af_values[i-1]  
+        else:  
+           trend[i] = -1  
+           ep[i] = low[i]  
+           af_values[i] = af  
+      else:  
+        if high[i] < psar[i]:  
+           trend[i] = -1  
+           if low[i] < ep[i-1]:  
+              ep[i] = low[i]  
+              af_values[i] = min(af_values[i-1] + af, max_af)  
+           else:  
+              ep[i] = ep[i-1]  
+              af_values[i] = af_values[i-1]  
+        else:  
+           trend[i] = 1  
+           ep[i] = high[i]  
+           af_values[i] = af  
+  
+   # Calculate sentiment score  
+   if trend[-1] == 1:  
+      sentiment = int(50 + (current_price - psar[-1]) / (high[-1] - low[-1]) * 50)  
+   else:  
+      sentiment = int(50 - (psar[-1] - current_price) / (high[-1] - low[-1]) * 50)  
+   sentiment = max(1, min(100, sentiment))  
+  
+   # Determine action and quantity  
+   if sentiment >= 81:  
+      action = "strong buy"  
+      quantity = min(int(max_investment // current_price), int(account_cash // current_price))  
+   elif 61 <= sentiment <= 80:  
+      action = "buy"  
+      quantity = min(int(max_investment // current_price), int(account_cash // current_price))  
+   elif 41 <= sentiment <= 60:  
+      action = "hold"  
+      quantity = 0  
+   elif 21 <= sentiment <= 40:  
+      action = "sell"  
+      quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))  
+   else:  
+      action = "strong sell"  
+      quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))  
+  
+   return action, quantity, ticker
 
-def aroon_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
-    """
-    Aroon Indicator Strategy
-    """
-    max_investment = total_portfolio_value * 0.10
-    period = 25
+def stochastic_momentum_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):  
+   """  
+   Stochastic Momentum Strategy  
+   """  
+   max_investment = total_portfolio_value * 0.10  
+   window = 20  
     
-    # Calculate Aroon indicators
-    rolling_high = historical_data['high'].rolling(period + 1)
-    rolling_low = historical_data['low'].rolling(period + 1)
+   def calculate_stochastic_momentum(data):  
+      # Calculate Stochastic Oscillator  
+      k_period = 14  
+      d_period = 3  
+       
+      low_min = historical_data['low'].rolling(window=k_period).min()  
+      high_max = historical_data['high'].rolling(window=k_period).max()  
+       
+      k = 100 * (historical_data['close'] - low_min) / (high_max - low_min)  
+      d = k.rolling(window=d_period).mean()  
+       
+      # Calculate Momentum  
+      momentum = historical_data['close'].diff(k_period)  
+       
+      # Combine signals  
+      signal = (k.iloc[-1] - 50) + (d.iloc[-1] - 50) + (momentum.iloc[-1] / historical_data['close'].iloc[-1] * 100)  
+       
+      # Normalize to 0-100 range  
+      normalized_signal = (signal + 200) / 4  # Assuming max signal is ±200  
+      return max(0, min(100, normalized_signal))  
+  
+   sentiment = calculate_stochastic_momentum(historical_data)  
     
-    aroon_up = rolling_high.apply(lambda x: float(np.argmax(x)) / period * 100)
-    aroon_down = rolling_low.apply(lambda x: float(np.argmin(x)) / period * 100)
+   if sentiment > 80:  
+      action = "strong buy"  
+      quantity = min(int(max_investment // current_price), int(account_cash // current_price))  
+   elif sentiment > 60:  
+      action = "buy"  
+      quantity = min(int((max_investment // 2) // current_price), int(account_cash // current_price))  
+   elif sentiment > 40:  
+      action = "hold"  
+      quantity = 0  
+   elif sentiment > 20:  
+      action = "sell"  
+      quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))  
+   else:  
+      action = "strong sell"  
+      quantity = portfolio_qty  
     
-    if aroon_up.iloc[-1] > 70 and aroon_down.iloc[-1] < 30 and account_cash > 0:
-        quantity_to_buy = min(int(max_investment // current_price), int(account_cash // current_price))
-        if quantity_to_buy > 0:
-            return ('buy', quantity_to_buy, ticker)
+   return action, quantity, ticker  
+  
+def williams_vix_fix_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):  
+   """  
+   Williams VIX Fix Strategy  
+   """  
+   max_investment = total_portfolio_value * 0.10  
+   window = 22  
     
-    elif aroon_up.iloc[-1] < 30 and aroon_down.iloc[-1] > 70 and portfolio_qty > 0:
-        quantity_to_sell = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))
-        return ('sell', quantity_to_sell, ticker)
+   def calculate_williams_vix_fix(data):  
+      # Calculate highest high and lowest low  
+      highest_high = historical_data['high'].rolling(window=window).max()  
+      lowest_low = historical_data['low'].rolling(window=window).min()  
+       
+      # Calculate Williams VIX Fix  
+      wvf = ((highest_high - historical_data['low']) / highest_high) * 100  
+       
+      # Calculate Bollinger Bands for WVF  
+      wvf_sma = wvf.rolling(window=window).mean()  
+      wvf_std = wvf.rolling(window=window).std()  
+      upper_band = wvf_sma + (2 * wvf_std)  
+       
+      # Generate signal  
+      if wvf.iloc[-1] > upper_band.iloc[-1]:  
+        return 90  # Strong buy signal  
+      elif wvf.iloc[-1] > wvf_sma.iloc[-1]:  
+        return 70  # Buy signal  
+      elif wvf.iloc[-1] < wvf_sma.iloc[-1]:  
+        return 30  # Sell signal  
+      else:  
+        return 50  # Hold signal  
+  
+   sentiment = calculate_williams_vix_fix(historical_data)  
     
-    return ('hold', portfolio_qty, ticker)
+   if sentiment > 80:  
+      action = "strong buy"  
+      quantity = min(int(max_investment // current_price), int(account_cash // current_price))  
+   elif sentiment > 60:  
+      action = "buy"  
+      quantity = min(int((max_investment // 2) // current_price), int(account_cash // current_price))  
+   elif sentiment > 40:  
+      action = "hold"  
+      quantity = 0  
+   elif sentiment > 20:  
+      action = "sell"  
+      quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))  
+   else:  
+      action = "strong sell"  
+      quantity = portfolio_qty  
+    
+   return action, quantity, ticker
 
-def ultimate_oscillator_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
-    """
-    Ultimate Oscillator Strategy
-    """
-    max_investment = total_portfolio_value * 0.10
+def conners_rsi_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):  
+   """  
+   Connors RSI Strategy  
+   """  
+   max_investment = total_portfolio_value * 0.10  
+   rsi_period = 3  
+   streak_period = 2  
+   rank_period = 100  
     
-    # Calculate buying pressure and true range
-    bp = historical_data['close'] - pd.concat([historical_data['low'], 
-                                             historical_data['close'].shift(1)], axis=1).min(axis=1)
-    tr = pd.concat([historical_data['high'] - historical_data['low'],
-                   abs(historical_data['high'] - historical_data['close'].shift(1)),
-                   abs(historical_data['low'] - historical_data['close'].shift(1))], axis=1).max(axis=1)
+   # Calculate RSI  
+   delta = historical_data['close'].diff()  
+   gain = (delta.where(delta > 0, 0)).rolling(window=rsi_period).mean()  
+   loss = (-delta.where(delta < 0, 0)).rolling(window=rsi_period).mean()  
+   rs = gain / loss  
+   rsi = 100 - (100 / (1 + rs))  
     
-    # Calculate averages for different periods
-    avg7 = bp.rolling(7).sum() / tr.rolling(7).sum()
-    avg14 = bp.rolling(14).sum() / tr.rolling(14).sum()
-    avg28 = bp.rolling(28).sum() / tr.rolling(28).sum()
+   # Calculate Streak RSI  
+   streak = np.zeros(len(historical_data))  
+   for i in range(1, len(historical_data)):  
+      if historical_data['close'].iloc[i] > historical_data['close'].iloc[i-1]:  
+        streak[i] = min(streak[i-1] + 1, streak_period)  
+      elif historical_data['close'].iloc[i] < historical_data['close'].iloc[i-1]:  
+        streak[i] = max(streak[i-1] - 1, -streak_period)  
+   streak_rsi = 100 * (streak - streak.min()) / (streak.max() - streak.min())  
     
-    # Calculate Ultimate Oscillator
-    uo = 100 * ((4 * avg7 + 2 * avg14 + avg28) / (4 + 2 + 1))
+   # Calculate Percentile Rank  
+   def percentile_rank(x):  
+      return 100 * (stats.percentileofscore(x, x.iloc[-1]) / 100)  
     
-    if uo.iloc[-1] < 30 and uo.iloc[-1] > uo.iloc[-2] and account_cash > 0:
-        quantity_to_buy = min(int(max_investment // current_price), int(account_cash // current_price))
-        if quantity_to_buy > 0:
-            return ('buy', quantity_to_buy, ticker)
+   rank = historical_data['close'].rolling(rank_period).apply(percentile_rank)  
     
-    elif uo.iloc[-1] > 70 and uo.iloc[-1] < uo.iloc[-2] and portfolio_qty > 0:
-        quantity_to_sell = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))
-        return ('sell', quantity_to_sell, ticker)
+   # Combine all components  
+   crsi = (rsi + streak_rsi + rank) / 3  
     
-    return ('hold', portfolio_qty, ticker)
-
-def trix_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
-    """
-    TRIX Strategy: Triple Exponential Average
-    """
-    max_investment = total_portfolio_value * 0.10
-    period = 15
-    signal_period = 9
+   # Calculate sentiment score (1-100)  
+   sentiment = 100 - crsi.iloc[-1]  
     
-    # Calculate TRIX
-    ema1 = historical_data['close'].ewm(span=period, adjust=False).mean()
-    ema2 = ema1.ewm(span=period, adjust=False).mean()
-    ema3 = ema2.ewm(span=period, adjust=False).mean()
-    trix = 100 * (ema3 - ema3.shift(1)) / ema3.shift(1)
-    signal = trix.rolling(window=signal_period).mean()
+   if sentiment >= 81:  
+      action = "strong buy"  
+      quantity = min(int(max_investment // current_price), int(account_cash // current_price))  
+   elif 61 <= sentiment < 81:  
+      action = "buy"  
+      quantity = min(int(max_investment // current_price), int(account_cash // current_price))  
+   elif 41 <= sentiment < 61:  
+      action = "hold"  
+      quantity = 0  
+   elif 21 <= sentiment < 41:  
+      action = "sell"  
+      quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))  
+   else:  
+      action = "strong sell"  
+      quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))  
+  
+   return action, quantity, ticker  
+  
+def dpo_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):  
+   """  
+   Detrended Price Oscillator Strategy  
+   """  
+   max_investment = total_portfolio_value * 0.10  
+   period = 20  
     
-    if trix.iloc[-1] > signal.iloc[-1] and trix.iloc[-2] <= signal.iloc[-2] and account_cash > 0:
-        quantity_to_buy = min(int(max_investment // current_price), int(account_cash // current_price))
-        if quantity_to_buy > 0:
-            return ('buy', quantity_to_buy, ticker)
-            
-    elif trix.iloc[-1] < signal.iloc[-1] and trix.iloc[-2] >= signal.iloc[-2] and portfolio_qty > 0:
-        quantity_to_sell = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))
-        return ('sell', quantity_to_sell, ticker)
-        
-    return ('hold', portfolio_qty, ticker)
-
-def kst_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
-    """
-    Know Sure Thing (KST) Oscillator Strategy
-    """
-    max_investment = total_portfolio_value * 0.10
+   # Calculate DPO  
+   shift = period // 2 + 1  
+   ma = historical_data['close'].rolling(window=period).mean()  
+   dpo = historical_data['close'].shift(shift) - ma  
     
-    # ROC periods
-    r1, r2, r3, r4 = 10, 15, 20, 30
-    # SMA periods
-    s1, s2, s3, s4 = 10, 10, 10, 15
+   # Calculate sentiment score (1-100)  
+   max_dpo = dpo.abs().max()  
+   sentiment = 50 + (dpo.iloc[-1] / max_dpo) * 50  
     
-    # Calculate ROC values
-    roc1 = historical_data['close'].diff(r1) / historical_data['close'].shift(r1) * 100
-    roc2 = historical_data['close'].diff(r2) / historical_data['close'].shift(r2) * 100
-    roc3 = historical_data['close'].diff(r3) / historical_data['close'].shift(r3) * 100
-    roc4 = historical_data['close'].diff(r4) / historical_data['close'].shift(r4) * 100
+   if sentiment >= 81:  
+      action = "strong buy"  
+      quantity = min(int(max_investment // current_price), int(account_cash // current_price))  
+   elif 61 <= sentiment < 81:  
+      action = "buy"  
+      quantity = min(int(max_investment // current_price), int(account_cash // current_price))  
+   elif 41 <= sentiment < 61:  
+      action = "hold"  
+      quantity = 0  
+   elif 21 <= sentiment < 41:  
+      action = "sell"  
+      quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))  
+   else:  
+      action = "strong sell"  
+      quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))  
+  
+   return action, quantity, ticker  
+  
+def fisher_transform_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):  
+   """  
+   Fisher Transform Strategy  
+   """  
+   max_investment = total_portfolio_value * 0.10  
+   window = 20  
     
-    # Calculate KST
-    k1 = roc1.rolling(s1).mean()
-    k2 = roc2.rolling(s2).mean()
-    k3 = roc3.rolling(s3).mean()
-    k4 = roc4.rolling(s4).mean()
+   def compute_fisher_transform(data):  
+      # Calculate the median price  
+      median_price = (historical_data['high'] + historical_data['low']) / 2  
+       
+      # Normalize price  
+      normalized = (median_price - median_price.rolling(window).min()) / (median_price.rolling(window).max() - median_price.rolling(window).min())  
+       
+      # Calculate Fisher Transform  
+      fisher = 0.5 * np.log((1 + normalized) / (1 - normalized))  
+      signal = fisher.shift(1)  
+       
+      return fisher, signal  
     
-    kst = (k1 * 1) + (k2 * 2) + (k3 * 3) + (k4 * 4)
-    signal = kst.rolling(9).mean()
+   fisher, signal = compute_fisher_transform(historical_data)  
     
-    if kst.iloc[-1] > signal.iloc[-1] and kst.iloc[-2] <= signal.iloc[-2] and account_cash > 0:
-        quantity_to_buy = min(int(max_investment // current_price), int(account_cash // current_price))
-        if quantity_to_buy > 0:
-            return ('buy', quantity_to_buy, ticker)
-            
-    elif kst.iloc[-1] < signal.iloc[-1] and kst.iloc[-2] >= signal.iloc[-2] and portfolio_qty > 0:
-        quantity_to_sell = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))
-        return ('sell', quantity_to_sell, ticker)
-        
-    return ('hold', portfolio_qty, ticker)
-
-def psar_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
-    """
-    Parabolic SAR Strategy
-    """
-    max_investment = total_portfolio_value * 0.10
-    af = 0.02  # Acceleration Factor
-    max_af = 0.2
+   # Calculate sentiment score  
+   if fisher.iloc[-1] > signal.iloc[-1] and fisher.iloc[-1] < 0:  
+      sentiment = 80 + (fisher.iloc[-1] - signal.iloc[-1]) * 100  # Scale to 61-100 range  
+   elif fisher.iloc[-1] < signal.iloc[-1] and fisher.iloc[-1] > 0:  
+      sentiment = 20 - (signal.iloc[-1] - fisher.iloc[-1]) * 100  # Scale to 1-40 range  
+   else:  
+      sentiment = 50 + (fisher.iloc[-1] - signal.iloc[-1]) * 50  # Scale to 41-60 range  
     
-    high = historical_data['high'].values
-    low = historical_data['low'].values
+   sentiment = max(1, min(100, sentiment))  # Ensure sentiment is between 1 and 100  
     
-    # Initialize arrays
-    psar = np.zeros(len(high))
-    trend = np.zeros(len(high))
-    ep = np.zeros(len(high))
-    af_values = np.zeros(len(high))
+   # Determine action and quantity based on sentiment  
+   if sentiment >= 81:  
+      action = "strong buy"  
+      quantity = min(int(max_investment // current_price), int(account_cash // current_price))  
+   elif 61 <= sentiment <= 80:  
+      action = "buy"  
+      quantity = min(int((max_investment // 2) // current_price), int(account_cash // current_price))  
+   elif 41 <= sentiment <= 60:  
+      action = "hold"  
+      quantity = 0  
+   elif 21 <= sentiment <= 40:  
+      action = "sell"  
+      quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.25)))  
+   else:  # sentiment <= 20  
+      action = "strong sell"  
+      quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))  
     
-    # Set initial values
-    trend[0] = 1 if high[0] > low[0] else -1
-    ep[0] = high[0] if trend[0] == 1 else low[0]
-    psar[0] = low[0] if trend[0] == 1 else high[0]
-    af_values[0] = af
-    
-    # Calculate PSAR
-    for i in range(1, len(high)):
-        psar[i] = psar[i-1] + af_values[i-1] * (ep[i-1] - psar[i-1])
-        
-        if trend[i-1] == 1:
-            if low[i] > psar[i]:
-                trend[i] = 1
-                if high[i] > ep[i-1]:
-                    ep[i] = high[i]
-                    af_values[i] = min(af_values[i-1] + af, max_af)
-                else:
-                    ep[i] = ep[i-1]
-                    af_values[i] = af_values[i-1]
-            else:
-                trend[i] = -1
-                ep[i] = low[i]
-                af_values[i] = af
-        else:
-            if high[i] < psar[i]:
-                trend[i] = -1
-                if low[i] < ep[i-1]:
-                    ep[i] = low[i]
-                    af_values[i] = min(af_values[i-1] + af, max_af)
-                else:
-                    ep[i] = ep[i-1]
-                    af_values[i] = af_values[i-1]
-            else:
-                trend[i] = 1
-                ep[i] = high[i]
-                af_values[i] = af
-    
-    if trend[-1] == 1 and trend[-2] == -1 and account_cash > 0:
-        quantity_to_buy = min(int(max_investment // current_price), int(account_cash // current_price))
-        if quantity_to_buy > 0:
-            return ('buy', quantity_to_buy, ticker)
-            
-    elif trend[-1] == -1 and trend[-2] == 1 and portfolio_qty > 0:
-        quantity_to_sell = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))
-        return ('sell', quantity_to_sell, ticker)
-        
-    return ('hold', portfolio_qty, ticker)
-
-def stochastic_momentum_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
-    """
-    Stochastic Momentum Strategy
-    """
-    max_investment = total_portfolio_value * 0.10
-    k_period = 14
-    d_period = 3
-    
-    # Calculate Stochastic Oscillator
-    low_min = historical_data['low'].rolling(window=k_period).min()
-    high_max = historical_data['high'].rolling(window=k_period).max()
-    
-    k = 100 * (historical_data['close'] - low_min) / (high_max - low_min)
-    d = k.rolling(window=d_period).mean()
-    
-    # Calculate Momentum
-    momentum = historical_data['close'].diff(k_period)
-    
-    if k.iloc[-1] < 20 and momentum.iloc[-1] > 0 and account_cash > 0:
-        quantity_to_buy = min(int(max_investment // current_price), int(account_cash // current_price))
-        if quantity_to_buy > 0:
-            return ('buy', quantity_to_buy, ticker)
-            
-    elif k.iloc[-1] > 80 and momentum.iloc[-1] < 0 and portfolio_qty > 0:
-        quantity_to_sell = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))
-        return ('sell', quantity_to_sell, ticker)
-        
-    return ('hold', portfolio_qty, ticker)
-
-def williams_vix_fix_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
-    """
-    Williams VIX Fix Strategy
-    """
-    max_investment = total_portfolio_value * 0.10
-    period = 22
-    
-    # Calculate highest high and lowest low
-    highest_high = historical_data['high'].rolling(window=period).max()
-    lowest_low = historical_data['low'].rolling(window=period).min()
-    
-    # Calculate Williams VIX Fix
-    wvf = ((highest_high - historical_data['low']) / highest_high) * 100
-    
-    # Calculate Bollinger Bands for WVF
-    wvf_sma = wvf.rolling(window=period).mean()
-    wvf_std = wvf.rolling(window=period).std()
-    upper_band = wvf_sma + (2 * wvf_std)
-    
-    if wvf.iloc[-1] > upper_band.iloc[-1] and account_cash > 0:
-        quantity_to_buy = min(int(max_investment // current_price), int(account_cash // current_price))
-        if quantity_to_buy > 0:
-            return ('buy', quantity_to_buy, ticker)
-            
-    elif wvf.iloc[-1] < wvf_sma.iloc[-1] and portfolio_qty > 0:
-        quantity_to_sell = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))
-        return ('sell', quantity_to_sell, ticker)
-        
-    return ('hold', portfolio_qty, ticker)
-
-def connors_rsi_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
-    """
-    Connors RSI Strategy
-    """
-    max_investment = total_portfolio_value * 0.10
-    rsi_period = 3
-    streak_period = 2
-    rank_period = 100
-    
-    # Calculate RSI
-    delta = historical_data['close'].diff()
-    gain = (delta.where(delta > 0, 0)).rolling(window=rsi_period).mean()
-    loss = (-delta.where(delta < 0, 0)).rolling(window=rsi_period).mean()
-    rs = gain / loss
-    rsi = 100 - (100 / (1 + rs))
-    
-    # Calculate Streak RSI
-    streak = np.zeros(len(historical_data))
-    for i in range(1, len(historical_data)):
-        if historical_data['close'].iloc[i] > historical_data['close'].iloc[i-1]:
-            streak[i] = min(streak[i-1] + 1, streak_period)
-        elif historical_data['close'].iloc[i] < historical_data['close'].iloc[i-1]:
-            streak[i] = max(streak[i-1] - 1, -streak_period)
-    streak_rsi = 100 * (streak - streak.min()) / (streak.max() - streak.min())
-    
-    # Calculate Percentile Rank
-    def percentile_rank(x):
-        return 100 * (stats.percentileofscore(x, x.iloc[-1]) / 100)
-    
-    rank = historical_data['close'].rolling(rank_period).apply(percentile_rank)
-    
-    # Combine all components
-    crsi = (rsi + streak_rsi + rank) / 3
-    
-    if crsi.iloc[-1] < 20 and account_cash > 0:
-        quantity_to_buy = min(int(max_investment // current_price), int(account_cash // current_price))
-        if quantity_to_buy > 0:
-            return ('buy', quantity_to_buy, ticker)
-            
-    elif crsi.iloc[-1] > 80 and portfolio_qty > 0:
-        quantity_to_sell = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))
-        return ('sell', quantity_to_sell, ticker)
-        
-    return ('hold', portfolio_qty, ticker)
-
-def dpo_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
-    """
-    Detrended Price Oscillator Strategy
-    """
-    max_investment = total_portfolio_value * 0.10
-    period = 20
-    
-    # Calculate DPO
-    shift = period // 2 + 1
-    ma = historical_data['close'].rolling(window=period).mean()
-    dpo = historical_data['close'].shift(shift) - ma
-    
-    if dpo.iloc[-1] < 0 and dpo.iloc[-1] > dpo.iloc[-2] and account_cash > 0:
-        quantity_to_buy = min(int(max_investment // current_price), int(account_cash // current_price))
-        if quantity_to_buy > 0:
-            return ('buy', quantity_to_buy, ticker)
-            
-    elif dpo.iloc[-1] > 0 and dpo.iloc[-1] < dpo.iloc[-2] and portfolio_qty > 0:
-        quantity_to_sell = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))
-        return ('sell', quantity_to_sell, ticker)
-        
-    return ('hold', portfolio_qty, ticker)
-
-def fisher_transform_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
-    """
-    Fisher Transform Strategy
-    """
-    max_investment = total_portfolio_value * 0.10
-    period = 10
-    
-    # Calculate the median price
-    median_price = (historical_data['high'] + historical_data['low']) / 2
-    
-    # Normalize price
-    normalized = (median_price - median_price.rolling(period).min()) / \
-                (median_price.rolling(period).max() - median_price.rolling(period).min())
-    
-    # Calculate Fisher Transform
-    fisher = 0.5 * np.log((1 + normalized) / (1 - normalized))
-    signal = fisher.shift(1)
-    
-    if fisher.iloc[-1] > signal.iloc[-1] and fisher.iloc[-1] < 0 and account_cash > 0:
-        quantity_to_buy = min(int(max_investment // current_price), int(account_cash // current_price))
-        if quantity_to_buy > 0:
-            return ('buy', quantity_to_buy, ticker)
-            
-    elif fisher.iloc[-1] < signal.iloc[-1] and fisher.iloc[-1] > 0 and portfolio_qty > 0:
-        quantity_to_sell = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))
-        return ('sell', quantity_to_sell, ticker)
-        
-    return ('hold', portfolio_qty, ticker)
+   return action, quantity, ticker
 
 def ehlers_fisher_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
     """
