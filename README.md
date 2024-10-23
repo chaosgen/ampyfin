@@ -1,18 +1,29 @@
 ﻿# AmpyFin Trading Bot
 ![](logo.png)
 ## Overview
-This trading bot retrieves and stores NASDAQ-100 tickers, monitors market status, and prepares for trading operations during premarket and regular trading hours using the Polygon API. This project serves as a great starting point for individuals looking to get into algorithmic trading, featuring multiple common strategies and easy access for potential traders. 
 
-To facilitate this, the bot is set up for paper trading, allowing users to practice and develop their strategies without risking real capital. To switch to live trading, simply update your API keys and adjust the trading parameters in the configuration file. Ensure you thoroughly test your strategies in paper trading mode before transitioning to live trading to mitigate risks.
+This trading bot retrieves and stores NASDAQ-100 tickers, monitors market status, and prepares for trading operations during premarket and regular trading hours using the Polygon API. The bot implements a ranking system for 95 trading algorithms, each initialized with a base rating of 1000. These rankings dynamically adjust based on each algorithm's hypothetical buy/sell decisions and resulting profitability, allowing for optimized trading strategies.
 
+The bot is configured for paper trading by default, allowing you to test and refine your strategies without risking real capital. To transition to live trading, simply update your API keys and adjust the trading parameters in the configuration file.
 
 ## Features
 
 - Fetches NASDAQ-100 tickers during early market hours using Financial Modeling Prep API.
 - Stores tickers in a MongoDB database.
 - Monitors market status (open, closed, early hours) using Polygon API.
+- Implements a ranking system for 95 trading algorithms based on performance.
 - Logs events and errors for easy debugging.
 - Can be extended to execute custom trading strategies.
+
+### Algorithm Ranking System
+
+The bot incorporates a ranking system for 95 trading algorithms, each starting with a base score of 1000. These rankings are updated based on the profitability of the algorithms’ hypothetical trades. The system uses a coefficient calculated as:
+
+\[
+\left( \frac{e^e}{e^2 - 1} \right)^{2i}
+\]
+
+where \(i\) is the inverse of the algorithm's ranking, with the highest-ranked algorithm having \(i = 95\). The coefficients influence the decision weights of each algorithm, creating a dynamic system where the most profitable algorithms contribute more heavily to the bot's overall trading decisions. This ranking system is key to optimizing trades as market conditions change.
 
 ## Table of Contents
 
@@ -82,6 +93,7 @@ The Financial Modeling Prep API is used to fetch NASDAQ-100 tickers. Follow thes
 For further details on using the Financial Modeling Prep API, check their [API documentation](https://financialmodelingprep.com/developer/docs).
 
 ## Alpaca Setup
+
 To execute trades, you can integrate Alpaca into the bot. Follow these steps to set up your Alpaca account:
 
 1. Sign up for a free account at [Alpaca](https://alpaca.markets/).
@@ -100,17 +112,8 @@ To execute trades, you can integrate Alpaca into the bot. Follow these steps to 
 
 To run the bot, simply execute:
 
+```bash
 python client.py
-
-## Features
-
-The bot will:
-
-- Call NASDAQ-100 tickers during early market hours.
-- Monitor market status and log activities.
-- Store tickers in MongoDB for future use.
-
-The bot checks the market status every minute and updates NASDAQ-100 tickers when early hours begin.
 
 ## Logging
 
@@ -123,7 +126,7 @@ The bot logs all major events and errors to a `system.log` file, including API e
 
 ## Contributing
 
-Contributions are welcome! Feel free to open a pull request or submit issues for bugs or feature requests, especially in the trading strategies section for future improvements. Your input can help enhance this project for those new to algorithmic trading.
+Contributions are welcome! Feel free to open a pull request or submit issues for bugs or feature requests. Future improvements may focus on optimizing the ranking system or expanding the bot's capabilities for more advanced trading strategies.
 
 ## License
 
