@@ -27,7 +27,7 @@ def get_historical_data(ticker, client, days=100):
    return data  
 
 def test_strategies():
-   tickers = ["GOOGL", "MSFT", "META", "REGN"]  
+   tickers = ["GOOGL", "MSFT", "META", "REGN", "ON", "AMZN", "MU", "NKLA"]  
    # Initialize the StockHistoricalDataClient  
    client = StockHistoricalDataClient(API_KEY, API_SECRET)  
   
@@ -44,9 +44,8 @@ def test_strategies():
         trading_strategies.rsi_strategy,  
         trading_strategies.momentum_strategy,  
         trading_strategies.mean_reversion_strategy,
-        trading_strategies.conners_rsi_strategy,
-        trading_strategies.dpo_strategy,
-        trading_strategies.fisher_transform_strategy 
+        trading_strategies.entropy_flow_strategy,
+        trading_strategies.regime_detection_strategy
         
     ]
     
