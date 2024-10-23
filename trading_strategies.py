@@ -58,7 +58,7 @@ def rsi_strategy(ticker, current_price, historical_data, account_cash, portfolio
    if 1 <= current_rsi <= 20:  # Strong sell  
       if portfolio_qty > 0:  
         quantity_to_sell = portfolio_qty  
-        return ('sell', quantity_to_sell, ticker)  
+        return ('strong sell', quantity_to_sell, ticker)  
    elif 21 <= current_rsi <= 40:  # Sell  
       if portfolio_qty > 0:  
         quantity_to_sell = max(1, int(portfolio_qty * 0.5))  
@@ -74,7 +74,7 @@ def rsi_strategy(ticker, current_price, historical_data, account_cash, portfolio
       if account_cash > 0:  
         quantity_to_buy = min(int((max_investment * 1.5) // current_price), int(account_cash // current_price))  
         if quantity_to_buy > 0:  
-           return ('buy', quantity_to_buy, ticker)  
+           return ('strong buy', quantity_to_buy, ticker)  
   
    # If no action is taken or quantities are 0  
    return ('hold', 0, ticker)
@@ -102,7 +102,7 @@ def bollinger_bands_strategy(ticker, current_price, historical_data, account_cas
   
    if sentiment_score <= 20 and portfolio_qty > 0:  
       quantity_to_sell = portfolio_qty  # Strong sell  
-      return ('sell', quantity_to_sell, ticker)  
+      return ('strong sell', quantity_to_sell, ticker)  
    elif 20 < sentiment_score <= 40 and portfolio_qty > 0:  
       quantity_to_sell = max(1, int(portfolio_qty * 0.5))  # Sell  
       return ('sell', quantity_to_sell, ticker)  
@@ -113,7 +113,7 @@ def bollinger_bands_strategy(ticker, current_price, historical_data, account_cas
    elif sentiment_score > 80 and account_cash > 0:  
       quantity_to_buy = min(int((max_investment * 1.5) // current_price), int(account_cash // current_price))  # Strong buy  
       if quantity_to_buy > 0:  
-        return ('buy', quantity_to_buy, ticker)  
+        return ('strong buy', quantity_to_buy, ticker)  
   
    # Hold (neutral sentiment)  
    return ('hold', 0, ticker)
@@ -143,7 +143,7 @@ def macd_strategy(ticker, current_price, historical_data, account_cash, portfoli
    # Determine action based on sentiment score  
    if sentiment >= 81:  # Strong buy  
       quantity_to_buy = min(int(max_investment // current_price), int(account_cash // current_price))  
-      return ('buy', quantity_to_buy, ticker)  
+      return ('strong buy', quantity_to_buy, ticker)  
    elif 61 <= sentiment < 81:  # Buy  
       quantity_to_buy = min(int(max_investment // current_price * 0.5), int(account_cash // current_price))  
       return ('buy', quantity_to_buy, ticker)  
@@ -153,7 +153,7 @@ def macd_strategy(ticker, current_price, historical_data, account_cash, portfoli
       quantity_to_sell = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))  
       return ('sell', quantity_to_sell, ticker)  
    else:  # Strong sell (sentiment < 21)  
-      return ('sell', portfolio_qty, ticker)
+      return ('strong sell', portfolio_qty, ticker)
 
 def momentum_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):  
    """  
@@ -182,7 +182,7 @@ def momentum_strategy(ticker, current_price, historical_data, account_cash, port
       amount_to_invest = min(account_cash, max_investment)  
       quantity_to_buy = int(amount_to_invest // current_price)  
       if quantity_to_buy > 0:  
-        return ('buy', quantity_to_buy, ticker)  
+        return ('strong buy', quantity_to_buy, ticker)  
   
    # Buy signal (sentiment 61-80)  
    elif 61 <= sentiment <= 80 and account_cash > 0:  
@@ -194,7 +194,7 @@ def momentum_strategy(ticker, current_price, historical_data, account_cash, port
    # Strong Sell signal (sentiment 1-20)  
    elif sentiment <= 20 and portfolio_qty > 0:  
       quantity_to_sell = portfolio_qty  
-      return ('sell', quantity_to_sell, ticker)  
+      return ('strong sell', quantity_to_sell, ticker)  
   
    # Sell signal (sentiment 21-40)  
    elif 21 <= sentiment <= 40 and portfolio_qty > 0:  
@@ -236,7 +236,7 @@ def mean_reversion_strategy(ticker, current_price, historical_data, account_cash
    if sentiment >= 81 and account_cash > 0:  
       quantity_to_buy = min(int(max_investment // current_price), int(account_cash // current_price))  
       if quantity_to_buy > 0:  
-        return ('buy', quantity_to_buy, ticker)  
+        return ('strong buy', quantity_to_buy, ticker)  
   
    # Buy signal (sentiment 61-80)  
    elif 61 <= sentiment <= 80 and account_cash > 0:  
@@ -246,7 +246,7 @@ def mean_reversion_strategy(ticker, current_price, historical_data, account_cash
   
    # Strong Sell signal (sentiment 1-20)  
    elif sentiment <= 20 and portfolio_qty > 0:  
-      return ('sell', portfolio_qty, ticker)  
+      return ('strong sell', portfolio_qty, ticker)  
   
    # Sell signal (sentiment 21-40)  
    elif 21 <= sentiment <= 40 and portfolio_qty > 0:  
