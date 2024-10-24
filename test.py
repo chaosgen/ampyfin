@@ -41,11 +41,10 @@ def test_strategies():
     current_price = historical_data['close'].iloc[-1]
     # Test each strategy  
     strategies = [  
-        trading_strategies.rsi_strategy,  
-        trading_strategies.momentum_strategy,  
-        trading_strategies.mean_reversion_strategy,
-        trading_strategies.entropy_flow_strategy,
-        trading_strategies.regime_detection_strategy
+        trading_strategies.klinger_oscillator_strategy,
+        trading_strategies.on_balance_volume_strategy,
+        trading_strategies.money_flow_index_strategy,
+        trading_strategies.stochastic_oscillator_strategy
         
     ]
     
