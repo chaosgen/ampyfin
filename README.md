@@ -2,7 +2,7 @@
 ![](logo.png)
 ## Overview
 
-This trading bot retrieves and stores NASDAQ-100 tickers, monitors market status, and prepares for trading operations during premarket and regular trading hours using the Polygon API. The bot implements a ranking system for 95 trading algorithms, each initialized with a base rating of 1000. These rankings dynamically adjust based on each algorithm's hypothetical buy/sell decisions and resulting profitability, allowing for optimized trading strategies.
+This trading bot retrieves and stores NASDAQ-100 tickers, monitors market status, and prepares for trading operations during premarket and regular trading hours using the Polygon API. The bot implements a ranking system for 50 trading algorithms, each initialized with a base rating of 1000. These rankings dynamically adjust based on each algorithm's hypothetical buy/sell decisions and resulting profitability, allowing for optimized trading strategies.
 
 The bot is configured for paper trading by default, allowing you to test and refine your strategies without risking real capital. To transition to live trading, simply update your API keys and adjust the trading parameters in the configuration file.
 
