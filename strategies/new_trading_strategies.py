@@ -40,44 +40,45 @@ def get_historical_data(ticker, client, days=100):
     return data
 
 def rsi_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):  
-   """  
-   RSI strategy: Buy when RSI is oversold, sell when overbought.  
-   """  
-   window = 14  
-   max_investment = total_portfolio_value * 0.10  
+    """  
+    RSI strategy: Buy when RSI is oversold (<30), sell when overbought (>70).  
+    """  
+    window = 14  
+    max_investment = total_portfolio_value * 0.10  # 10% of portfolio value to invest  
   
-   # Calculate RSI  
-   delta = historical_data['close'].diff()  
-   gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()  
-   loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()  
-   rs = gain / loss  
-   rsi = 100 - (100 / (1 + rs))  
+    # Calculate RSI  
+    delta = historical_data['close'].diff()  
+    gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()  
+    loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()  
+    rs = gain / loss  
+    rsi = 100 - (100 / (1 + rs))  
   
-   current_rsi = rsi.iloc[-1]  
+    current_rsi = rsi.iloc[-1]  
   
-   if 1 <= current_rsi <= 20:  # Strong sell  
-      if portfolio_qty > 0:  
-        quantity_to_sell = portfolio_qty  
-        return ('strong sell', quantity_to_sell, ticker)  
-   elif 21 <= current_rsi <= 40:  # Sell  
-      if portfolio_qty > 0:  
-        quantity_to_sell = max(1, int(portfolio_qty * 0.5))  
-        return ('sell', quantity_to_sell, ticker)  
-   elif 41 <= current_rsi <= 60:  # Hold  
-      return ('hold', 0, ticker)  
-   elif 61 <= current_rsi <= 80:  # Buy  
-      if account_cash > 0:  
-        quantity_to_buy = min(int(max_investment // current_price), int(account_cash // current_price))  
-        if quantity_to_buy > 0:  
-           return ('buy', quantity_to_buy, ticker)  
-   elif 81 <= current_rsi <= 100:  # Strong buy  
-      if account_cash > 0:  
-        quantity_to_buy = min(int((max_investment * 1.5) // current_price), int(account_cash // current_price))  
-        if quantity_to_buy > 0:  
-           return ('strong buy', quantity_to_buy, ticker)  
+    # Overbought condition (sell/strong sell)  
+    if current_rsi >= 70:  
+        if portfolio_qty > 0:  
+            if current_rsi >= 80:  # Strong sell  
+                quantity_to_sell = portfolio_qty  # Sell all  
+                return ('strong sell', quantity_to_sell, ticker)  
+            else:  # Regular sell  
+                quantity_to_sell = max(1, int(portfolio_qty * 0.5))  # Sell half  
+                return ('sell', quantity_to_sell, ticker)  
   
-   # If no action is taken or quantities are 0  
-   return ('hold', 0, ticker)
+    # Oversold condition (buy/strong buy)  
+    elif current_rsi <= 30:  
+        if account_cash > 0:  
+            if current_rsi <= 20:  # Strong buy  
+                quantity_to_buy = min(int((max_investment * 1.5) // current_price), int(account_cash // current_price))  
+                if quantity_to_buy > 0:  
+                    return ('strong buy', quantity_to_buy, ticker)  
+            else:  # Regular buy  
+                quantity_to_buy = min(int(max_investment // current_price), int(account_cash // current_price))  
+                if quantity_to_buy > 0:  
+                    return ('buy', quantity_to_buy, ticker)  
+  
+    # Hold condition  
+    return ('hold', 0, ticker)
 
 def bollinger_bands_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):  
    """  
