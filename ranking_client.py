@@ -93,7 +93,7 @@ def main():
             for ticker in ndaq_tickers:
                 
                 """
-                insert ranking logic here
+                rank logic currently being redeveloped. wil publish on 10/31 after backtest is completed.
                 """
                     
 

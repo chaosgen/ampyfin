@@ -13,7 +13,7 @@ from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
 from alpaca.data.historical.stock import StockHistoricalDataClient
 from alpaca.trading.requests import MarketOrderRequest
 from alpaca.trading.enums import OrderSide, TimeInForce
-import strategies.trading_strategies as trading_strategies
+import strategies.trading_strategies_v1 as trading_strategies_v1
 import yfinance as yf
 import logging
 from collections import Counter
@@ -77,7 +77,7 @@ def main():
                 cash_to_portfolio_ratio = buying_power / portfolio_value
 
                 try:
-                    historical_data = trading_strategies.get_historical_data(ticker, data_client)
+                    historical_data = trading_strategies_v1.get_historical_data(ticker, data_client)
                     ticker_yahoo = yf.Ticker(ticker)
                     data = ticker_yahoo.history()
                     current_price = data['Close'].iloc[-1]
@@ -85,9 +85,9 @@ def main():
                     asset_info = asset_collection.find_one({'symbol': ticker})
                     portfolio_qty = asset_info['qty'] if asset_info else 0.0
 
-                    for strategy in [trading_strategies.mean_reversion_strategy, trading_strategies.momentum_strategy,
-                                     trading_strategies.bollinger_bands_strategy, trading_strategies.rsi_strategy, 
-                                     trading_strategies.macd_strategy]:
+                    for strategy in [trading_strategies_v1.mean_reversion_strategy, trading_strategies_v1.momentum_strategy,
+                                     trading_strategies_v1.bollinger_bands_strategy, trading_strategies_v1.rsi_strategy, 
+                                     trading_strategies_v1.macd_strategy]:
                         decision, quantity, _ = strategy(ticker, current_price, historical_data,
                                                       buying_power, portfolio_qty, portfolio_value)
                         decisions_and_quantities.append((decision, quantity))
