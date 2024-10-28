@@ -47,6 +47,24 @@ import logging
 from collections import Counter
 from trading_client import market_status
 from helper_files.client_helper import get_ndaq_tickers
+from strategies.trading_strategies_v2 import (  
+   rsi_strategy, bollinger_bands_strategy, momentum_strategy, mean_reversion_strategy,  
+   triple_moving_average_strategy, volume_price_trend_strategy, keltner_channel_strategy,  
+   dual_thrust_strategy, adaptive_momentum_strategy, hull_moving_average_strategy,  
+   elder_ray_strategy, chande_momentum_strategy, dema_strategy, price_channel_strategy,  
+   mass_index_strategy, vortex_indicator_strategy, aroon_strategy, ultimate_oscillator_strategy,  
+   trix_strategy, kst_strategy, psar_strategy, stochastic_momentum_strategy,  
+   williams_vix_fix_strategy, conners_rsi_strategy, dpo_strategy, fisher_transform_strategy,  
+   ehlers_fisher_strategy, schaff_trend_cycle_strategy, rainbow_oscillator_strategy,  
+   heikin_ashi_strategy, volume_weighted_macd_strategy, fractal_adaptive_moving_average_strategy,  
+   relative_vigor_index_strategy, center_of_gravity_strategy, kauffman_efficiency_strategy,  
+   phase_change_strategy, volatility_breakout_strategy, momentum_divergence_strategy,  
+   adaptive_channel_strategy, wavelet_decomposition_strategy, entropy_flow_strategy,  
+   bollinger_band_width_strategy, commodity_channel_index_strategy, force_index_strategy,  
+   ichimoku_cloud_strategy, klinger_oscillator_strategy, money_flow_index_strategy,  
+   on_balance_volume_strategy, stochastic_oscillator_strategy, euler_fibonacci_zone_strategy  
+)
+from datetime import datetime  
 
 # Connect to MongoDB  
 mongo_url = f"mongodb+srv://{MONGO_DB_USER}:{MONGO_DB_PASS}@cluster0.0qoxq.mongodb.net/?retryWrites=true&writeConcern=majority"
@@ -69,6 +87,115 @@ def insert_rank_to_coefficient(i):
     )
     client.close()
 
+  
+  
+def initialize_rank():  
+   client = MongoClient(mongo_url)  
+   db = client.trading_simulator  
+   collections = db.algorithm_holdings  
+    
+   initialization_date = datetime.now()  
+  
+   strategies = [rsi_strategy, bollinger_bands_strategy, momentum_strategy, mean_reversion_strategy,  
+   triple_moving_average_strategy, volume_price_trend_strategy, keltner_channel_strategy,  
+   dual_thrust_strategy, adaptive_momentum_strategy, hull_moving_average_strategy,  
+   elder_ray_strategy, chande_momentum_strategy, dema_strategy, price_channel_strategy,  
+   mass_index_strategy, vortex_indicator_strategy, aroon_strategy, ultimate_oscillator_strategy,  
+   trix_strategy, kst_strategy, psar_strategy, stochastic_momentum_strategy,  
+   williams_vix_fix_strategy, conners_rsi_strategy, dpo_strategy, fisher_transform_strategy,  
+   ehlers_fisher_strategy, schaff_trend_cycle_strategy, rainbow_oscillator_strategy,  
+   heikin_ashi_strategy, volume_weighted_macd_strategy, fractal_adaptive_moving_average_strategy,  
+   relative_vigor_index_strategy, center_of_gravity_strategy, kauffman_efficiency_strategy,  
+   phase_change_strategy, volatility_breakout_strategy, momentum_divergence_strategy,  
+   adaptive_channel_strategy, wavelet_decomposition_strategy, entropy_flow_strategy,  
+   bollinger_band_width_strategy, commodity_channel_index_strategy, force_index_strategy,  
+   ichimoku_cloud_strategy, klinger_oscillator_strategy, money_flow_index_strategy,  
+   on_balance_volume_strategy, stochastic_oscillator_strategy, euler_fibonacci_zone_strategy   
+   ]  
+   for strategy in strategies:  
+        strategy_name = strategy.__name__ 
+        print(strategy_name)
+        collections = db.algorithm_holdings 
+        collections.insert_one({  
+            "strategy": strategy_name,  
+            "holdings": {},  
+            "amount_cash": 50000,  
+            "initialized_date": initialization_date,  
+            "total_trades": 0,  
+            "successful_trades": 0,
+            "neutral_trades": 0,
+            "failed_trades": 0,  
+            "current_portfolio_value:": 50000,  
+            "last_updated": initialization_date  
+        })  
+    
+        collections = db.points_tally  
+        collections.insert_one({  
+            "strategy": strategy_name,  
+            "total_points": 0,  
+            "initialized_date": initialization_date,  
+            "last_updated": initialization_date  
+        })  
+   client.close()
+
+def simulate_trade(ticker, strategy, historical_data, current_price, account_cash, portfolio_qty, total_portfolio_value, mongo_url):  
+   """  
+   Simulates a trade based on the given strategy and updates MongoDB.  
+   """  
+   action, quantity, _ = strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value)  
+    
+   # Update MongoDB with trade details  
+   client = MongoClient(mongo_url)  
+   db = client.trading_simulator  
+   holdings_collection = db.algorithm_holdings  
+   points_collection = db.points_tally  
+  
+   # Find the strategy document in MongoDB  
+   strategy_doc = holdings_collection.find_one({"strategy": strategy.__name__})  
+   holdings_doc = holdings_collection["holdings"]
+   # Update holdings and cash based on the trade action - still need to work a little more on buy sell simulation including updating holding stats  
+   if action == "buy" or action == "strong buy":  
+        
+      strategy_doc["amount_cash"] -= quantity * current_price  
+      strategy_doc["total_trades"] += 1  
+      strategy_doc["current_portfolio_value:"] += quantity * current_price  
+      if quantity > 0:  
+        strategy_doc["successful_trades"] += 1  
+   elif action == "sell" or action == "strong sell":  
+      strategy_doc["holdings"][ticker] = 0  
+      strategy_doc["amount_cash"] += quantity * current_price  
+      strategy_doc["total_trades"] += 1  
+      strategy_doc["current_portfolio_value:"] -= quantity * current_price  
+      if quantity > 0:  
+        strategy_doc["successful_trades"] += 1  
+   elif action == "hold":  
+      strategy_doc["total_trades"] += 1  
+      strategy_doc["neutral_trades"] += 1  
+   else:  
+      strategy_doc["total_trades"] += 1  
+      strategy_doc["failed_trades"] += 1  
+  
+   # Update points tally based on the trade action  
+   points_doc = points_collection.find_one({"strategy": strategy.__name__})  
+   if action == "buy":  
+      points_doc["total_points"] += 10  
+   elif action == "sell":  
+      points_doc["total_points"] += 5  
+   elif action == "hold":  
+      points_doc["total_points"] += 1  
+  
+   # Update MongoDB with the modified strategy documents  
+   holdings_collection.update_one({"strategy": strategy.__name__}, {"$set": strategy_doc})  
+   points_collection.update_one({"strategy": strategy.__name__}, {"$set": points_doc})  
+  
+   client.close()  
+
+def update_portfolio_values():
+    """
+    still need to implement.
+    we go through each strategy and update portfolio value buy cash + summation(holding * current price)
+    """
+    return None
 
 def main():
     """
@@ -116,4 +243,4 @@ def main():
             time.sleep(60)
 
 if __name__ == "__main__":
-    main()
+    initialize_rank()

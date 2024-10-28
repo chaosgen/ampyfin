@@ -18,7 +18,6 @@ import itertools
 import zlib
 import time
 
-
 # Function to fetch historical bar data using Alpaca StockHistoricalDataClient
 def get_historical_data(ticker, client, days=100):
     """
@@ -133,7 +132,6 @@ def bollinger_bands_strategy(ticker, current_price, historical_data, account_cas
     
 
    return (sentiment, quantity, ticker)
-
 
 def momentum_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):  
    """  
@@ -1501,7 +1499,6 @@ def volume_weighted_macd_strategy(ticker, current_price, historical_data, accoun
   
   return sentiment, quantity, ticker  
   
-  
 def fractal_adaptive_moving_average_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):  
   """   
   Fractal Adaptive Moving Average (FRAMA) Strategy   
@@ -2009,7 +2006,6 @@ def bollinger_band_width_strategy(ticker, current_price, historical_data, accoun
   # Hold (neutral sentiment or no portfolio quantity for sell signals)  
   return ('hold', 0, ticker)
   
-  
 def commodity_channel_index_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):  
   max_investment = total_portfolio_value * 0.10  
   window = 20  
@@ -2038,7 +2034,6 @@ def commodity_channel_index_strategy(ticker, current_price, historical_data, acc
   # Hold (neutral sentiment or no portfolio quantity for sell signals)  
   return ('hold', 0, ticker) 
   
-  
 def force_index_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):  
   max_investment = total_portfolio_value * 0.10  
   window = 13  
@@ -2066,7 +2061,6 @@ def force_index_strategy(ticker, current_price, historical_data, account_cash, p
   
   # Hold (neutral sentiment or insufficient portfolio quantity)  
   return ('hold', 0, ticker)
-  
   
 def ichimoku_cloud_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):  
   max_investment = total_portfolio_value * 0.10  
@@ -2135,7 +2129,6 @@ def klinger_oscillator_strategy(ticker, current_price, historical_data, account_
   
   return action, quantity, ticker
   
-  
 def money_flow_index_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):  
   """Money Flow Index Strategy"""  
   max_investment = total_portfolio_value * 0.10  
@@ -2167,7 +2160,6 @@ def money_flow_index_strategy(ticker, current_price, historical_data, account_ca
     quantity = 0  
   
   return action, quantity, ticker
-  
   
 def on_balance_volume_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):  
   """On Balance Volume Strategy"""  
@@ -2201,8 +2193,8 @@ def on_balance_volume_strategy(ticker, current_price, historical_data, account_c
   
   return action, quantity, ticker 
   
-  
 def stochastic_oscillator_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):  
+
   """Stochastic Oscillator Strategy"""  
   max_investment = total_portfolio_value * 0.10  
   window = 20  
@@ -2235,3 +2227,57 @@ def stochastic_oscillator_strategy(ticker, current_price, historical_data, accou
     quantity = 0  
   
   return action, quantity, ticker
+
+def euler_fibonacci_zone_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):  
+   """  
+   Euler-Fibonacci Zone Trading Strategy  
+   This strategy combines Euler's number (e) with Fibonacci ratios to create trading zones.  
+   """  
+   max_investment = total_portfolio_value * 0.10  
+   window = 20  
+  
+   # Calculate Euler-Fibonacci zones  
+   high = historical_data['high'].rolling(window=window).max()  
+   low = historical_data['low'].rolling(window=window).min()  
+   range_size = high - low  
+  
+   euler = np.exp(1)  # Euler's number  
+   fib_ratios = [0.236, 0.382, 0.618, 1.0, 1.618]  
+  
+   zones = []  
+   for ratio in fib_ratios:  
+      zone = low + (range_size * ratio * euler) % range_size  
+      zones.append(zone)  
+  
+   current_zone = zones[-1].iloc[-1]  # Use the last calculated zone  
+  
+   # Calculate sentiment score  
+   if current_price < zones[0].iloc[-1]:  
+      sentiment = 90  # Strong buy  
+   elif current_price < zones[1].iloc[-1]:  
+      sentiment = 70  # Buy  
+   elif current_price > zones[4].iloc[-1]:  
+      sentiment = 10  # Strong sell  
+   elif current_price > zones[3].iloc[-1]:  
+      sentiment = 30  # Sell  
+   else:  
+      sentiment = 50  # Hold  
+  
+   # Determine action and quantity  
+   if sentiment >= 81:  
+      action = "strong buy"  
+      quantity = min(int(max_investment // current_price), int(account_cash // current_price))  
+   elif 61 <= sentiment <= 80:  
+      action = "buy"  
+      quantity = min(int(max_investment // current_price), int(account_cash // current_price))  
+   elif 21 <= sentiment <= 40 and portfolio_qty > 0:  
+      action = "sell"  
+      quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))  
+   elif sentiment <= 20 and portfolio_qty > 0:  
+      action = "strong sell"  
+      quantity = portfolio_qty  
+   else:  
+      action = "hold"  
+      quantity = 0  
+  
+   return action, quantity, ticker

@@ -41,7 +41,7 @@ def test_strategies():
     current_price = historical_data['close'].iloc[-1]
     # Test each strategy  
     strategies = [  
-        trading_strategies_v2.dual_thrust_strategy
+        trading_strategies_v2.euler_fibonacci_zone_strategy
         
     ] 
     
@@ -64,4 +64,4 @@ def test_strategies():
 def test_helper():
    print(helper_files.client_helper.get_latest_price("AAPL"))
 if __name__ == "__main__":  
-   test_helper()
+   test_strategies()

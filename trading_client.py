@@ -91,7 +91,7 @@ def main():
                         decision, quantity, _ = strategy(ticker, current_price, historical_data,
                                                       buying_power, portfolio_qty, portfolio_value)
                         decisions_and_quantities.append((decision, quantity))
-
+                        
                     decision, quantity = majority_decision_and_min_quantity(decisions_and_quantities)
 
                     if decision == "buy" and cash_to_portfolio_ratio >= 0.4 and buying_power > 0:
