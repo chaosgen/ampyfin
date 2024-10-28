@@ -7,7 +7,7 @@ from config import API_KEY, API_SECRET, BASE_URL
 import numpy as np
 import pandas as pd
 
-# Function to fetch historical bar data using Alpaca StockHistoricalDataClient
+#V2 is now available so please use those methods instead.
 def get_historical_data(ticker, client, days=100):
     """
     Fetch historical bar data for a given stock ticker.
@@ -27,9 +27,6 @@ def get_historical_data(ticker, client, days=100):
     bars = client.get_stock_bars(request_params)
     data = bars.df  # Returns a pandas DataFrame
     return data
-
-
-# ... (existing code remains unchanged)
 
 def rsi_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
     """

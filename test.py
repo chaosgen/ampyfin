@@ -4,8 +4,8 @@ from alpaca.data.historical import StockHistoricalDataClient
 from alpaca.data.requests import StockBarsRequest  
 from alpaca.data.timeframe import TimeFrame  
 from config import API_KEY, API_SECRET  
-import strategies.new_trading_strategies as new_trading_strategies
-
+import strategies.trading_strategies_v2 as trading_strategies_v2
+import helper_files.client_helper
 def get_historical_data(ticker, client, days=100):  
    """  
    Fetch historical bar data for a given stock ticker.  
@@ -41,7 +41,7 @@ def test_strategies():
     current_price = historical_data['close'].iloc[-1]
     # Test each strategy  
     strategies = [  
-        new_trading_strategies.dual_thrust_strategy
+        trading_strategies_v2.dual_thrust_strategy
         
     ] 
     
@@ -60,6 +60,8 @@ def test_strategies():
         print(f"  Ticker: {ticker}")  
         print(f"  Quantity: {quantity}")  
         print("__________________________________________________")  
-  
+
+def test_helper():
+   print(helper_files.client_helper.get_latest_price("AAPL"))
 if __name__ == "__main__":  
-   test_strategies()
+   test_helper()

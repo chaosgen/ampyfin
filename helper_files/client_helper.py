@@ -6,6 +6,7 @@ from alpaca.trading.requests import MarketOrderRequest
 from alpaca.trading.enums import OrderSide, TimeInForce
 from datetime import datetime
 import logging
+import yfinance as yf
 
 # MongoDB connection helper
 def connect_to_mongo(mongo_url):
@@ -79,3 +80,19 @@ def market_status(polygon_client):
     except Exception as e:
         logging.error(f"Error retrieving market status: {e}")
         return "error"
+
+# Helper to get latest price
+def get_latest_price(ticker):  
+   """  
+   Fetch the latest price for a given stock ticker using yfinance.  
+  
+   :param ticker: The stock ticker symbol  
+   :return: The latest price of the stock  
+   """  
+   try:  
+      ticker_yahoo = yf.Ticker(ticker)  
+      data = ticker_yahoo.history(period="1d")  
+      return round(data['Close'].iloc[-1], 2)  
+   except Exception as e:  
+      logging.error(f"Error fetching latest price for {ticker}: {e}")  
+      return None
