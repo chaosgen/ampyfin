@@ -206,15 +206,20 @@ def main():
    ndaq_tickers = []  
    early_hour_first_iteration = False  
    client = RESTClient(api_key=POLYGON_API_KEY)  
-   trading_client = TradingClient(API_KEY, API_SECRET)  
    data_client = StockHistoricalDataClient(API_KEY, API_SECRET)  
    mongo_client = MongoClient(mongo_url)  
    db = mongo_client.trading_simulator  
    holdings_collection = db.algorithm_holdings  
-  
+   status = market_status(client)
+   print(status)
+   print(holdings_collection)
+   for strategy in strategies:
+      strategy_doc = holdings_collection.find_one({"strategy": strategy.__name__})  
+      print(strategy_doc)
+   """
    while True:  
       status = market_status(client)  # Use the helper function for market status  
-  
+      
       if status == "open":  
         logging.info("Market is open. Processing strategies.")  
         if not ndaq_tickers:  
@@ -242,7 +247,7 @@ def main():
                 simulate_trade(ticker, strategy, historical_data, current_price,  
                           account_cash, portfolio_qty, total_portfolio_value, mongo_url)  
                   
-                # Update account cash and portfolio value after each trade  
+                # Update account cash and portfolio value after each trade of ticker and then pass to next  
                 updated_doc = holdings_collection.find_one({"strategy": strategy.__name__})  
                 account_cash = updated_doc["amount_cash"]  
                 total_portfolio_value = updated_doc["current_portfolio_value"]  
@@ -269,6 +274,7 @@ def main():
       else:  
         logging.error("An error occurred while checking market status.")  
         time.sleep(60)  
+   """   
   
 if __name__ == "__main__":  
    main()

@@ -7,6 +7,39 @@ from alpaca.trading.enums import OrderSide, TimeInForce
 from datetime import datetime
 import logging
 import yfinance as yf
+from strategies.trading_strategies_v2 import (  
+   rsi_strategy, bollinger_bands_strategy, momentum_strategy, mean_reversion_strategy,  
+   triple_moving_average_strategy, volume_price_trend_strategy, keltner_channel_strategy,  
+   dual_thrust_strategy, adaptive_momentum_strategy, hull_moving_average_strategy,  
+   elder_ray_strategy, chande_momentum_strategy, dema_strategy, price_channel_strategy,  
+   mass_index_strategy, vortex_indicator_strategy, aroon_strategy, ultimate_oscillator_strategy,  
+   trix_strategy, kst_strategy, psar_strategy, stochastic_momentum_strategy,  
+   williams_vix_fix_strategy, conners_rsi_strategy, dpo_strategy, fisher_transform_strategy,  
+   ehlers_fisher_strategy, schaff_trend_cycle_strategy, rainbow_oscillator_strategy,  
+   heikin_ashi_strategy, volume_weighted_macd_strategy, fractal_adaptive_moving_average_strategy,  
+   relative_vigor_index_strategy, center_of_gravity_strategy, kauffman_efficiency_strategy,  
+   phase_change_strategy, volatility_breakout_strategy, momentum_divergence_strategy,  
+   adaptive_channel_strategy, wavelet_decomposition_strategy, entropy_flow_strategy,  
+   bollinger_band_width_strategy, commodity_channel_index_strategy, force_index_strategy,  
+   ichimoku_cloud_strategy, klinger_oscillator_strategy, money_flow_index_strategy,  
+   on_balance_volume_strategy, stochastic_oscillator_strategy, euler_fibonacci_zone_strategy  
+)
+
+strategies = [rsi_strategy, bollinger_bands_strategy, momentum_strategy, mean_reversion_strategy,  
+   triple_moving_average_strategy, volume_price_trend_strategy, keltner_channel_strategy,  
+   dual_thrust_strategy, adaptive_momentum_strategy, hull_moving_average_strategy,  
+   elder_ray_strategy, chande_momentum_strategy, dema_strategy, price_channel_strategy,  
+   mass_index_strategy, vortex_indicator_strategy, aroon_strategy, ultimate_oscillator_strategy,  
+   trix_strategy, kst_strategy, psar_strategy, stochastic_momentum_strategy,  
+   williams_vix_fix_strategy, conners_rsi_strategy, dpo_strategy, fisher_transform_strategy,  
+   ehlers_fisher_strategy, schaff_trend_cycle_strategy, rainbow_oscillator_strategy,  
+   heikin_ashi_strategy, volume_weighted_macd_strategy, fractal_adaptive_moving_average_strategy,  
+   relative_vigor_index_strategy, center_of_gravity_strategy, kauffman_efficiency_strategy,  
+   phase_change_strategy, volatility_breakout_strategy, momentum_divergence_strategy,  
+   adaptive_channel_strategy, wavelet_decomposition_strategy, entropy_flow_strategy,  
+   bollinger_band_width_strategy, commodity_channel_index_strategy, force_index_strategy,  
+   ichimoku_cloud_strategy, klinger_oscillator_strategy, money_flow_index_strategy,  
+   on_balance_volume_strategy, stochastic_oscillator_strategy, euler_fibonacci_zone_strategy]
 
 # MongoDB connection helper
 def connect_to_mongo(mongo_url):
