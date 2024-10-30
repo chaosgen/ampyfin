@@ -13,7 +13,7 @@ def get_historical_data(ticker, client, days=100):
    :param ticker: The stock ticker symbol.  
    :param client: An instance of StockHistoricalDataClient.  
    :param days: Number of days of historical data to fetch.  
-   :return: DataFrame with historical stock bar data.  
+   :return: DataFrame with historical stock bar data. test all data for all tickers - try to follow trading client specification  
    """  
    start_time = datetime.now() - timedelta(days=days)  
    request_params = StockBarsRequest(  
@@ -27,7 +27,7 @@ def get_historical_data(ticker, client, days=100):
    return data  
 
 def test_strategies():
-   tickers = ["META", "GOOGL", "MSFT", "TSLA", "REGN", "MNPR", "GORO"]  
+   tickers = ["META", "GOOGL", "MSFT", "TSLA", "REGN"]  
    # Initialize the StockHistoricalDataClient  
    client = StockHistoricalDataClient(API_KEY, API_SECRET)  
    
@@ -41,7 +41,7 @@ def test_strategies():
     current_price = historical_data['close'].iloc[-1]
     # Test each strategy  
     strategies = [  
-        trading_strategies_v2.euler_fibonacci_zone_strategy
+        trading_strategies_v2.mean_reversion_strategy
         
     ] 
     

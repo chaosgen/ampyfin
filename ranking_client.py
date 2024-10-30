@@ -46,7 +46,7 @@ import yfinance as yf
 import logging
 from collections import Counter
 from trading_client import market_status
-import helper_files.client_helper
+from helper_files.client_helper import strategies, get_latest_price, get_ndaq_tickers
 from strategies.trading_strategies_v2 import (  
    rsi_strategy, bollinger_bands_strategy, momentum_strategy, mean_reversion_strategy,  
    triple_moving_average_strategy, volume_price_trend_strategy, keltner_channel_strategy,  
@@ -64,25 +64,21 @@ from strategies.trading_strategies_v2 import (
    ichimoku_cloud_strategy, klinger_oscillator_strategy, money_flow_index_strategy,  
    on_balance_volume_strategy, stochastic_oscillator_strategy, euler_fibonacci_zone_strategy  
 )
-from datetime import datetime  
-strategies = [rsi_strategy, bollinger_bands_strategy, momentum_strategy, mean_reversion_strategy,  
-   triple_moving_average_strategy, volume_price_trend_strategy, keltner_channel_strategy,  
-   dual_thrust_strategy, adaptive_momentum_strategy, hull_moving_average_strategy,  
-   elder_ray_strategy, chande_momentum_strategy, dema_strategy, price_channel_strategy,  
-   mass_index_strategy, vortex_indicator_strategy, aroon_strategy, ultimate_oscillator_strategy,  
-   trix_strategy, kst_strategy, psar_strategy, stochastic_momentum_strategy,  
-   williams_vix_fix_strategy, conners_rsi_strategy, dpo_strategy, fisher_transform_strategy,  
-   ehlers_fisher_strategy, schaff_trend_cycle_strategy, rainbow_oscillator_strategy,  
-   heikin_ashi_strategy, volume_weighted_macd_strategy, fractal_adaptive_moving_average_strategy,  
-   relative_vigor_index_strategy, center_of_gravity_strategy, kauffman_efficiency_strategy,  
-   phase_change_strategy, volatility_breakout_strategy, momentum_divergence_strategy,  
-   adaptive_channel_strategy, wavelet_decomposition_strategy, entropy_flow_strategy,  
-   bollinger_band_width_strategy, commodity_channel_index_strategy, force_index_strategy,  
-   ichimoku_cloud_strategy, klinger_oscillator_strategy, money_flow_index_strategy,  
-   on_balance_volume_strategy, stochastic_oscillator_strategy, euler_fibonacci_zone_strategy   
-   ]  
+from datetime import datetime 
+import heapq 
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    handlers=[
+        logging.FileHandler('rank_system.log'),  # Log messages to a file
+        logging.StreamHandler()             # Log messages to the console
+    ]
+)
+
 # Connect to MongoDB  
-mongo_url = f"mongodb+srv://{MONGO_DB_USER}:{MONGO_DB_PASS}@cluster0.0qoxq.mongodb.net/?retryWrites=true&writeConcern=majority"
+mongo_url = f"mongodb+srv://{MONGO_DB_USER}:{MONGO_DB_PASS}@cluster0.0qoxq.mongodb.net"
 
 def insert_rank_to_coefficient(i):
     """
@@ -101,8 +97,6 @@ def insert_rank_to_coefficient(i):
         }
     )
     client.close()
-
-  
   
 def initialize_rank():  
    client = MongoClient(mongo_url)  
@@ -126,7 +120,8 @@ def initialize_rank():
             "neutral_trades": 0,
             "failed_trades": 0,  
             "current_portfolio_value": 50000,  
-            "last_updated": initialization_date  
+            "last_updated": initialization_date, 
+            "portfolio_value": 50000 
         })  
     
         collections = db.points_tally  
@@ -138,143 +133,236 @@ def initialize_rank():
         })  
    client.close()
 
-def simulate_trade(ticker, strategy, historical_data, current_price, account_cash, portfolio_qty, total_portfolio_value, mongo_url):  
-   """  
-   Simulates a trade based on the given strategy and updates MongoDB.  
-   """  
-   action, quantity, _ = strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value)  
+def simulate_trade(ticker, strategy, historical_data, current_price, account_cash, portfolio_qty, total_portfolio_value, mongo_url):
+    """
+    Simulates a trade based on the given strategy and updates MongoDB.
+    """
     
-   # Update MongoDB with trade details  
-   client = MongoClient(mongo_url)  
-   db = client.trading_simulator  
-   holdings_collection = db.algorithm_holdings  
-   points_collection = db.points_tally  
-  
-   # Find the strategy document in MongoDB  
-   strategy_doc = holdings_collection.find_one({"strategy": strategy.__name__})  
-   holdings_doc = holdings_collection["holdings"]
-   # Update holdings and cash based on the trade action - still need to work a little more on buy sell simulation including updating holding stats  
-   if action == "buy" or action == "strong buy":  
+    # Simulate trading action from strategy
+    action, quantity, _ = strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value)
+    
+    # MongoDB setup
+    client = MongoClient(mongo_url)
+    db = client.trading_simulator
+    holdings_collection = db.algorithm_holdings
+    points_collection = db.points_tally
+
+    # Find the strategy document in MongoDB
+    strategy_doc = holdings_collection.find_one({"strategy": strategy.__name__})
+    holdings_doc = strategy_doc.get("holdings", {})
+    time_delta = db.time_delta['time_delta']
+    logging.info(f"Action: {action} | Ticker: {ticker} | Quantity: {quantity} | Price: {current_price}")
+    # Update holdings and cash based on trade action
+    if action in ["buy", "strong buy"] and strategy_doc["amount_cash"] - quantity * current_price > 15000:
+        # Calculate average price if already holding some shares of the ticker
+        if ticker in holdings_doc:
+            current_qty = holdings_doc[ticker]["quantity"]
+            new_qty = current_qty + quantity
+            average_price = (holdings_doc[ticker]["price"] * current_qty + current_price * quantity) / new_qty
+        else:
+            new_qty = quantity
+            average_price = current_price
+
+        # Update the holdings document
+        holdings_doc[ticker] = {
+            "quantity": new_qty,
+            "price": average_price
+        }
+
+        # Deduct the cash used for buying
+        strategy_doc["amount_cash"] -= quantity * current_price
+        strategy_doc["total_trades"] += 1
+
+    elif action in ["sell", "strong sell"] and ticker in holdings_doc and holdings_doc[ticker]["quantity"] > 0:
+        current_qty = holdings_doc[ticker]["quantity"]
         
-      strategy_doc["amount_cash"] -= quantity * current_price  
-      strategy_doc["total_trades"] += 1  
-      strategy_doc["current_portfolio_value"] += quantity * current_price  
-      if quantity > 0:  
-        strategy_doc["successful_trades"] += 1  
-   elif action == "sell" or action == "strong sell":  
-      """
-      if sold and quantity is 0, we delete it from holdings because we don't have any more holdings anymore
-      we have to deduct quantity . there's a lot to do
-      """
-      strategy_doc["holdings"][ticker] = 0  
-      strategy_doc["amount_cash"] += quantity * current_price  
-      strategy_doc["total_trades"] += 1  
-      strategy_doc["current_portfolio_value"] -= quantity * current_price  
-      if quantity > 0:  
-        strategy_doc["successful_trades"] += 1  
-   """
-   hold - is there anything to do?
-   also need to fix asset_quantities for trding cliet because if quantity is 0 after sell, we need to delete it to conserve mem
-   """
-   
-   # Update points tally based on the trade action  
-   points_doc = points_collection.find_one({"strategy": strategy.__name__})  
-   if action == "buy":  
-      points_doc["total_points"] += 10  
-   elif action == "sell":  
-      points_doc["total_points"] += 5  
-   elif action == "hold":  
-      points_doc["total_points"] += 1  
-  
-   # Update MongoDB with the modified strategy documents  
-   holdings_collection.update_one({"strategy": strategy.__name__}, {"$set": strategy_doc})  
-   points_collection.update_one({"strategy": strategy.__name__}, {"$set": points_doc})  
-  
-   client.close()  
+        # Ensure we do not sell more than we have
+        sell_qty = min(quantity, current_qty)
+        holdings_doc[ticker]["quantity"] -= sell_qty
+
+        # Update cash after selling
+        strategy_doc["amount_cash"] += sell_qty * current_price
+        strategy_doc["total_trades"] += 1
+
+        
+
+        # Points tally based on price increase/decrease
+
+        price_change_ratio = current_price / holdings_doc[ticker]["price"] if ticker in holdings_doc else 1
+
+        if current_price > holdings_doc[ticker]["price"]:
+           # Calculate points to add if the current price is higher than the purchase price
+           if price_change_ratio < 1.05:
+              points = time_delta * 1
+           elif price_change_ratio < 1.1:
+              points = time_delta * 1.5
+           else:
+              points = time_delta * 2
+           points_collection.update_one({"strategy": strategy.__name__}, {"$inc": {"total_points": points}})
+        else:
+           # Calculate points to deduct if the current price is lower than the purchase price
+           if price_change_ratio > 0.975:
+              points = -time_delta * 1
+           elif price_change_ratio > 0.95:
+              points = -time_delta * 1.5
+           else:
+              points = -time_delta * 2
+           points_collection.update_one({"strategy": strategy.__name__}, {"$inc": {"total_points": points}})
+        
+        # Remove the ticker if quantity reaches zero
+        if holdings_doc[ticker]["quantity"] == 0:
+            del holdings_doc[ticker]
+    # Update the strategy document in MongoDB
+    holdings_collection.update_one(
+        {"strategy": strategy.__name__},
+        {"$set": {
+            "holdings": holdings_doc,
+            "amount_cash": strategy_doc["amount_cash"],
+            "total_trades": strategy_doc["total_trades"],
+            "last_updated": datetime.now()
+        }},
+        upsert=True
+    )
+
+    points_collection.update_one(
+        {"strategy": strategy.__name__},
+        {"$set": {"last_updated": datetime.now()}},
+        upsert=True
+    )
+
+    # Close the MongoDB connection
+    client.close()
 
 def update_portfolio_values():
-    """
-    still need to implement.
-    we go through each strategy and update portfolio value buy cash + summation(holding * current price)
-    """
-    return None
+   """
+   still need to implement.
+   we go through each strategy and update portfolio value buy cash + summation(holding * current price)
+   """
+   client = MongoClient(mongo_url)  
+   db = client.trading_simulator  
+   holdings_collection = db.algorithm_holdings
+   # Update portfolio values
+   for strategy_doc in holdings_collection.find({}):
+      # Calculate the portfolio value for the strategy
+      portfolio_value = strategy_doc["amount_cash"]
+      for ticker, holding in strategy_doc["holdings"].items():
+          # Get the current price of the ticker from the Polygon API
+          current_price = get_latest_price(ticker)
+          # Calculate the value of the holding
+          holding_value = holding["quantity"] * current_price
+          # Add the holding value to the portfolio value
+          portfolio_value += holding_value
+      # Update the portfolio value in the strategy document
+      holdings_collection.update_one({"strategy": strategy_doc["strategy"]}, {"$set": {"portfolio_value": portfolio_value}})
+
+   # Update MongoDB with the modified strategy documents
+   client.close()
+
+def update_ranks():
+   """"
+   based on portfolio values, rank the strategies to use for actual trading_simulator
+   """
+   client = MongoClient(mongo_url)
+   db = client.trading_simulator
+   points_collection = db.points_tally
+   rank_collection = db.rank
+   """
+   delete all documents in rank collection first
+   """
+   rank_collection.delete_many({})
+   """
+   now update rank based on successful_trades - failed
+   """
+   q = []
+   for strategy_name, strategy_doc in points_collection.find():
+      heapq.heappush(q, (strategy_doc["total_points"], strategy_name))
+   rank = 1
+   while q:
+      _, strategy_name = heapq.heappop(q)
+      rank_collection.insert_one({"strategy": strategy_name, "rank": rank})
+      rank += 1
+   client.close()
 
 def main():  
    """  
    Main function to control the workflow based on the market's status.  
    """  
    ndaq_tickers = []  
-   early_hour_first_iteration = False  
+   early_hour_first_iteration = True
+   post_market_hour_first_iteration = True
    client = RESTClient(api_key=POLYGON_API_KEY)  
    data_client = StockHistoricalDataClient(API_KEY, API_SECRET)  
    mongo_client = MongoClient(mongo_url)  
    db = mongo_client.trading_simulator  
    holdings_collection = db.algorithm_holdings  
    status = market_status(client)
-   print(status)
-   print(holdings_collection)
-   for strategy in strategies:
-      strategy_doc = holdings_collection.find_one({"strategy": strategy.__name__})  
-      print(strategy_doc)
-   """
+   
+   
    while True:  
       status = market_status(client)  # Use the helper function for market status  
       
       if status == "open":  
         logging.info("Market is open. Processing strategies.")  
         if not ndaq_tickers:  
-           ndaq_tickers = helper_files.client_helper.get_ndaq_tickers(mongo_url)  
+           ndaq_tickers = get_ndaq_tickers(mongo_url)  
           
         for strategy in strategies:  
-           strategy_doc = holdings_collection.find_one({"strategy": strategy.__name__})  
-           if not strategy_doc:
-              logging.warning(f"Strategy {strategy.__name__} not found in database. Skipping.")  
-              continue  
+            strategy_doc = holdings_collection.find_one({"strategy": strategy.__name__})  
+            if not strategy_doc:
+               logging.warning(f"Strategy {strategy.__name__} not found in database. Skipping.")  
+               continue  
   
-           account_cash = strategy_doc["amount_cash"]  
-           total_portfolio_value = strategy_doc["current_portfolio_value"]  
+            account_cash = strategy_doc["amount_cash"]  
+            total_portfolio_value = strategy_doc["portfolio_value"] 
+           
+            for ticker in ndaq_tickers:  
+               try:  
+                  current_price = get_latest_price(ticker)  
+                  if current_price is None:  
+                     logging.warning(f"Could not fetch price for {ticker}. Skipping.")  
+                     continue  
   
-           for ticker in ndaq_tickers:  
-              try:  
-                current_price = helper_files.client_helper.get_latest_price(ticker)  
-                if current_price is None:  
-                   logging.warning(f"Could not fetch price for {ticker}. Skipping.")  
-                   continue  
-  
-                historical_data = trading_strategies.get_historical_data(ticker, data_client)  
-                portfolio_qty = strategy_doc["holdings"].get(ticker, 0)  
-  
-                simulate_trade(ticker, strategy, historical_data, current_price,  
+                  historical_data = trading_strategies.get_historical_data(ticker, data_client)  
+                  portfolio_qty = strategy_doc["holdings"].get(ticker, 0)  
+                  
+                  simulate_trade(ticker, strategy, historical_data, current_price,  
                           account_cash, portfolio_qty, total_portfolio_value, mongo_url)  
                   
-                # Update account cash and portfolio value after each trade of ticker and then pass to next  
-                updated_doc = holdings_collection.find_one({"strategy": strategy.__name__})  
-                account_cash = updated_doc["amount_cash"]  
-                total_portfolio_value = updated_doc["current_portfolio_value"]  
-  
-              except Exception as e:  
-                logging.error(f"Error processing {ticker} for {strategy.__name__}: {e}")  
-  
-        # After processing all strategies and tickers, update portfolio values  
-        update_portfolio_values()  
+
+               except Exception as e:  
+                  logging.error(f"Error processing {ticker} for {strategy.__name__}: {e}")  
+            print(f"{strategy} completed")
+        update_portfolio_values()
   
         logging.info("Finished processing all strategies. Waiting for 60 seconds.")  
         time.sleep(60)  
   
       elif status == "early_hours":  
-        if not early_hour_first_iteration:  
-           ndaq_tickers = helper_files.client_helper.get_ndaq_tickers(mongo_url)  
-           early_hour_first_iteration = True  
+        if early_hour_first_iteration:  
+           ndaq_tickers = get_ndaq_tickers(mongo_url)  
+           early_hour_first_iteration = False  
+           post_market_hour_first_iteration = True
         logging.info("Market is in early hours. Waiting for 60 seconds.")  
         time.sleep(60)  
   
       elif status == "closed":  
         logging.info("Market is closed. Performing post-market analysis.")  
+        early_hour_first_iteration = True
+        if post_market_hour_first_iteration:
+            post_market_hour_first_iteration = False
+            #increment time_Delta in database by 0.01
+            time_delta = mongo_client.trading_simulator.time_delta["time_delta"]
+            time_delta += 0.01
+            mongo_client.trading_simulator.time_delta.update_one({}, {"$set": {"time_delta": time_delta}})
+            #Update ranks
+            update_portfolio_values()
+            update_ranks()
+        logging.info("Market is closed. Waiting for 60 seconds.")
         time.sleep(60)  
       else:  
         logging.error("An error occurred while checking market status.")  
         time.sleep(60)  
-   """   
+   
   
 if __name__ == "__main__":  
    main()

@@ -91,7 +91,11 @@ def main():
 
                     asset_info = asset_collection.find_one({'symbol': ticker})
                     portfolio_qty = asset_info['qty'] if asset_info else 0.0
-
+                    print(type(historical_data))
+                    print(type(ticker))
+                    print(type(data))
+                    print(type(current_price))
+                    
                     for strategy in strategies:
                         
                         decision, quantity, _ = strategy(ticker, current_price, historical_data,
