@@ -78,6 +78,19 @@ def place_order(trading_client, symbol, side, qty, mongo_url):
         'time': datetime.now()
     })
     mongo_client.close()
+
+    #Track assets as well
+    db = mongo_client.trades
+    assets = db.assets
+    """
+    will keep track of assets. if buy, we increment, if sell, we decrement
+    """
+    if not assets.find_one({'symbol': symbol}) and side == OrderSide.BUY:
+        assets.insert_one({'symbol': symbol, 'qty': qty})
+    elif side == OrderSide.BUY:
+        assets.update_one({'symbol': symbol}, {'$inc': {'qty': qty}}, upsert=True)
+    elif side == OrderSide.SELL:
+        assets.update_one({'symbol': symbol}, {'$inc': {'qty': -qty}}, upsert=True)
     
     return order
 
