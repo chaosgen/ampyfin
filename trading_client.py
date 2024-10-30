@@ -21,7 +21,7 @@ from statistics import median, mode
 import statistics
 
 # MongoDB connection string
-mongo_url = f"mongodb+srv://{MONGO_DB_USER}:{MONGO_DB_PASS}@cluster0.0qoxq.mongodb.net/?retryWrites=true&writeConcern=majority"
+mongo_url = f"mongodb+srv://{MONGO_DB_USER}:{MONGO_DB_PASS}@cluster0.0qoxq.mongodb.net"
 
 # Set up logging configuration
 logging.basicConfig(

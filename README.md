@@ -1,36 +1,69 @@
 ﻿# AmpyFin Trading Bot
 ![](logo.png)
+
 ## Overview
 
-This trading bot retrieves and stores NASDAQ-100 tickers, monitors market status, and prepares for trading operations during premarket and regular trading hours using the Polygon API. The bot implements a ranked ensemble learning system for 50 known trading algorithms, each initialized with a base rating of 0. These rankings dynamically adjust based on each algorithm's hypothetical buy/sell decisions and resulting profitability, allowing for optimized trading strategies to have more influence in the final buying & selling decisions.
-
-The bot is configured for paper trading by default, allowing you to test and refine your strategies without risking real capital. To transition to live trading, simply update your API keys and adjust the trading parameters in the configuration file.
+AmpyFin Trading Bot is a high-performance NASDAQ-100 trading bot that uses a ranked ensemble learning system with 50 trading algorithms. Each algorithm's rank dynamically adjusts based on the profitability of hypothetical buy/sell decisions, optimizing final trading decisions. The bot is configured for paper trading by default, allowing for safe testing and refinement of strategies. Transitioning to live trading is as simple as updating API keys and adjusting configuration settings.
 
 ## Features
 
-- Fetches NASDAQ-100 tickers during early market hours using Financial Modeling Prep API.
-- Stores tickers in a MongoDB database.
-- Monitors market status (open, closed, early hours) using Polygon API.
-- Implements a ranking system for 95 trading algorithms based on performance.
-- Logs events and errors for easy debugging.
-- Can be extended to execute custom trading strategies.
+- **NASDAQ-100 Ticker Retrieval**: Fetches tickers using the Financial Modeling Prep API during early market hours.
+- **Market Status Monitoring**: Checks market status in real-time (open, closed, premarket) with the Polygon API.
+- **Algorithm Ranking System**: Adjusts algorithm rankings based on performance to optimize trading decisions.
+- **Paper Trading**: Safe testing environment, with live trading option available via configuration.
+- **Data Storage**: Utilizes MongoDB for secure storage of ticker data and trading activity logs.
+- **Customizable**: Allows for the extension of trading strategies and configurations.
 
-### Algorithm Ranking System
+## Algorithm Ranking System
 
-The bot incorporates a ranking system for 95 trading algorithms, each starting with a base score of 1000. These rankings are updated based on the profitability of the algorithms’ hypothetical trades. The system uses a coefficient calculated as:
+Each trading algorithm starts with a base score of 0. Rankings are updated dynamically based on the algorithm’s profitability, using a coefficient calculated as:
 
 $$
 \left( \frac{e^e}{e^2 - 1} \right)^{2i}
 $$
 
-where \(i\) is the inverse of the algorithm's ranking, with the highest-ranked algorithm having \(i = 95\). The coefficients influence the decision weights of each algorithm, creating a dynamic system where the most profitable algorithms contribute more heavily to the bot's overall trading decisions. This ranking system is key to optimizing trades as market conditions change.
+where \(i\) is the inverse of the algorithm’s ranking. This creates a system where the highest-ranked algorithms contribute more heavily to the bot’s decisions, adapting to changing market conditions.
+
+## File Structure and Objectives
+
+### `client.py`
+- **Objective**: Orchestrates both trading and ranking clients.
+- **Features**:
+  - Initiates trading and ranking clients at appropriate times.
+  - Ensures trading operations during premarket and market hours.
+  - Includes error handling and logs system performance.
+
+### `trading_client.py`
+- **Objective**: Executes trading based on algorithmic decisions.
+- **Features**:
+  - Executes trading algorithms every 60 seconds.
+  - Manages a minimum balance of $15,000 and maintains 30% liquidity.
+  - Logs all trades with timestamps, stock details, price, and reasons.
+  - Includes checks for sufficient balance, unauthorized selling, and automatic sell-off conditions.
+
+### `ranking_client.py`
+- **Objective**: Runs the ranking algorithm to evaluate and rank trading strategies.
+- **Features**:
+  - Downloads and stores NASDAQ-100 tickers in MongoDB.
+  - Executes strategies on each ticker.
+  - Updates algorithm scores based on trade success.
+  - Includes a 30-second interval between ranking updates.
+
+### `trading_strategies#.py`
+- **Objective**: Defines multiple trading strategies with a standardized interface.
+- **Features**:
+  - Includes strategies like mean reversion, momentum, and arbitrage.
+  - Ensures consistent decision-making across all strategies.
+
+### Helper Files
+- **`client_helper.py`**: Common functions for client operations (MongoDB setup, error handling).
+- **`ranking_helper.py`**: Functions for updating rankings based on performance.
 
 ## Table of Contents
 
 - [Installation](#installation)
 - [Configuration](#configuration)
-- [Polygon API Setup](#polygon-api-setup)
-- [Financial Modeling Prep API Setup](#financial-modeling-prep-api-setup)
+- [API Setup](#api-setup)
 - [Usage](#usage)
 - [Logging](#logging)
 - [Notes](#notes)
@@ -39,27 +72,25 @@ where \(i\) is the inverse of the algorithm's ranking, with the highest-ranked a
 
 ## Installation
 
-1. Clone the repository:
-
+1. **Clone the Repository**:
     ```bash
     git clone https://github.com/yeonholee50/polygon-trading-bot.git
     cd polygon-trading-bot
     ```
 
-2. Install the required dependencies:
-
+2. **Install Dependencies**:
     ```bash
     pip install -r requirements.txt
     ```
 
-3. Set up MongoDB:
-   - You will need a MongoDB cluster. If you don’t have one, sign up at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) and set up your cluster.
-   - Ensure you have the MongoDB connection string and create a database for storing the stock data.
+3. **Set Up MongoDB**:
+   - Sign up for a MongoDB cluster (e.g., via [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)).
+   - Get your MongoDB connection string and create a database for stock data storage.
 
 ## Configuration
 
-1. Rename `config_template.py` to `config.py` and provide your API keys and MongoDB credentials:
-
+1. **Create `config.py`**:
+   - Copy `config_template.py` to `config.py` and enter your API keys and MongoDB credentials.
     ```python
     POLYGON_API_KEY = "your_polygon_api_key"
     FINANCIAL_PREP_API_KEY = "your_fmp_api_key"
@@ -70,48 +101,23 @@ where \(i\) is the inverse of the algorithm's ranking, with the highest-ranked a
     BASE_URL = "https://paper-api.alpaca.markets"
     ```
 
-## Polygon API Setup
+## API Setup
 
-To use the Polygon API for market data, you need to sign up and obtain an API key. Follow these steps:
+### Polygon API
+1. Sign up at [Polygon.io](https://polygon.io/) and get an API key.
+2. Add it to `config.py` as `POLYGON_API_KEY`.
 
-1. Visit [Polygon.io](https://polygon.io/).
-2. Click on **Get Started for Free** and create an account.
-3. After signing up, navigate to the **API Keys** section in your Polygon account dashboard.
-4. Copy your API key and add it to the `config.py` file as `POLYGON_API_KEY`.
+### Financial Modeling Prep API
+1. Sign up at [Financial Modeling Prep](https://financialmodelingprep.com/) and get an API key.
+2. Add it to `config.py` as `FINANCIAL_PREP_API_KEY`.
 
-For more information on how to use the Polygon API, refer to their [official documentation](https://polygon.io/docs).
-
-## Financial Modeling Prep API Setup
-
-The Financial Modeling Prep API is used to fetch NASDAQ-100 tickers. Follow these steps to set it up:
-
-1. Visit [Financial Modeling Prep](https://financialmodelingprep.com/).
-2. Sign up for a free account.
-3. Once registered, log in to your account and navigate to the **API Key** section.
-4. Copy your API key and add it to the `config.py` file as `FINANCIAL_PREP_API_KEY`.
-
-For further details on using the Financial Modeling Prep API, check their [API documentation](https://financialmodelingprep.com/developer/docs).
-
-## Alpaca Setup
-
-To execute trades, you can integrate Alpaca into the bot. Follow these steps to set up your Alpaca account:
-
-1. Sign up for a free account at [Alpaca](https://alpaca.markets/).
-2. Once registered, navigate to the **API** section in your Alpaca dashboard.
-3. Copy your API key and secret, and add them to the `config.py` file:
-
-    ```python
-    API_KEY = "your_alpaca_api_key"
-    API_SECRET = "your_alpaca_secret_key"
-    BASE_URL = "https://paper-api.alpaca.markets"
-    ```
-
-4. Refer to the [Alpaca API documentation](https://alpaca.markets/docs/api-documentation/) for more details on how to use the Alpaca API for trading.
+### Alpaca API
+1. Sign up at [Alpaca](https://alpaca.markets/) and get API keys.
+2. Add them to `config.py` as `API_KEY` and `API_SECRET`.
 
 ## Usage
 
-To run the bot, simply execute:
-
+To start the bot, execute:
 ```bash
 python client.py
 
