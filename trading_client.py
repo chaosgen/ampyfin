@@ -20,6 +20,8 @@ from collections import Counter
 from statistics import median, mode
 import statistics
 
+
+
 # MongoDB connection string
 mongo_url = f"mongodb+srv://{MONGO_DB_USER}:{MONGO_DB_PASS}@cluster0.0qoxq.mongodb.net"
 
@@ -60,7 +62,7 @@ def weighted_majority_decision_and_median_quantity(decisions_and_quantities):
             sell_weight += weight
         elif decision == 'hold':
             hold_weight += weight
-    
+    print(f"buy_weight: {buy_weight}, sell_weight: {sell_weight}, hold_weight: {hold_weight}")
     # Determine the majority decision based on the highest accumulated weight
     if buy_weight > sell_weight and buy_weight > hold_weight:
         return 'buy', median(weighted_buy_quantities) if weighted_buy_quantities else 0
@@ -85,11 +87,26 @@ def main():
     strategy_to_coefficient = {}
     while True:
         status = market_status(client)  # Use the helper function for market status
+        market_db = mongo_client.market_data
+        market_collection = market_db.status
+        if market_collection['market_status'] != status:
+            market_collection.update_one({}, {"$set": {"market_status": status}})
+            
+        
 
         if status == "open":
             logging.info("Market is open. Waiting for 60 seconds.")
             if not ndaq_tickers:
                 ndaq_tickers = get_ndaq_tickers(mongo_url)  # Fetch tickers using the helper function
+                sim_db = mongo_client.trading_simulator
+                rank_collection = sim_db.rank
+                r_t_c_collection = sim_db.rank_to_coefficient
+                for strategy in strategies:
+                    rank = rank_collection.find_one({'strategy': strategy.__name__})['rank']
+                    coefficient = r_t_c_collection.find_one({'rank': rank})['coefficient']
+                    strategy_to_coefficient[strategy.__name__] = coefficient
+                    early_hour_first_iteration = False
+                    post_hour_first_iteration = True
             account = trading_client.get_account()
 
             for ticker in ndaq_tickers:
@@ -109,15 +126,14 @@ def main():
                     """
                     use weight from each strategy to determine how much each decision will be weighed. weights will be in decimal
                     """
-                    
                     for strategy in strategies:
                         
                         decision, quantity, _ = strategy(ticker, current_price, historical_data,
                                                       buying_power, portfolio_qty, portfolio_value)
                         weight = strategy_to_coefficient[strategy.__name__]
+                        
                         decisions_and_quantities.append((decision, quantity, weight))
                     decision, quantity = weighted_majority_decision_and_median_quantity(decisions_and_quantities)
-                    
                     
                     """
                     later we should implement buying_power regulator depending on vix strategy
@@ -146,7 +162,7 @@ def main():
                 except Exception as e:
                     logging.error(f"Error processing {ticker}: {e}")
 
-            time.sleep(60)
+            time.sleep(30)
 
         elif status == "early_hours":
             if early_hour_first_iteration:
@@ -161,7 +177,7 @@ def main():
                     early_hour_first_iteration = False
                     post_hour_first_iteration = True
             logging.info("Market is in early hours. Waiting for 60 seconds.")
-            time.sleep(60)
+            time.sleep(30)
 
         elif status == "closed":
             
@@ -169,7 +185,7 @@ def main():
                 early_hour_first_iteration = True
                 post_hour_first_iteration = False
             logging.info("Market is closed. Performing post-market operations.")
-            time.sleep(60)
+            time.sleep(30)
             
         else:
             logging.error("An error occurred while checking market status.")

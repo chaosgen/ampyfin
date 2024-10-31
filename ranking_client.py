@@ -67,6 +67,7 @@ from strategies.trading_strategies_v2 import (
 from datetime import datetime 
 import heapq 
 
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -317,16 +318,14 @@ def main():
    ndaq_tickers = []  
    early_hour_first_iteration = True
    post_market_hour_first_iteration = True
-   client = RESTClient(api_key=POLYGON_API_KEY)  
    data_client = StockHistoricalDataClient(API_KEY, API_SECRET)  
    mongo_client = MongoClient(mongo_url)  
    db = mongo_client.trading_simulator  
    holdings_collection = db.algorithm_holdings  
-   status = market_status(client)
    
    
    while True:  
-      status = market_status(client)  # Use the helper function for market status  
+      status = mongo_client.market_data.market_status.find_one({})["market_status"]
       
       if status == "open":  
         logging.info("Market is open. Processing strategies.")  
@@ -355,11 +354,11 @@ def main():
                   simulate_trade(ticker, strategy, historical_data, current_price,  
                           account_cash, portfolio_qty, total_portfolio_value, mongo_url)  
                   
-                  if market_status(client) == "closed":
+                  if mongo_client.market_data.market_status.find_one({})["market_status"] == "closed":
                      break
                except Exception as e:  
                   logging.error(f"Error processing {ticker} for {strategy.__name__}: {e}")
-            if market_status(client) == "closed":
+            if mongo_client.market_data.market_status.find_one({})["market_status"] == "closed":
                break 
             print(f"{strategy} completed")
         update_portfolio_values()
@@ -383,6 +382,7 @@ def main():
             #increment time_Delta in database by 0.01
             
             mongo_client.trading_simulator.time_delta.update_one({}, {"$inc": {"time_delta": 0.01}})
+            mongo_client.close()
             #Update ranks
             update_portfolio_values()
             update_ranks()
