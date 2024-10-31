@@ -64,4 +64,4 @@ def test_strategies():
 def test_helper():
    print(helper_files.client_helper.get_latest_price("AAPL"))
 if __name__ == "__main__":  
-   print(helper_files.client_helper.get_latest_price("XEL"))
+   test_strategies()

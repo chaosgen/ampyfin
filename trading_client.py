@@ -53,14 +53,14 @@ def weighted_majority_decision_and_median_quantity(decisions_and_quantities):
     # Process decisions with weights
     for decision, quantity, weight in decisions_and_quantities:
         if decision in buy_decisions:
-            weighted_buy_quantities.extend([quantity * weight])
+            weighted_buy_quantities.extend([quantity])
             buy_weight += weight
         elif decision in sell_decisions:
-            weighted_sell_quantities.extend([quantity * weight])
+            weighted_sell_quantities.extend([quantity])
             sell_weight += weight
         elif decision == 'hold':
             hold_weight += weight
-  
+    
     # Determine the majority decision based on the highest accumulated weight
     if buy_weight > sell_weight and buy_weight > hold_weight:
         return 'buy', median(weighted_buy_quantities) if weighted_buy_quantities else 0
@@ -97,7 +97,7 @@ def main():
                 buying_power = float(account.cash)
                 portfolio_value = float(account.portfolio_value)
                 cash_to_portfolio_ratio = buying_power / portfolio_value
-
+                
                 try:
                     historical_data = get_historical_data(ticker, data_client)
                     ticker_yahoo = yf.Ticker(ticker)
@@ -151,7 +151,6 @@ def main():
         elif status == "early_hours":
             if early_hour_first_iteration:
                 ndaq_tickers = get_ndaq_tickers(mongo_url)
-                ndaq_tickers = get_ndaq_tickers(mongo_url)
                 sim_db = mongo_client.trading_simulator
                 rank_collection = sim_db.rank
                 r_t_c_collection = sim_db.rank_to_coefficient
@@ -165,11 +164,13 @@ def main():
             time.sleep(60)
 
         elif status == "closed":
+            
             if post_hour_first_iteration:
                 early_hour_first_iteration = True
                 post_hour_first_iteration = False
             logging.info("Market is closed. Performing post-market operations.")
             time.sleep(60)
+            
         else:
             logging.error("An error occurred while checking market status.")
             time.sleep(60)
