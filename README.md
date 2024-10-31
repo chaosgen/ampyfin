@@ -117,13 +117,16 @@ where \(i\) is the inverse of the algorithm’s ranking. This creates a system w
 
 ## Usage
 
-To start the bot, execute:
-```bash
-python client.py
+To start the bot, execute on two separate terminals:
+```python
+python ranking_client.py
+python trading_client.py
+```
+
 
 ## Logging
 
-The bot logs all major events and errors to a `system.log` file, including API errors, MongoDB operations, and market status checks. You can access the log file to review the bot's activities and diagnose potential issues.
+The bot logs all major events and errors to a `system.log` file, including API errors, MongoDB operations, and market status checks. You can access the log file to review the bot's activities and diagnose potential issues. The bot will also log rank events to a separate `rank.log` file.
 
 ## Notes
 
