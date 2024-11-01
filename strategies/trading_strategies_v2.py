@@ -13,10 +13,8 @@ import pywt  # PyWavelets for wavelet analysis
 import ripser  # For topological data analysis
 from scipy.spatial.distance import pdist, squareform
 from scipy.special import zeta  # For Riemann zeta function
-import networkx as nx  # For graph theory implementations
-import itertools
-import zlib
-import time
+
+
 
 # Function to fetch historical bar data using Alpaca StockHistoricalDataClient
 def get_historical_data(ticker, client, days=100):
@@ -1135,60 +1133,83 @@ def williams_vix_fix_strategy(ticker, current_price, historical_data, account_ca
     
   return action, quantity, ticker
 
-def conners_rsi_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):  
-  """   
-  Connors RSI Strategy   
-  """   
-  max_investment = total_portfolio_value * 0.10   
-  rsi_period = 3   
-  streak_period = 2   
-  rank_period = 100   
+def conners_rsi_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):   
+   max_investment = total_portfolio_value * 0.10    
+   rsi_period = 3    
+   streak_period = 2    
+   rank_period = 100    
     
-  # Calculate RSI   
-  delta = historical_data['close'].diff()   
-  gain = (delta.where(delta > 0, 0)).rolling(window=rsi_period).mean()   
-  loss = (-delta.where(delta < 0, 0)).rolling(window=rsi_period).mean()   
-  rs = gain / loss   
-  rsi = 100 - (100 / (1 + rs))   
+   # Calculate RSI  
+   delta = historical_data['close'].diff()  
+   gain = (delta.where(delta > 0, 0)).rolling(window=rsi_period).mean()  
+   loss = (-delta.where(delta < 0, 0)).rolling(window=rsi_period).mean()  
+   rs = gain / loss  
+   rsi = 100 - (100 / (1 + rs))  
+   rsi = rsi.dropna()  # Handle NaNs  
+  
+   # Calculate Streak RSI  
+   streak = np.zeros(len(historical_data))  
+   for i in range(1, len(historical_data)):  
+      if historical_data['close'].iloc[i] > historical_data['close'].iloc[i-1]:  
+        streak[i] = streak[i-1] + 1  
+      elif historical_data['close'].iloc[i] < historical_data['close'].iloc[i-1]:  
+        streak[i] = streak[i-1] - 1  
+  
+   # Convert streak to a pandas Series and drop NaNs  
+   streak_series = pd.Series(streak)  
+   streak_rsi = (100 * (streak_series - streak_series.min()) / (streak_series.max() - streak_series.min())).dropna()  
+  
+   # Calculate Percentile Rank  
+   def rolling_percentile_rank(series, window):  
+    return series.rolling(window).apply(lambda x: stats.percentileofscore(x, x.iloc[-1]), raw=False).fillna(0)
+  
+   rank = rolling_percentile_rank(historical_data['close'], rank_period).dropna()  
     
-  # Calculate Streak RSI   
-  streak = np.zeros(len(historical_data))   
-  for i in range(1, len(historical_data)):   
-    if historical_data['close'].iloc[i] > historical_data['close'].iloc[i-1]:   
-      streak[i] = min(streak[i-1] + 1, streak_period)   
-    elif historical_data['close'].iloc[i] < historical_data['close'].iloc[i-1]:   
-      streak[i] = max(streak[i-1] - 1, -streak_period)   
-  streak_rsi = 100 * (streak - streak.min()) / (streak.max() - streak.min())   
+   # Reset index for each series  
+   rsi = rsi.reset_index(drop=True)  
+   streak_rsi = streak_rsi.reset_index(drop=True)  
+   rank = rank.reset_index(drop=True)  
     
-  # Calculate Percentile Rank   
-  def percentile_rank(x):   
-    return 100 * (stats.percentileofscore(x, x.iloc[-1]) / 100)   
+   """ 
+   print("RSI length:", len(rsi))  
+   print("Streak RSI length:", len(streak_rsi))  
+   print("Rank length:", len(rank))  
+   print("RSI NaN count:", rsi.isnull().sum())  
+   print("Streak RSI NaN count:", streak_rsi.isnull().sum())  
+   print("Rank NaN count:", rank.isnull().sum())  
+   """
     
-  rank = historical_data['close'].rolling(rank_period).apply(percentile_rank)   
+   # Combine all components to form CRSI  
+   crsi = (rsi + streak_rsi + rank) / 3  
+   crsi = crsi.dropna()  # Ensure final CRSI has no NaN values  
     
-  # Combine all components   
-  crsi = (rsi + streak_rsi + rank) / 3   
-    
-  # Calculate sentiment score (1-100)   
-  sentiment = 100 - crsi.iloc[-1]   
-    
-  if sentiment >= 81:   
-    action = "strong buy"   
-    quantity = min(int(max_investment // current_price), int(account_cash // current_price))   
-  elif 61 <= sentiment < 81:   
-    action = "buy"   
-    quantity = min(int(max_investment // current_price), int(account_cash // current_price))   
-  elif 21 <= sentiment <= 40 and portfolio_qty > 0:   
-    action = "sell"   
-    quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))   
-  elif sentiment <= 20 and portfolio_qty > 0:   
-    action = "strong sell"   
-    quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))   
-  else:   
-    action = "hold"   
-    quantity = 0  
    
-  return action, quantity, ticker 
+     
+    
+   # Calculate sentiment score (1-100)  
+   if not crsi.empty:  
+      sentiment = 100 - crsi.iloc[-1]  
+   else:  
+      return "hold", 0, ticker  # Return hold if CRSI couldn't be calculated  
+    
+   # Determine action and quantity based on sentiment  
+   if sentiment >= 81:  
+      action = "strong buy"  
+      quantity = min(int(max_investment // current_price), int(account_cash // current_price))  
+   elif 61 <= sentiment < 81:  
+      action = "buy"  
+      quantity = min(int(max_investment // current_price), int(account_cash // current_price))  
+   elif 21 <= sentiment <= 40 and portfolio_qty > 0:  
+      action = "sell"  
+      quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))  
+   elif sentiment <= 20 and portfolio_qty > 0:  
+      action = "strong sell"  
+      quantity = min(portfolio_qty, max(1, int(portfolio_qty * 0.5)))  
+   else:  
+      action = "hold"  
+      quantity = 0   
+    
+   return action, quantity, ticker
   
 def dpo_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):   
   """   
@@ -1252,8 +1273,10 @@ def fisher_transform_strategy(ticker, current_price, historical_data, account_ca
   elif fisher.iloc[-1] < signal.iloc[-1] and fisher.iloc[-1] > 0:   
     sentiment = 20 - (signal.iloc[-1] - fisher.iloc[-1]) * 100  # Scale to 1-40 range   
   else:   
+    fisher = fisher.replace([np.inf, -np.inf], np.nan)
+    signal = signal.replace([np.inf, -np.inf], np.nan)
     sentiment = 50 + (fisher.iloc[-1] - signal.iloc[-1]) * 50  # Scale to 41-60 range   
-    
+     
   sentiment = max(1, min(100, sentiment))  # Ensure sentiment is between 1 and 100   
     
   # Determine action and quantity based on sentiment   

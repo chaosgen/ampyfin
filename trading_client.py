@@ -88,9 +88,9 @@ def main():
     while True:
         status = market_status(client)  # Use the helper function for market status
         market_db = mongo_client.market_data
-        market_collection = market_db.status
-        if market_collection['market_status'] != status:
-            market_collection.update_one({}, {"$set": {"market_status": status}})
+        market_collection = market_db.market_status
+        
+        market_collection.update_one({}, {"$set": {"market_status": status}})
             
         
 
@@ -140,7 +140,7 @@ def main():
                     for now in bull: 15000
                     for bear: 5000
                     """
-                    if decision == "buy" and buying_power > 15000:
+                    if decision == "buy" and buying_power - (quantity * current_price(ticker)) > 15000:
                         order = place_order(trading_client, ticker, OrderSide.BUY, qty=quantity, mongo_url=mongo_url)  # Place order using helper
                         if asset_collection.find_one({'symbol': ticker}):
                             asset_collection.update_one({'symbol': ticker}, {'$set': {'qty': portfolio_qty + quantity}})

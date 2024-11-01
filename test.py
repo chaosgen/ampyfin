@@ -6,6 +6,12 @@ from alpaca.data.timeframe import TimeFrame
 from config import API_KEY, API_SECRET  
 import strategies.trading_strategies_v2 as trading_strategies_v2
 import helper_files.client_helper
+from pymongo import MongoClient
+from helper_files.client_helper import get_ndaq_tickers
+from config import MONGO_DB_USER, MONGO_DB_PASS
+
+mongo_url = f"mongodb+srv://{MONGO_DB_USER}:{MONGO_DB_PASS}@cluster0.0qoxq.mongodb.net"
+
 def get_historical_data(ticker, client, days=100):  
    """  
    Fetch historical bar data for a given stock ticker.  
@@ -27,21 +33,23 @@ def get_historical_data(ticker, client, days=100):
    return data  
 
 def test_strategies():
-   tickers = ["META", "GOOGL", "MSFT", "TSLA", "REGN"]  
+   
    # Initialize the StockHistoricalDataClient  
    client = StockHistoricalDataClient(API_KEY, API_SECRET)  
-   
+   mongo_client = MongoClient() 
+   tickers = get_ndaq_tickers(mongo_url)
+   tickers = tickers + ['DBRG', 'WTFC', 'AESI', 'MDB', 'SNPS', 'CRUS', 'RRR', 'CI', 'OSK', 'AZZ']
    # Define test parameters  
    for ticker in tickers:  
     account_cash = 10000  
-    portfolio_qty = 2091020
+    portfolio_qty = 100
     total_portfolio_value = 100000  
     
     historical_data = get_historical_data(ticker, client) 
     current_price = historical_data['close'].iloc[-1]
     # Test each strategy  
     strategies = [  
-        trading_strategies_v2.mean_reversion_strategy
+        trading_strategies_v2.conners_rsi_strategy
         
     ] 
     
@@ -54,13 +62,13 @@ def test_strategies():
             portfolio_qty,  
             total_portfolio_value  
         )  
-        
-        print(f"{strategy.__name__}:")  
-        print(f"  Decision: {decision}")  
-        print(f"  Ticker: {ticker}")  
-        print(f"  Quantity: {quantity}")  
-        print("__________________________________________________")  
-
+        if decision != "hold":
+         print(f"{strategy.__name__}:")  
+         print(f"  Decision: {decision}")  
+         print(f"  Ticker: {ticker}")  
+         print(f"  Quantity: {quantity}")  
+         print("__________________________________________________")  
+   mongo_client.close()
 def test_helper():
    print(helper_files.client_helper.get_latest_price("AAPL"))
 if __name__ == "__main__":  

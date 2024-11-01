@@ -330,8 +330,7 @@ def main():
       if status == "open":  
         logging.info("Market is open. Processing strategies.")  
         if not ndaq_tickers:  
-           ndaq_tickers = get_ndaq_tickers(mongo_url)  
-          
+           ndaq_tickers = get_ndaq_tickers(mongo_url) 
         for strategy in strategies:  
             strategy_doc = holdings_collection.find_one({"strategy": strategy.__name__})  
             if not strategy_doc:
@@ -375,14 +374,15 @@ def main():
         time.sleep(60)  
   
       elif status == "closed":  
-        logging.info("Market is closed. Performing post-market analysis.")  
+         
         early_hour_first_iteration = True
         if post_market_hour_first_iteration:
+            logging.info("Market is closed. Performing post-market analysis.") 
             post_market_hour_first_iteration = False
             #increment time_Delta in database by 0.01
             
             mongo_client.trading_simulator.time_delta.update_one({}, {"$inc": {"time_delta": 0.01}})
-            mongo_client.close()
+            
             #Update ranks
             update_portfolio_values()
             update_ranks()
