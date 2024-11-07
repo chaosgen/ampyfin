@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 from pymongo import MongoClient
 import time
 from datetime import datetime, timedelta
-from helper_files.client_helper import place_order, get_ndaq_tickers, market_status, strategies  # Import helper functions
+from helper_files.client_helper import place_order, get_ndaq_tickers, market_status, strategies, get_latest_price 
 from alpaca.trading.client import TradingClient
 from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
 from alpaca.data.historical.stock import StockHistoricalDataClient
@@ -51,7 +51,7 @@ def weighted_majority_decision_and_median_quantity(decisions_and_quantities):
     buy_weight = 0
     sell_weight = 0
     hold_weight = 0
-  
+    
     # Process decisions with weights
     for decision, quantity, weight in decisions_and_quantities:
         if decision in buy_decisions:
@@ -62,6 +62,7 @@ def weighted_majority_decision_and_median_quantity(decisions_and_quantities):
             sell_weight += weight
         elif decision == 'hold':
             hold_weight += weight
+    
     print(f"buy_weight: {buy_weight}, sell_weight: {sell_weight}, hold_weight: {hold_weight}")
     # Determine the majority decision based on the highest accumulated weight
     if buy_weight > sell_weight and buy_weight > hold_weight:
@@ -97,7 +98,7 @@ def main():
         if status == "open":
             logging.info("Market is open. Waiting for 60 seconds.")
             if not ndaq_tickers:
-                ndaq_tickers = get_ndaq_tickers(mongo_url)  # Fetch tickers using the helper function
+                ndaq_tickers = get_ndaq_tickers(mongo_url, FINANCIAL_PREP_API_KEY)  # Fetch tickers using the helper function
                 sim_db = mongo_client.trading_simulator
                 rank_collection = sim_db.rank
                 r_t_c_collection = sim_db.rank_to_coefficient
@@ -140,20 +141,14 @@ def main():
                     for now in bull: 15000
                     for bear: 5000
                     """
-                    if decision == "buy" and buying_power - (quantity * current_price(ticker)) > 15000:
+                    if decision == "buy" and float(account.cash) - (quantity * get_latest_price(ticker)) > 15000:
                         order = place_order(trading_client, ticker, OrderSide.BUY, qty=quantity, mongo_url=mongo_url)  # Place order using helper
-                        if asset_collection.find_one({'symbol': ticker}):
-                            asset_collection.update_one({'symbol': ticker}, {'$set': {'qty': portfolio_qty + quantity}})
-                        else:
-                            asset_collection.insert_one({'symbol': ticker, 'qty': quantity})
+                        
                         
                         logging.info(f"Executed BUY order for {ticker}: {order}")
                     elif decision == "sell" and portfolio_qty > 0:
                         order = place_order(trading_client, ticker, OrderSide.SELL, qty=quantity, mongo_url=mongo_url)  # Place order using helper
-                        if portfolio_qty - quantity == 0:
-                            asset_collection.delete_one({'symbol': ticker})
-                        else:
-                            asset_collection.update_one({'symbol': ticker}, {'$set': {'qty': portfolio_qty - quantity}})
+                        
                         logging.info(f"Executed SELL order for {ticker}: {order}")
                     else:
                         logging.info(f"Holding for {ticker}, no action taken.")
@@ -166,7 +161,7 @@ def main():
 
         elif status == "early_hours":
             if early_hour_first_iteration:
-                ndaq_tickers = get_ndaq_tickers(mongo_url)
+                ndaq_tickers = get_ndaq_tickers(mongo_url, FINANCIAL_PREP_API_KEY)
                 sim_db = mongo_client.trading_simulator
                 rank_collection = sim_db.rank
                 r_t_c_collection = sim_db.rank_to_coefficient

@@ -330,7 +330,7 @@ def main():
       if status == "open":  
         logging.info("Market is open. Processing strategies.")  
         if not ndaq_tickers:  
-           ndaq_tickers = get_ndaq_tickers(mongo_url) 
+           ndaq_tickers = get_ndaq_tickers(mongo_url, FINANCIAL_PREP_API_KEY) 
         for strategy in strategies:  
             strategy_doc = holdings_collection.find_one({"strategy": strategy.__name__})  
             if not strategy_doc:
@@ -367,7 +367,7 @@ def main():
   
       elif status == "early_hours":  
         if early_hour_first_iteration:  
-           ndaq_tickers = get_ndaq_tickers(mongo_url)  
+           ndaq_tickers = get_ndaq_tickers(mongo_url, FINANCIAL_PREP_API_KEY)  
            early_hour_first_iteration = False  
            post_market_hour_first_iteration = True
         logging.info("Market is in early hours. Waiting for 60 seconds.")  

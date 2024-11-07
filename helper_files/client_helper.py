@@ -40,6 +40,11 @@ strategies = [rsi_strategy, bollinger_bands_strategy, momentum_strategy, mean_re
    bollinger_band_width_strategy, commodity_channel_index_strategy, force_index_strategy,  
    ichimoku_cloud_strategy, klinger_oscillator_strategy, money_flow_index_strategy,  
    on_balance_volume_strategy, stochastic_oscillator_strategy, euler_fibonacci_zone_strategy]
+from urllib.request import urlopen
+import json
+import certifi
+from zoneinfo import ZoneInfo
+import time
 
 # MongoDB connection helper
 def connect_to_mongo(mongo_url):
@@ -77,24 +82,81 @@ def place_order(trading_client, symbol, side, qty, mongo_url):
         'time_in_force': TimeInForce.DAY.name,
         'time': datetime.now()
     })
-    mongo_client.close()
+    
 
     #Track assets as well
     db = mongo_client.trades
-    assets = db.assets
+    assets = db.assets_quantities
+    """
+    insert or subtract or delete based on what happened
+    """
+    if side == OrderSide.BUY:
+        assets.update_one({'symbol': symbol}, {'$inc': {'quantity': qty}}, upsert=True)
+    elif side == OrderSide.SELL:
+        assets.update_one({'symbol': symbol}, {'$inc': {'quantity': -qty}}, upsert=True)
+        if assets.find_one({'symbol': symbol})['quantity'] == 0:
+            assets.delete_one({'symbol': symbol})
+
+    mongo_client.close()
+
     
     
     return order
 
 # Helper to retrieve NASDAQ-100 tickers from MongoDB
-def get_ndaq_tickers(mongo_url):
+def get_ndaq_tickers(mongo_url, FINANCIAL_PREP_API_KEY):
     """
     Connects to MongoDB and retrieves NASDAQ-100 tickers.
 
     :param mongo_url: MongoDB connection URL
     :return: List of NASDAQ-100 ticker symbols.
     """
-    mongo_client = connect_to_mongo(mongo_url)
+    
+
+    def call_ndaq_100():
+        """
+        Fetches the list of NASDAQ 100 tickers using the Financial Modeling Prep API and stores it in a MongoDB collection.
+        The MongoDB collection is cleared before inserting the updated list of tickers.
+        """
+        logging.info("Calling NASDAQ 100 to retrieve tickers.")
+
+        def get_jsonparsed_data(url):
+            """
+            Parses the JSON response from the provided URL.
+            
+            :param url: The API endpoint to retrieve data from.
+            :return: Parsed JSON data as a dictionary.
+            """
+            response = urlopen(url, cafile=certifi.where())
+            data = response.read().decode("utf-8")
+            return json.loads(data)
+
+        try:
+            # API URL for fetching NASDAQ 100 tickers
+            ndaq_url = f"https://financialmodelingprep.com/api/v3/nasdaq_constituent?apikey={FINANCIAL_PREP_API_KEY}"
+            ndaq_stocks = get_jsonparsed_data(ndaq_url)
+            logging.info("Successfully retrieved NASDAQ 100 tickers.")
+        except Exception as e:
+            logging.error(f"Error fetching NASDAQ 100 tickers: {e}")
+            return
+
+        try:
+            # MongoDB connection details
+            mongo_client = MongoClient(mongo_url)
+            db = mongo_client.stock_list
+            ndaq100_tickers = db.ndaq100_tickers
+
+            ndaq100_tickers.delete_many({})  # Clear existing data
+            ndaq100_tickers.insert_many(ndaq_stocks)  # Insert new data
+            logging.info("Successfully inserted NASDAQ 100 tickers into MongoDB.")
+        except Exception as e:
+            logging.error(f"Error inserting tickers into MongoDB: {e}")
+        finally:
+            mongo_client.close()
+            logging.info("MongoDB connection closed.")
+
+    call_ndaq_100()
+    mongo_client = connect_to_mongo(mongo_url) 
     tickers = [stock['symbol'] for stock in mongo_client.stock_list.ndaq100_tickers.find()]
     mongo_client.close()
     return tickers
