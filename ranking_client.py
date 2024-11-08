@@ -115,10 +115,10 @@ def initialize_rank():
   
    
    for strategy in strategies:  
-        strategy_name = strategy.__name__ 
-        print(strategy_name)
-        collections = db.algorithm_holdings 
-        collections.insert_one({  
+         strategy_name = strategy.__name__ 
+         print(strategy_name)
+         collections = db.algorithm_holdings 
+         collections.insert_one({  
             "strategy": strategy_name,  
             "holdings": {},  
             "amount_cash": 50000,  
@@ -132,126 +132,137 @@ def initialize_rank():
             "portfolio_value": 50000 
         })  
     
-        collections = db.points_tally  
-        collections.insert_one({  
+         collections = db.points_tally  
+         collections.insert_one({  
             "strategy": strategy_name,  
             "total_points": 0,  
             "initialized_date": initialization_date,  
             "last_updated": initialization_date  
-        })  
+         })  
    client.close()
 
 def simulate_trade(ticker, strategy, historical_data, current_price, account_cash, portfolio_qty, total_portfolio_value, mongo_url):
-    """
-    Simulates a trade based on the given strategy and updates MongoDB.
-    """
+   """
+   Simulates a trade based on the given strategy and updates MongoDB.
+   """
     
-    # Simulate trading action from strategy
-    action, quantity, _ = strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value)
+   # Simulate trading action from strategy
+   action, quantity, _ = strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value)
+   
+   # MongoDB setup
+   client = MongoClient(mongo_url)
+   db = client.trading_simulator
+   holdings_collection = db.algorithm_holdings
+   points_collection = db.points_tally
+   points_doc = points_collection.find_one({"strategy": strategy.__name__})
+   # Find the strategy document in MongoDB
+   strategy_doc = holdings_collection.find_one({"strategy": strategy.__name__})
+   holdings_doc = strategy_doc.get("holdings", {})
+   time_delta = db.time_delta['time_delta']
     
-    # MongoDB setup
-    client = MongoClient(mongo_url)
-    db = client.trading_simulator
-    holdings_collection = db.algorithm_holdings
-    points_collection = db.points_tally
+   # Update holdings and cash based on trade action
+   if action in ["buy", "strong buy"] and strategy_doc["amount_cash"] - quantity * current_price > 15000:
+      logging.info(f"Action: {action} | Ticker: {ticker} | Quantity: {quantity} | Price: {current_price}")
+      # Calculate average price if already holding some shares of the ticker
+      if ticker in holdings_doc:
+         current_qty = holdings_doc[ticker]["quantity"]
+         new_qty = current_qty + quantity
+         average_price = (holdings_doc[ticker]["price"] * current_qty + current_price * quantity) / new_qty
+      else:
+         new_qty = quantity
+         average_price = current_price
 
-    # Find the strategy document in MongoDB
-    strategy_doc = holdings_collection.find_one({"strategy": strategy.__name__})
-    holdings_doc = strategy_doc.get("holdings", {})
-    time_delta = db.time_delta['time_delta']
-    
-    # Update holdings and cash based on trade action
-    if action in ["buy", "strong buy"] and strategy_doc["amount_cash"] - quantity * current_price > 15000:
-        logging.info(f"Action: {action} | Ticker: {ticker} | Quantity: {quantity} | Price: {current_price}")
-        # Calculate average price if already holding some shares of the ticker
-        if ticker in holdings_doc:
-            current_qty = holdings_doc[ticker]["quantity"]
-            new_qty = current_qty + quantity
-            average_price = (holdings_doc[ticker]["price"] * current_qty + current_price * quantity) / new_qty
-        else:
-            new_qty = quantity
-            average_price = current_price
+      # Update the holdings document
+      holdings_doc[ticker] = {
+         "quantity": new_qty,
+         "price": average_price
+      }
 
-        # Update the holdings document
-        holdings_doc[ticker] = {
-            "quantity": new_qty,
-            "price": average_price
-        }
+      # Deduct the cash used for buying
+      strategy_doc["amount_cash"] -= quantity * current_price
+      strategy_doc["total_trades"] += 1
 
-        # Deduct the cash used for buying
-        strategy_doc["amount_cash"] -= quantity * current_price
-        strategy_doc["total_trades"] += 1
-
-    elif action in ["sell", "strong sell"] and ticker in holdings_doc and holdings_doc[ticker]["quantity"] > 0:
-        logging.info(f"Action: {action} | Ticker: {ticker} | Quantity: {quantity} | Price: {current_price}")
-        current_qty = holdings_doc[ticker]["quantity"]
+   elif action in ["sell", "strong sell"] and ticker in holdings_doc and holdings_doc[ticker]["quantity"] > 0:
+      logging.info(f"Action: {action} | Ticker: {ticker} | Quantity: {quantity} | Price: {current_price}")
+      current_qty = holdings_doc[ticker]["quantity"]
         
-        # Ensure we do not sell more than we have
-        sell_qty = min(quantity, current_qty)
-        holdings_doc[ticker]["quantity"] -= sell_qty
+      # Ensure we do not sell more than we have
+      sell_qty = min(quantity, current_qty)
+      holdings_doc[ticker]["quantity"] -= sell_qty
 
-        # Update cash after selling
-        strategy_doc["amount_cash"] += sell_qty * current_price
-        strategy_doc["total_trades"] += 1
+      # Update cash after selling
+      strategy_doc["amount_cash"] += sell_qty * current_price
+      strategy_doc["total_trades"] += 1
 
         
 
-        # Points tally based on price increase/decrease
+      # Points tally based on price increase/decrease
 
-        price_change_ratio = current_price / holdings_doc[ticker]["price"] if ticker in holdings_doc else 1
-
-        if current_price > holdings_doc[ticker]["price"]:
-           #increment successful trades
-           strategy_doc["successful_trades"] += 1
-           # Calculate points to add if the current price is higher than the purchase price
-           if price_change_ratio < 1.05:
-              points = time_delta * 1
-           elif price_change_ratio < 1.1:
-              points = time_delta * 1.5
-           else:
-              points = time_delta * 2
-           points_collection.update_one({"strategy": strategy.__name__}, {"$inc": {"total_points": points}})
-        else:
-           # Calculate points to deduct if the current price is lower than the purchase price
-           if holdings_doc[ticker]["price"] == current_price:
-              strategy_doc["neutral_trades"] += 1
-           else:   
-              strategy_doc["failed_trades"] += 1
-            
-           if price_change_ratio > 0.975:
-              points = -time_delta * 1
-           elif price_change_ratio > 0.95:
-              points = -time_delta * 1.5
-           else:
-              points = -time_delta * 2
-           points_collection.update_one({"strategy": strategy.__name__}, {"$inc": {"total_points": points}})
+      price_change_ratio = current_price / holdings_doc[ticker]["price"] if ticker in holdings_doc else 1
         
-        # Remove the ticker if quantity reaches zero
-        if holdings_doc[ticker]["quantity"] == 0:
-            del holdings_doc[ticker]
-    else:
-       logging.info(f"Action: {action} | Ticker: {ticker} | Quantity: {quantity} | Price: {current_price}")
+        
+
+      if current_price > holdings_doc[ticker]["price"]:
+         #increment successful trades
+         strategy_doc["successful_trades"] += 1
+           
+         # Calculate points to add if the current price is higher than the purchase price
+         if price_change_ratio < 1.05:
+            points = time_delta * 1
+         elif price_change_ratio < 1.1:
+            points = time_delta * 1.5
+         else:
+            points = time_delta * 2
+         
+      else:
+         # Calculate points to deduct if the current price is lower than the purchase price
+         if holdings_doc[ticker]["price"] == current_price:
+            strategy_doc["neutral_trades"] += 1
+         else:   
+            strategy_doc["failed_trades"] += 1
+           
+         if price_change_ratio > 0.975:
+            points = -time_delta * 1
+         elif price_change_ratio > 0.95:
+            points = -time_delta * 1.5
+         else:
+            points = -time_delta * 2
+         
+      # Update the points tally
+      points_doc["total_points"] += points
+        
+      # Remove the ticker if quantity reaches zero
+      if holdings_doc[ticker]["quantity"] == 0:      
+         del holdings_doc[ticker]
+        
+   else:
+      logging.info(f"Action: {action} | Ticker: {ticker} | Quantity: {quantity} | Price: {current_price}")
        
-    # Update the strategy document in MongoDB
-    holdings_collection.update_one(
-        {"strategy": strategy.__name__},
-        {"$set": {
-            "holdings": holdings_doc,
-            "amount_cash": strategy_doc["amount_cash"],
-            "total_trades": strategy_doc["total_trades"],
-            "last_updated": datetime.now()
-        }},
-        upsert=True
-    )
+   # Update the strategy document in MongoDB
+   holdings_collection.update_one(
+      {"strategy": strategy.__name__},
+      {"$set": {
+         "holdings": holdings_doc,
+         "amount_cash": strategy_doc["amount_cash"],
+         "total_trades": strategy_doc["total_trades"],
+         "successful_trades": strategy_doc["successful_trades"],
+         "failed_trades": strategy_doc["failed_trades"],
+         "neutral_trades": strategy_doc["neutral_trades"],
+         "last_updated": datetime.now()
+      }},
+      upsert=True
+   )
 
-    points_collection.update_one(
-        {"strategy": strategy.__name__},
-        {"$set": {"last_updated": datetime.now()}},
-        upsert=True
-    )
+   points_collection.update_one(
+      {"strategy": strategy.__name__},
+      {"$set": {
+         "total_points": points_doc["total_points"],
+         "last_updated": datetime.now()}},
+      upsert=True
+   )
 
-    # Close the MongoDB connection
-    client.close()
+   # Close the MongoDB connection
+   client.close()
 
 def update_portfolio_values():
    """
