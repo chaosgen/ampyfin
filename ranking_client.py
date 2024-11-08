@@ -237,7 +237,7 @@ def simulate_trade(ticker, strategy, historical_data, current_price, account_cas
         
    else:
       logging.info(f"Action: {action} | Ticker: {ticker} | Quantity: {quantity} | Price: {current_price}")
-       
+   print(f"Action: {action} | Ticker: {ticker} | Quantity: {quantity} | Price: {current_price}")
    # Update the strategy document in MongoDB
    holdings_collection.update_one(
       {"strategy": strategy.__name__},
@@ -260,7 +260,7 @@ def simulate_trade(ticker, strategy, historical_data, current_price, account_cas
          "last_updated": datetime.now()}},
       upsert=True
    )
-
+   print("Holdings updated in MongoDB")
    # Close the MongoDB connection
    client.close()
 

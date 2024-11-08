@@ -19,7 +19,7 @@ import logging
 from collections import Counter
 from statistics import median, mode
 import statistics
-
+import heapq
 
 
 # MongoDB connection string
@@ -63,14 +63,14 @@ def weighted_majority_decision_and_median_quantity(decisions_and_quantities):
         elif decision == 'hold':
             hold_weight += weight
     
-    print(f"buy_weight: {buy_weight}, sell_weight: {sell_weight}, hold_weight: {hold_weight}")
+    
     # Determine the majority decision based on the highest accumulated weight
     if buy_weight > sell_weight and buy_weight > hold_weight:
-        return 'buy', median(weighted_buy_quantities) if weighted_buy_quantities else 0
+        return 'buy', median(weighted_buy_quantities) if weighted_buy_quantities else 0, buy_weight, sell_weight, hold_weight
     elif sell_weight > buy_weight and sell_weight > hold_weight:
-        return 'sell', median(weighted_sell_quantities) if weighted_sell_quantities else 0
+        return 'sell', median(weighted_sell_quantities) if weighted_sell_quantities else 0, buy_weight, sell_weight, hold_weight
     else:
-        return 'hold', 0
+        return 'hold', 0, buy_weight, sell_weight, hold_weight
 
 def main():
     """
@@ -83,8 +83,8 @@ def main():
     trading_client = TradingClient(API_KEY, API_SECRET)
     data_client = StockHistoricalDataClient(API_KEY, API_SECRET)
     mongo_client = MongoClient(mongo_url)
-    db = mongo_client.assets
-    asset_collection = db.asset_quantities
+    db = mongo_client.trades
+    asset_collection = db.assets_quantities
     strategy_to_coefficient = {}
     while True:
         status = market_status(client)  # Use the helper function for market status
@@ -109,7 +109,7 @@ def main():
                     early_hour_first_iteration = False
                     post_hour_first_iteration = True
             account = trading_client.get_account()
-
+            buy_heap = []
             for ticker in ndaq_tickers:
                 decisions_and_quantities = []
                 buying_power = float(account.cash)
@@ -123,7 +123,8 @@ def main():
                     current_price = data['Close'].iloc[-1]
 
                     asset_info = asset_collection.find_one({'symbol': ticker})
-                    portfolio_qty = asset_info['qty'] if asset_info else 0.0
+                    portfolio_qty = asset_info['quantity'] if asset_info else 0.0
+                    
                     """
                     use weight from each strategy to determine how much each decision will be weighed. weights will be in decimal
                     """
@@ -134,18 +135,15 @@ def main():
                         weight = strategy_to_coefficient[strategy.__name__]
                         
                         decisions_and_quantities.append((decision, quantity, weight))
-                    decision, quantity = weighted_majority_decision_and_median_quantity(decisions_and_quantities)
-                    
+                    decision, quantity, buy_weight, sell_weight, hold_weight = weighted_majority_decision_and_median_quantity(decisions_and_quantities)
+                    print(f"Ticker: {ticker}, Decision: {decision}, Quantity: {quantity}, Weights: Buy: {buy_weight}, Sell: {sell_weight}, Hold: {hold_weight}")
                     """
                     later we should implement buying_power regulator depending on vix strategy
                     for now in bull: 15000
                     for bear: 5000
                     """
                     if decision == "buy" and float(account.cash) - (quantity * get_latest_price(ticker)) > 15000:
-                        order = place_order(trading_client, ticker, OrderSide.BUY, qty=quantity, mongo_url=mongo_url)  # Place order using helper
-                        
-                        
-                        logging.info(f"Executed BUY order for {ticker}: {order}")
+                        heapq.heappush(buy_heap, (-(buy_weight-sell_weight), quantity, ticker))
                     elif decision == "sell" and portfolio_qty > 0:
                         order = place_order(trading_client, ticker, OrderSide.SELL, qty=quantity, mongo_url=mongo_url)  # Place order using helper
                         
@@ -157,6 +155,13 @@ def main():
                 except Exception as e:
                     logging.error(f"Error processing {ticker}: {e}")
 
+            
+            while buy_heap and float(account.cash) > 15000:
+                buy_coeff, quantity, ticker = heapq.heappop(buy_heap)
+                print(f"buy_coeff: {buy_coeff}, quantity: {quantity}, ticker: {ticker}")
+                order = place_order(trading_client, ticker, OrderSide.BUY, qty=quantity, mongo_url=mongo_url)  # Place order using helper
+                logging.info(f"Executed BUY order for {ticker}: {order}")
+            print("Sleeping for 30 seconds...")
             time.sleep(30)
 
         elif status == "early_hours":
