@@ -120,7 +120,7 @@ def main():
                     historical_data = get_historical_data(ticker, data_client)
                     ticker_yahoo = yf.Ticker(ticker)
                     data = ticker_yahoo.history()
-                    current_price = data['Close'].iloc[-1]
+                    current_price = get_latest_price(ticker)
 
                     asset_info = asset_collection.find_one({'symbol': ticker})
                     portfolio_qty = asset_info['quantity'] if asset_info else 0.0
