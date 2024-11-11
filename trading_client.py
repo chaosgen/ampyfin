@@ -142,7 +142,7 @@ def main():
                     for now in bull: 15000
                     for bear: 5000
                     """
-                    if decision == "buy" and float(account.cash) - (quantity * get_latest_price(ticker)) > 15000:
+                    if decision == "buy" and float(account.cash) > 15000:
                         heapq.heappush(buy_heap, (-(buy_weight-sell_weight), quantity, ticker))
                     elif decision == "sell" and portfolio_qty > 0:
                         order = place_order(trading_client, ticker, OrderSide.SELL, qty=quantity, mongo_url=mongo_url)  # Place order using helper
@@ -156,11 +156,15 @@ def main():
                     logging.error(f"Error processing {ticker}: {e}")
 
             
-            while buy_heap and float(account.cash) > 15000:
+            while buy_heap and float(account.cash) > 15000:  
                 buy_coeff, quantity, ticker = heapq.heappop(buy_heap)
                 print(f"buy_coeff: {buy_coeff}, quantity: {quantity}, ticker: {ticker}")
                 order = place_order(trading_client, ticker, OrderSide.BUY, qty=quantity, mongo_url=mongo_url)  # Place order using helper
                 logging.info(f"Executed BUY order for {ticker}: {order}")
+                trading_client = TradingClient(API_KEY, API_SECRET)
+                account = trading_client.get_account()
+                
+                
             print("Sleeping for 30 seconds...")
             time.sleep(30)
 
@@ -192,4 +196,5 @@ def main():
             time.sleep(60)
 
 if __name__ == "__main__":
+    
     main()
