@@ -87,12 +87,16 @@ def main():
     asset_collection = db.assets_quantities
     strategy_to_coefficient = {}
     while True:
+        client = RESTClient(api_key=POLYGON_API_KEY)
+        trading_client = TradingClient(API_KEY, API_SECRET)
+        data_client = StockHistoricalDataClient(API_KEY, API_SECRET)
         status = market_status(client)  # Use the helper function for market status
+        db = mongo_client.trades
+        asset_collection = db.assets_quantities
         market_db = mongo_client.market_data
         market_collection = market_db.market_status
         
         market_collection.update_one({}, {"$set": {"market_status": status}})
-            
         
 
         if status == "open":
@@ -112,11 +116,15 @@ def main():
             buy_heap = []
             for ticker in ndaq_tickers:
                 decisions_and_quantities = []
-                buying_power = float(account.cash)
-                portfolio_value = float(account.portfolio_value)
-                cash_to_portfolio_ratio = buying_power / portfolio_value
-                
                 try:
+                    trading_client = TradingClient(API_KEY, API_SECRET)
+                    account = trading_client.get_account()
+                
+                    buying_power = float(account.cash)
+                    portfolio_value = float(account.portfolio_value)
+                    cash_to_portfolio_ratio = buying_power / portfolio_value
+                
+                
                     historical_data = get_historical_data(ticker, data_client)
                     ticker_yahoo = yf.Ticker(ticker)
                     data = ticker_yahoo.history()
@@ -142,7 +150,7 @@ def main():
                     for now in bull: 15000
                     for bear: 5000
                     """
-                    if decision == "buy" and float(account.cash) > 15000:
+                    if decision == "buy" and float(account.cash) > 15000 and (current_price(ticker) * (quantity + portfolio_qty))/portfolio_value < 0.05:
                         heapq.heappush(buy_heap, (-(buy_weight-sell_weight), quantity, ticker))
                     elif decision == "sell" and portfolio_qty > 0:
                         order = place_order(trading_client, ticker, OrderSide.SELL, qty=quantity, mongo_url=mongo_url)  # Place order using helper
@@ -157,13 +165,19 @@ def main():
 
             
             while buy_heap and float(account.cash) > 15000:  
-                buy_coeff, quantity, ticker = heapq.heappop(buy_heap)
-                print(f"buy_coeff: {buy_coeff}, quantity: {quantity}, ticker: {ticker}")
-                order = place_order(trading_client, ticker, OrderSide.BUY, qty=quantity, mongo_url=mongo_url)  # Place order using helper
-                logging.info(f"Executed BUY order for {ticker}: {order}")
-                trading_client = TradingClient(API_KEY, API_SECRET)
-                account = trading_client.get_account()
-                
+                try:
+                    buy_coeff, quantity, ticker = heapq.heappop(buy_heap)
+                    print(f"buy_coeff: {buy_coeff}, quantity: {quantity}, ticker: {ticker}")
+                    order = place_order(trading_client, ticker, OrderSide.BUY, qty=quantity, mongo_url=mongo_url)  # Place order using helper
+                    logging.info(f"Executed BUY order for {ticker}: {order}")
+                    trading_client = TradingClient(API_KEY, API_SECRET)
+                    account = trading_client.get_account()
+                    
+                    
+                except:
+                    print("Error occurred while executing buy order. Continuing...")
+                    break
+            
                 
             print("Sleeping for 30 seconds...")
             time.sleep(30)

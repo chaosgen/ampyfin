@@ -335,7 +335,8 @@ def main():
    holdings_collection = db.algorithm_holdings  
    
    
-   while True:  
+   while True: 
+        
       status = mongo_client.market_data.market_status.find_one({})["market_status"]
       
       if status == "open":  
