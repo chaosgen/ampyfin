@@ -1,31 +1,32 @@
 ﻿# AmpyFin Trading Bot
 ![](logo.png)
 
-## 1. Introduction
+## Introduction
 Picture this: A trading system so advanced, it's like having 60 expert traders working for you around the clock. Sounds too good to be true?
 
 Meet **AmpyFin**, the AI-powered bot that's turning this fantasy into reality for NASDAQ-100 traders. Curious about how it works? You're in the right place.
 
-## 2. AmpyFin's Data Collection Power
+## AmpyFin's Data Collection Power
 AmpyFin starts its day by tapping into the **Financial Modeling Prep API** to fetch NASDAQ-100 ticker data, giving it a sneak peek into the market. 
 
 AmpyFin doesn't stop there—it's constantly checking market status in real-time using the **Polygon API**. This helps AmpyFin stay ahead of the game and make decisions based on the most current market conditions.
 
 All of this data is stored securely in **MongoDB**, ensuring quick access to market information and trading activity logs, giving AmpyFin a real edge over the competition.
 
-## 3. 60 Algorithms at Work
+## 60 Algorithms at Work
 Imagine having 60 of the world's top traders working for you 24/7. That’s what AmpyFin does with its diverse collection of algorithms.
 
 These 60 algorithms range from basic strategies like **mean reversion** to more complex, **AI-driven** approaches. Each algorithm runs simulated trades during market hours, logging every success and failure. This constant testing helps AmpyFin refine its strategies and learn from every move, all while minimizing risk in the process.
 
-In practice, AmpyFin uses strategies such as:
+In practice, AmpyFin uses simple strategies such as:
 - **Mean Reversion**: Asset prices return to their historical averages.
 - **Momentum**: Capitalizing on current market trends.
 - **Arbitrage**: Looking for price discrepancies between related assets.
+to more complex ones that utilize its own AI libraries to recommend trades.
 
 Each algorithm contributes its unique strength to the overall strategy, and the best-performing ones are given greater influence in the final trading decisions.
 
-## 4. The Genius of Dynamic Ranking
+## How Dynamic Ranking Works
 Managing 60 algorithms would be chaos if it weren’t for AmpyFin’s dynamic ranking system. Each algorithm starts with a base score of 0 and is ranked based on its performance—both real and simulated.
 
 AmpyFin uses a special formula to calculate a coefficient for each algorithm:
@@ -41,7 +42,7 @@ The dynamic ranking system helps AmpyFin:
 - Balance risk and reward.
 - Prioritize high-performing strategies automatically.
 
-## 5. Features
+## Features
 - **NASDAQ-100 Ticker Retrieval**: Fetches tickers using the Financial Modeling Prep API during early market hours.
 - **Market Status Monitoring**: Monitors market status (open, closed, premarket) in real-time with the Polygon API.
 - **Algorithm Ranking System**: Dynamically adjusts algorithm rankings based on profitability.
@@ -49,7 +50,7 @@ The dynamic ranking system helps AmpyFin:
 - **Data Storage**: MongoDB for storing ticker data and trading activity logs.
 - **Customizable**: Easily extend trading strategies and configurations.
 
-## 6. File Structure and Objectives
+## File Structure and Objectives
 
 ### `client.py`
 - **Objective**: Orchestrates both trading and ranking clients.
@@ -74,7 +75,7 @@ The dynamic ranking system helps AmpyFin:
   - Updates algorithm scores based on trade performance.
   - Refreshes rankings every 30 seconds.
 
-### `trading_strategies#.py`
+### `trading_strategies.py`
 - **Objective**: Defines various trading strategies.
 - **Features**:
   - Includes strategies like mean reversion, momentum, and arbitrage.
@@ -84,7 +85,7 @@ The dynamic ranking system helps AmpyFin:
 - **`client_helper.py`**: Common functions for client operations (MongoDB setup, error handling).
 - **`ranking_helper.py`**: Functions for updating rankings based on performance.
 
-## 7. Table of Contents
+## Table of Contents
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [API Setup](#api-setup)
@@ -94,7 +95,7 @@ The dynamic ranking system helps AmpyFin:
 - [Contributing](#contributing)
 - [License](#license)
 
-## 8. Installation
+## Installation
 
 1. **Clone the Repository**:
     ```bash
@@ -111,7 +112,7 @@ The dynamic ranking system helps AmpyFin:
    - Sign up for a MongoDB cluster (e.g., via [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)).
    - Get your MongoDB connection string and create a database for stock data storage.
 
-## 9. Configuration
+## Configuration
 
 1. **Create `config.py`**:
    - Copy `config_template.py` to `config.py` and enter your API keys and MongoDB credentials.
@@ -125,7 +126,7 @@ The dynamic ranking system helps AmpyFin:
     BASE_URL = "https://paper-api.alpaca.markets"
     ```
 
-## 10. API Setup
+## API Setup
 
 ### Polygon API
 1. Sign up at [Polygon.io](https://polygon.io/) and get an API key.
@@ -139,13 +140,13 @@ The dynamic ranking system helps AmpyFin:
 1. Sign up at [Alpaca](https://alpaca.markets/) and get API keys.
 2. Add them to `config.py` as `API_KEY` and `API_SECRET`.
 
-## 11. Usage
+## Usage
 
 To start the bot, execute on two separate terminals:
 ```bash
 python ranking_client.py
 python trading_client.py
-
+,,,
 
 ## Logging
 
