@@ -1,5 +1,3 @@
-# client_helper.py
-
 from pymongo import MongoClient
 from alpaca.trading.client import TradingClient
 from alpaca.trading.requests import MarketOrderRequest
@@ -24,6 +22,16 @@ from strategies.trading_strategies_v2 import (
    ichimoku_cloud_strategy, klinger_oscillator_strategy, money_flow_index_strategy,  
    on_balance_volume_strategy, stochastic_oscillator_strategy, euler_fibonacci_zone_strategy  
 )
+from strategies.trading_strategies_v2_1 import (
+    pairs_trading_strategy, kalman_filter_strategy, regime_switching_strategy, adaptive_momentum_filter_strategy,
+    topological_data_analysis_strategy, levy_distribution_strategy,
+    wavelet_momentum_strategy, complex_network_strategy, quantum_oscillator_strategy, simple_trend_reversal_strategy
+)
+
+
+beta_strategies = [pairs_trading_strategy, kalman_filter_strategy, regime_switching_strategy, adaptive_momentum_filter_strategy,
+                   topological_data_analysis_strategy, levy_distribution_strategy,
+                   wavelet_momentum_strategy, complex_network_strategy, quantum_oscillator_strategy, simple_trend_reversal_strategy]
 
 strategies = [rsi_strategy, bollinger_bands_strategy, momentum_strategy, mean_reversion_strategy,  
    triple_moving_average_strategy, volume_price_trend_strategy, keltner_channel_strategy,  
@@ -39,7 +47,7 @@ strategies = [rsi_strategy, bollinger_bands_strategy, momentum_strategy, mean_re
    adaptive_channel_strategy, wavelet_decomposition_strategy, entropy_flow_strategy,  
    bollinger_band_width_strategy, commodity_channel_index_strategy, force_index_strategy,  
    ichimoku_cloud_strategy, klinger_oscillator_strategy, money_flow_index_strategy,  
-   on_balance_volume_strategy, stochastic_oscillator_strategy, euler_fibonacci_zone_strategy]
+   on_balance_volume_strategy, stochastic_oscillator_strategy, euler_fibonacci_zone_strategy] + beta_strategies
 from urllib.request import urlopen
 import json
 import certifi

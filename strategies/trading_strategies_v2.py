@@ -15,7 +15,6 @@ from scipy.spatial.distance import pdist, squareform
 from scipy.special import zeta  # For Riemann zeta function
 
 
-
 # Function to fetch historical bar data using Alpaca StockHistoricalDataClient
 def get_historical_data(ticker, client, days=100):
     """

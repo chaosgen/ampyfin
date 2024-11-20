@@ -2,7 +2,7 @@
 ![](logo.png)
 
 ## 1. Introduction
-Picture this: A trading system so advanced, it's like having 200 expert traders working for you around the clock. Sounds too good to be true?
+Picture this: A trading system so advanced, it's like having 60 expert traders working for you around the clock. Sounds too good to be true?
 
 Meet **AmpyFin**, the AI-powered bot that's turning this fantasy into reality for NASDAQ-100 traders. Curious about how it works? You're in the right place.
 
@@ -13,10 +13,10 @@ AmpyFin doesn't stop there—it's constantly checking market status in real-time
 
 All of this data is stored securely in **MongoDB**, ensuring quick access to market information and trading activity logs, giving AmpyFin a real edge over the competition.
 
-## 3. 200 Algorithms at Work
-Imagine having 200 of the world's top traders working for you 24/7. That’s what AmpyFin does with its diverse collection of algorithms.
+## 3. 60 Algorithms at Work
+Imagine having 60 of the world's top traders working for you 24/7. That’s what AmpyFin does with its diverse collection of algorithms.
 
-These 200 algorithms range from basic strategies like **mean reversion** to more complex, **AI-driven** approaches. Each algorithm runs simulated trades during market hours, logging every success and failure. This constant testing helps AmpyFin refine its strategies and learn from every move, all while minimizing risk in the process.
+These 60 algorithms range from basic strategies like **mean reversion** to more complex, **AI-driven** approaches. Each algorithm runs simulated trades during market hours, logging every success and failure. This constant testing helps AmpyFin refine its strategies and learn from every move, all while minimizing risk in the process.
 
 In practice, AmpyFin uses strategies such as:
 - **Mean Reversion**: Asset prices return to their historical averages.
@@ -26,7 +26,7 @@ In practice, AmpyFin uses strategies such as:
 Each algorithm contributes its unique strength to the overall strategy, and the best-performing ones are given greater influence in the final trading decisions.
 
 ## 4. The Genius of Dynamic Ranking
-Managing 200 algorithms would be chaos if it weren’t for AmpyFin’s dynamic ranking system. Each algorithm starts with a base score of 0 and is ranked based on its performance—both real and simulated.
+Managing 60 algorithms would be chaos if it weren’t for AmpyFin’s dynamic ranking system. Each algorithm starts with a base score of 0 and is ranked based on its performance—both real and simulated.
 
 AmpyFin uses a special formula to calculate a coefficient for each algorithm:
 

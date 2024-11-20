@@ -1,7 +1,8 @@
 from polygon import RESTClient
 from config import POLYGON_API_KEY, FINANCIAL_PREP_API_KEY, MONGO_DB_USER, MONGO_DB_PASS, API_KEY, API_SECRET, BASE_URL
-import json
-import certifi
+import threading
+from concurrent.futures import ThreadPoolExecutor
+
 from urllib.request import urlopen
 from zoneinfo import ZoneInfo
 from pymongo import MongoClient
@@ -47,23 +48,7 @@ import logging
 from collections import Counter
 from trading_client import market_status
 from helper_files.client_helper import strategies, get_latest_price, get_ndaq_tickers
-from strategies.trading_strategies_v2 import (  
-   rsi_strategy, bollinger_bands_strategy, momentum_strategy, mean_reversion_strategy,  
-   triple_moving_average_strategy, volume_price_trend_strategy, keltner_channel_strategy,  
-   dual_thrust_strategy, adaptive_momentum_strategy, hull_moving_average_strategy,  
-   elder_ray_strategy, chande_momentum_strategy, dema_strategy, price_channel_strategy,  
-   mass_index_strategy, vortex_indicator_strategy, aroon_strategy, ultimate_oscillator_strategy,  
-   trix_strategy, kst_strategy, psar_strategy, stochastic_momentum_strategy,  
-   williams_vix_fix_strategy, conners_rsi_strategy, dpo_strategy, fisher_transform_strategy,  
-   ehlers_fisher_strategy, schaff_trend_cycle_strategy, rainbow_oscillator_strategy,  
-   heikin_ashi_strategy, volume_weighted_macd_strategy, fractal_adaptive_moving_average_strategy,  
-   relative_vigor_index_strategy, center_of_gravity_strategy, kauffman_efficiency_strategy,  
-   phase_change_strategy, volatility_breakout_strategy, momentum_divergence_strategy,  
-   adaptive_channel_strategy, wavelet_decomposition_strategy, entropy_flow_strategy,  
-   bollinger_band_width_strategy, commodity_channel_index_strategy, force_index_strategy,  
-   ichimoku_cloud_strategy, klinger_oscillator_strategy, money_flow_index_strategy,  
-   on_balance_volume_strategy, stochastic_oscillator_strategy, euler_fibonacci_zone_strategy  
-)
+
 from datetime import datetime 
 import heapq 
 
@@ -116,29 +101,34 @@ def initialize_rank():
    
    for strategy in strategies:  
          strategy_name = strategy.__name__ 
-         print(strategy_name)
+         
          collections = db.algorithm_holdings 
-         collections.insert_one({  
-            "strategy": strategy_name,  
-            "holdings": {},  
-            "amount_cash": 50000,  
-            "initialized_date": initialization_date,  
-            "total_trades": 0,  
-            "successful_trades": 0,
-            "neutral_trades": 0,
-            "failed_trades": 0,  
-            "current_portfolio_value": 50000,  
-            "last_updated": initialization_date, 
-            "portfolio_value": 50000 
-        })  
-    
-         collections = db.points_tally  
-         collections.insert_one({  
-            "strategy": strategy_name,  
-            "total_points": 0,  
-            "initialized_date": initialization_date,  
-            "last_updated": initialization_date  
-         })  
+         
+         if not collections.find_one({"strategy": strategy_name}):
+            collections.insert_one({  
+               "strategy": strategy_name,  
+               "holdings": {},  
+               "amount_cash": 50000,  
+               "initialized_date": initialization_date,  
+               "total_trades": 0,  
+               "successful_trades": 0,
+               "neutral_trades": 0,
+               "failed_trades": 0,   
+               "last_updated": initialization_date, 
+               "portfolio_value": 50000 
+            })  
+      
+            collections = db.points_tally  
+            collections.insert_one({  
+               "strategy": strategy_name,  
+               "total_points": 0,  
+               "initialized_date": initialization_date,  
+               "last_updated": initialization_date  
+            })  
+         
+         
+
+      
    client.close()
 
 def simulate_trade(ticker, strategy, historical_data, current_price, account_cash, portfolio_qty, total_portfolio_value, mongo_url):
@@ -159,7 +149,9 @@ def simulate_trade(ticker, strategy, historical_data, current_price, account_cas
    strategy_doc = holdings_collection.find_one({"strategy": strategy.__name__})
    holdings_doc = strategy_doc.get("holdings", {})
    time_delta = db.time_delta['time_delta']
-    
+   
+   
+   
    # Update holdings and cash based on trade action
    if action in ["buy", "strong buy"] and strategy_doc["amount_cash"] - quantity * current_price > 15000:
       logging.info(f"Action: {action} | Ticker: {ticker} | Quantity: {quantity} | Price: {current_price}")
@@ -182,7 +174,8 @@ def simulate_trade(ticker, strategy, historical_data, current_price, account_cas
       strategy_doc["amount_cash"] -= quantity * current_price
       strategy_doc["total_trades"] += 1
 
-   elif action in ["sell", "strong sell"] and ticker in holdings_doc and holdings_doc[ticker]["quantity"] > 0:
+   elif action in ["sell", "strong sell"] and str(ticker) in holdings_doc and holdings_doc[str(ticker)]["quantity"] > 0:
+      
       logging.info(f"Action: {action} | Ticker: {ticker} | Quantity: {quantity} | Price: {current_price}")
       current_qty = holdings_doc[ticker]["quantity"]
         
@@ -260,7 +253,7 @@ def simulate_trade(ticker, strategy, historical_data, current_price, account_cas
          "last_updated": datetime.now()}},
       upsert=True
    )
-   print("Holdings updated in MongoDB")
+   
    # Close the MongoDB connection
    client.close()
 
@@ -392,8 +385,9 @@ def main():
             logging.info("Market is closed. Performing post-market analysis.") 
             post_market_hour_first_iteration = False
             #increment time_Delta in database by 0.01
-            
+            mongo_client = MongoClient(mongo_url)
             mongo_client.trading_simulator.time_delta.update_one({}, {"$inc": {"time_delta": 0.01}})
+            mongo_client.close()
             
             #Update ranks
             update_portfolio_values()

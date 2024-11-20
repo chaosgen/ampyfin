@@ -3,13 +3,13 @@ from datetime import datetime, timedelta
 from alpaca.data.historical import StockHistoricalDataClient  
 from alpaca.data.requests import StockBarsRequest  
 from alpaca.data.timeframe import TimeFrame  
-from config import API_KEY, API_SECRET  
+from config import API_KEY, API_SECRET, FINANCIAL_PREP_API_KEY
 import strategies.trading_strategies_v2 as trading_strategies_v2
 import helper_files.client_helper
 from pymongo import MongoClient
 from helper_files.client_helper import get_ndaq_tickers
 from config import MONGO_DB_USER, MONGO_DB_PASS
-
+from helper_files.client_helper import strategies
 mongo_url = f"mongodb+srv://{MONGO_DB_USER}:{MONGO_DB_PASS}@cluster0.0qoxq.mongodb.net"
 
 def get_historical_data(ticker, client, days=100):  
@@ -37,38 +37,37 @@ def test_strategies():
    # Initialize the StockHistoricalDataClient  
    client = StockHistoricalDataClient(API_KEY, API_SECRET)  
    mongo_client = MongoClient() 
-   tickers = get_ndaq_tickers(mongo_url)
-   tickers = tickers + ['DBRG', 'WTFC', 'AESI', 'MDB', 'SNPS', 'CRUS', 'RRR', 'CI', 'OSK', 'AZZ']
+   tickers = get_ndaq_tickers(mongo_url, FINANCIAL_PREP_API_KEY)
+   mongo_client.close()
+
+   
    # Define test parameters  
    for ticker in tickers:  
-    account_cash = 10000  
-    portfolio_qty = 100
-    total_portfolio_value = 100000  
+      account_cash = 10000  
+      portfolio_qty = 0
+      total_portfolio_value = 100000  
     
-    historical_data = get_historical_data(ticker, client) 
-    current_price = historical_data['close'].iloc[-1]
-    # Test each strategy  
-    strategies = [  
-        trading_strategies_v2.conners_rsi_strategy
-        
-    ] 
-    
-    for strategy in strategies:  
-        decision, quantity, ticker = strategy(  
-            ticker,  
-            current_price,  
-            historical_data,  
-            account_cash,  
-            portfolio_qty,  
-            total_portfolio_value  
-        )  
-        if decision != "hold":
-         print(f"{strategy.__name__}:")  
-         print(f"  Decision: {decision}")  
-         print(f"  Ticker: {ticker}")  
-         print(f"  Quantity: {quantity}")  
-         print("__________________________________________________")  
-   mongo_client.close()
+      historical_data = get_historical_data(ticker, client) 
+      current_price = historical_data['close'].iloc[-1]
+      # Test each strategy  
+      
+      
+      for strategy in strategies:  
+         try:
+            decision, quantity, ticker = strategy(  
+                  ticker,  
+                  current_price,  
+                  historical_data,  
+                  account_cash,  
+                  portfolio_qty,  
+                  total_portfolio_value  
+            )
+            if decision == "sell":
+               print(f"Strategy {strategy.__name__} recommends {ticker} and {decision} and {quantity}")
+
+         except Exception as e:
+            print(f"ERROR processing {ticker} for {strategy.__name__}: {e}")
+
 def test_helper():
    print(helper_files.client_helper.get_latest_price("AAPL"))
 if __name__ == "__main__":  
