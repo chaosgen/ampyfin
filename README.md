@@ -1,66 +1,90 @@
 ﻿# AmpyFin Trading Bot
 ![](logo.png)
 
-## Overview
+## 1. Introduction
+Picture this: A trading system so advanced, it's like having 200 expert traders working for you around the clock. Sounds too good to be true?
 
-AmpyFin Trading Bot is a high-performance NASDAQ-100 trading bot that uses a ranked ensemble learning system with 50 trading algorithms. Each algorithm's rank dynamically adjusts based on the profitability of hypothetical buy/sell decisions, optimizing final trading decisions. The bot is configured for paper trading by default, allowing for safe testing and refinement of strategies. Transitioning to live trading is as simple as updating API keys and adjusting configuration settings.
+Meet **AmpyFin**, the AI-powered bot that's turning this fantasy into reality for NASDAQ-100 traders. Curious about how it works? You're in the right place.
 
-## Features
+## 2. AmpyFin's Data Collection Power
+AmpyFin starts its day by tapping into the **Financial Modeling Prep API** to fetch NASDAQ-100 ticker data, giving it a sneak peek into the market. 
 
-- **NASDAQ-100 Ticker Retrieval**: Fetches tickers using the Financial Modeling Prep API during early market hours.
-- **Market Status Monitoring**: Checks market status in real-time (open, closed, premarket) with the Polygon API.
-- **Algorithm Ranking System**: Adjusts algorithm rankings based on performance to optimize trading decisions.
-- **Paper Trading**: Safe testing environment, with live trading option available via configuration.
-- **Data Storage**: Utilizes MongoDB for secure storage of ticker data and trading activity logs.
-- **Customizable**: Allows for the extension of trading strategies and configurations.
+AmpyFin doesn't stop there—it's constantly checking market status in real-time using the **Polygon API**. This helps AmpyFin stay ahead of the game and make decisions based on the most current market conditions.
 
-## Algorithm Ranking System
+All of this data is stored securely in **MongoDB**, ensuring quick access to market information and trading activity logs, giving AmpyFin a real edge over the competition.
 
-Each trading algorithm starts with a base score of 0. Rankings are updated dynamically based on the algorithm’s profitability, using a coefficient calculated as:
+## 3. 200 Algorithms at Work
+Imagine having 200 of the world's top traders working for you 24/7. That’s what AmpyFin does with its diverse collection of algorithms.
+
+These 200 algorithms range from basic strategies like **mean reversion** to more complex, **AI-driven** approaches. Each algorithm runs simulated trades during market hours, logging every success and failure. This constant testing helps AmpyFin refine its strategies and learn from every move, all while minimizing risk in the process.
+
+In practice, AmpyFin uses strategies such as:
+- **Mean Reversion**: Asset prices return to their historical averages.
+- **Momentum**: Capitalizing on current market trends.
+- **Arbitrage**: Looking for price discrepancies between related assets.
+
+Each algorithm contributes its unique strength to the overall strategy, and the best-performing ones are given greater influence in the final trading decisions.
+
+## 4. The Genius of Dynamic Ranking
+Managing 200 algorithms would be chaos if it weren’t for AmpyFin’s dynamic ranking system. Each algorithm starts with a base score of 0 and is ranked based on its performance—both real and simulated.
+
+AmpyFin uses a special formula to calculate a coefficient for each algorithm:
 
 $$
 \left( \frac{e^e}{e^2 - 1} \right)^{2i}
 $$
 
-where \(i\) is the inverse of the algorithm’s ranking. This creates a system where the highest-ranked algorithms contribute more heavily to the bot’s decisions, adapting to changing market conditions.
+Where \(i\) is the inverse of the algorithm's ranking. This ranking system adjusts the influence each algorithm has on the bot’s decisions, ensuring that the highest-ranked algorithms are given more weight during trading.
 
-## File Structure and Objectives
+The dynamic ranking system helps AmpyFin:
+- Adapt to changing market conditions.
+- Balance risk and reward.
+- Prioritize high-performing strategies automatically.
+
+## 5. Features
+- **NASDAQ-100 Ticker Retrieval**: Fetches tickers using the Financial Modeling Prep API during early market hours.
+- **Market Status Monitoring**: Monitors market status (open, closed, premarket) in real-time with the Polygon API.
+- **Algorithm Ranking System**: Dynamically adjusts algorithm rankings based on profitability.
+- **Paper Trading**: Simulated trading environment for safe strategy testing, with an option for live trading.
+- **Data Storage**: MongoDB for storing ticker data and trading activity logs.
+- **Customizable**: Easily extend trading strategies and configurations.
+
+## 6. File Structure and Objectives
 
 ### `client.py`
 - **Objective**: Orchestrates both trading and ranking clients.
 - **Features**:
   - Initiates trading and ranking clients at appropriate times.
-  - Ensures trading operations during premarket and market hours.
+  - Manages trading operations during market hours.
   - Includes error handling and logs system performance.
 
 ### `trading_client.py`
 - **Objective**: Executes trading based on algorithmic decisions.
 - **Features**:
   - Executes trading algorithms every 60 seconds.
-  - Manages a minimum balance of $15,000 and maintains 30% liquidity.
-  - Logs all trades with timestamps, stock details, price, and reasons.
-  - Includes checks for sufficient balance, unauthorized selling, and automatic sell-off conditions.
+  - Ensures a minimum balance of $15,000 and maintains 30% liquidity.
+  - Logs trades with timestamps, stock details, and reasons.
+  - Validates balance and prevents unauthorized selling.
 
 ### `ranking_client.py`
 - **Objective**: Runs the ranking algorithm to evaluate and rank trading strategies.
 - **Features**:
   - Downloads and stores NASDAQ-100 tickers in MongoDB.
   - Executes strategies on each ticker.
-  - Updates algorithm scores based on trade success.
-  - Includes a 30-second interval between ranking updates.
+  - Updates algorithm scores based on trade performance.
+  - Refreshes rankings every 30 seconds.
 
 ### `trading_strategies#.py`
-- **Objective**: Defines multiple trading strategies with a standardized interface.
+- **Objective**: Defines various trading strategies.
 - **Features**:
   - Includes strategies like mean reversion, momentum, and arbitrage.
-  - Ensures consistent decision-making across all strategies.
+  - Ensures consistency across strategy decision-making.
 
 ### Helper Files
 - **`client_helper.py`**: Common functions for client operations (MongoDB setup, error handling).
 - **`ranking_helper.py`**: Functions for updating rankings based on performance.
 
-## Table of Contents
-
+## 7. Table of Contents
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [API Setup](#api-setup)
@@ -70,7 +94,7 @@ where \(i\) is the inverse of the algorithm’s ranking. This creates a system w
 - [Contributing](#contributing)
 - [License](#license)
 
-## Installation
+## 8. Installation
 
 1. **Clone the Repository**:
     ```bash
@@ -87,7 +111,7 @@ where \(i\) is the inverse of the algorithm’s ranking. This creates a system w
    - Sign up for a MongoDB cluster (e.g., via [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)).
    - Get your MongoDB connection string and create a database for stock data storage.
 
-## Configuration
+## 9. Configuration
 
 1. **Create `config.py`**:
    - Copy `config_template.py` to `config.py` and enter your API keys and MongoDB credentials.
@@ -101,7 +125,7 @@ where \(i\) is the inverse of the algorithm’s ranking. This creates a system w
     BASE_URL = "https://paper-api.alpaca.markets"
     ```
 
-## API Setup
+## 10. API Setup
 
 ### Polygon API
 1. Sign up at [Polygon.io](https://polygon.io/) and get an API key.
@@ -115,13 +139,12 @@ where \(i\) is the inverse of the algorithm’s ranking. This creates a system w
 1. Sign up at [Alpaca](https://alpaca.markets/) and get API keys.
 2. Add them to `config.py` as `API_KEY` and `API_SECRET`.
 
-## Usage
+## 11. Usage
 
 To start the bot, execute on two separate terminals:
-```python
+```bash
 python ranking_client.py
 python trading_client.py
-```
 
 
 ## Logging
