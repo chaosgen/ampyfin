@@ -66,6 +66,17 @@ logging.basicConfig(
 # Connect to MongoDB  
 mongo_url = f"mongodb+srv://{MONGO_DB_USER}:{MONGO_DB_PASS}@cluster0.0qoxq.mongodb.net"
 
+def find_nans_within_rank_holding():
+   mongo_client = MongoClient(mongo_url)
+   db = mongo_client.trading_simulator
+   collections = db.algorithm_holdings
+   for strategy in strategies:
+      strategy_doc = collections.find_one({"strategy": strategy.__name__})
+      holdings_doc = strategy_doc.get("holdings", {})
+      for ticker in holdings_doc:
+         if holdings_doc[ticker]['quantity'] == 0:
+            print(f"{ticker} : {strategy.__name__}")
+
 def insert_rank_to_coefficient(i):
    """
    currently i is at 50
@@ -150,10 +161,11 @@ def simulate_trade(ticker, strategy, historical_data, current_price, account_cas
    holdings_doc = strategy_doc.get("holdings", {})
    time_delta = db.time_delta['time_delta']
    
-   
+   if action in ["sell", "strong sell"]:
+      print(action)
    
    # Update holdings and cash based on trade action
-   if action in ["buy", "strong buy"] and strategy_doc["amount_cash"] - quantity * current_price > 15000:
+   if action in ["buy", "strong buy"] and strategy_doc["amount_cash"] - quantity * current_price > 15000 and quantity > 0:
       logging.info(f"Action: {action} | Ticker: {ticker} | Quantity: {quantity} | Price: {current_price}")
       # Calculate average price if already holding some shares of the ticker
       if ticker in holdings_doc:
@@ -223,6 +235,7 @@ def simulate_trade(ticker, strategy, historical_data, current_price, account_cas
          
       # Update the points tally
       points_doc["total_points"] += points
+
         
       # Remove the ticker if quantity reaches zero
       if holdings_doc[ticker]["quantity"] == 0:      
