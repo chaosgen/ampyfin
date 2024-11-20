@@ -146,7 +146,7 @@ To start the bot, execute on two separate terminals:
 ```bash
 python ranking_client.py
 python trading_client.py
-,,,
+```
 
 ## Logging
 
