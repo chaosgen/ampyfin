@@ -77,7 +77,7 @@ def test_strategies():
       
       
       action = "sell"
-      quantity = 1
+      quantity = 7
       
       # MongoDB setup
       client = MongoClient(mongo_url)
@@ -129,8 +129,7 @@ def test_strategies():
          # Ensure we do not sell more than we have
          sell_qty = min(quantity, current_qty)
          holdings_doc[ticker]["quantity"] = current_qty - sell_qty
-         if holdings_doc[ticker]["quantity"] == 0:      
-            del holdings_doc[ticker]
+         
          price_change_ratio = current_price / holdings_doc[ticker]["price"] if ticker in holdings_doc else 1
          
          
@@ -180,6 +179,8 @@ def test_strategies():
             {"$inc": {"points": points}},
             upsert=True
          )
+         if holdings_doc[ticker]["quantity"] == 0:      
+            del holdings_doc[ticker]
          # Update cash after selling
          holdings_collection.update_one(
             {"strategy": "test"},

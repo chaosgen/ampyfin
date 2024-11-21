@@ -205,8 +205,7 @@ def simulate_trade(ticker, strategy, historical_data, current_price, account_cas
       # Ensure we do not sell more than we have
       sell_qty = min(quantity, current_qty)
       holdings_doc[ticker]["quantity"] = current_qty - sell_qty
-      if holdings_doc[ticker]["quantity"] == 0:      
-         del holdings_doc[ticker]
+      
       price_change_ratio = current_price / holdings_doc[ticker]["price"] if ticker in holdings_doc else 1
       
       
@@ -256,6 +255,8 @@ def simulate_trade(ticker, strategy, historical_data, current_price, account_cas
          {"$inc": {"points": points}},
          upsert=True
       )
+      if holdings_doc[ticker]["quantity"] == 0:      
+         del holdings_doc[ticker]
       # Update cash after selling
       holdings_collection.update_one(
          {"strategy": strategy.__name__},
@@ -310,7 +311,7 @@ def update_portfolio_values():
           portfolio_value += holding_value
           
       # Update the portfolio value in the strategy document
-      holdings_collection.update_one({"strategy": strategy_doc["strategy"]}, {"$set": {"portfolio_value": portfolio_value}})
+      holdings_collection.update_one({"strategy": strategy_doc["strategy"]}, {"$set": {"portfolio_value": portfolio_value}}, upsert=True)
 
    # Update MongoDB with the modified strategy documents
    client.close()
