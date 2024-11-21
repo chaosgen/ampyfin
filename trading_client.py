@@ -150,7 +150,7 @@ def main():
                     for now in bull: 15000
                     for bear: 5000
                     """
-                    if decision == "buy" and float(account.cash) > 15000 and (current_price(ticker) * (quantity + portfolio_qty))/portfolio_value < 0.05:
+                    if decision == "buy" and float(account.cash) > 15000:
                         heapq.heappush(buy_heap, (-(buy_weight-sell_weight), quantity, ticker))
                     elif decision == "sell" and portfolio_qty > 0:
                         order = place_order(trading_client, ticker, OrderSide.SELL, qty=quantity, mongo_url=mongo_url)  # Place order using helper
@@ -163,7 +163,8 @@ def main():
                 except Exception as e:
                     logging.error(f"Error processing {ticker}: {e}")
 
-            
+            print(f"buy_heap: {buy_heap}")
+            print(float(account.cash))
             while buy_heap and float(account.cash) > 15000:  
                 try:
                     buy_coeff, quantity, ticker = heapq.heappop(buy_heap)
