@@ -199,7 +199,7 @@ def get_latest_price(ticker):
    """  
    try:  
       ticker_yahoo = yf.Ticker(ticker)  
-      data = ticker_yahoo.history(period="1d")  
+      data = ticker_yahoo.history()  
       return round(data['Close'].iloc[-1], 2)  
    except Exception as e:  
       logging.error(f"Error fetching latest price for {ticker}: {e}")  

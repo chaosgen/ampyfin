@@ -20,6 +20,7 @@ from collections import Counter
 from statistics import median, mode
 import statistics
 import heapq
+import requests
 
 
 # MongoDB connection string
@@ -128,7 +129,13 @@ def main():
                     historical_data = get_historical_data(ticker, data_client)
                     ticker_yahoo = yf.Ticker(ticker)
                     data = ticker_yahoo.history()
-                    current_price = get_latest_price(ticker)
+                    current_price = None
+                    while current_price is None:
+                        try:
+                            current_price = get_latest_price(ticker)
+                        except:
+                            print(f"Error fetching price for {ticker}. Retrying...")
+                    print(f"Current price of {ticker}: {current_price}")
 
                     asset_info = asset_collection.find_one({'symbol': ticker})
                     portfolio_qty = asset_info['quantity'] if asset_info else 0.0
@@ -150,7 +157,9 @@ def main():
                     for now in bull: 15000
                     for bear: 5000
                     """
-                    if decision == "buy" and float(account.cash) > 15000:
+                    print(f"Ticker{ticker} holding is currently at percentage of portfolio value: {(portfolio_qty * current_price) / portfolio_value}")
+                    if decision == "buy" and float(account.cash) > 15000 and (((quantity + portfolio_qty) * current_price) / portfolio_value) < 0.1:
+                        
                         heapq.heappush(buy_heap, (-(buy_weight-sell_weight), quantity, ticker))
                     elif decision == "sell" and portfolio_qty > 0:
                         order = place_order(trading_client, ticker, OrderSide.SELL, qty=quantity, mongo_url=mongo_url)  # Place order using helper
@@ -163,8 +172,7 @@ def main():
                 except Exception as e:
                     logging.error(f"Error processing {ticker}: {e}")
 
-            print(f"buy_heap: {buy_heap}")
-            print(float(account.cash))
+            
             while buy_heap and float(account.cash) > 15000:  
                 try:
                     buy_coeff, quantity, ticker = heapq.heappop(buy_heap)

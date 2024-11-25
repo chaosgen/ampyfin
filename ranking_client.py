@@ -110,34 +110,35 @@ def initialize_rank():
    initialization_date = datetime.now()  
   
    
-    
-   strategy_name = "test_strategy"
+   for strategy in strategies:
+      strategy_name = strategy.__name__
    
-   collections = db.algorithm_holdings 
    
-   if not collections.find_one({"strategy": strategy_name}):
+      collections = db.algorithm_holdings 
       
-      collections.insert_one({  
-         "strategy": strategy_name,  
-         "holdings": {},  
-         "amount_cash": 50000,  
-         "initialized_date": initialization_date,  
-         "total_trades": 0,  
-         "successful_trades": 0,
-         "neutral_trades": 0,
-         "failed_trades": 0,   
-         "last_updated": initialization_date, 
-         "portfolio_value": 50000 
-      })  
-   
-      collections = db.points_tally  
-      collections.insert_one({  
-         "strategy": strategy_name,  
-         "total_points": 0,  
-         "initialized_date": initialization_date,  
-         "last_updated": initialization_date  
-      })  
+      if not collections.find_one({"strategy": strategy_name}):
          
+         collections.insert_one({  
+            "strategy": strategy_name,  
+            "holdings": {},  
+            "amount_cash": 50000,  
+            "initialized_date": initialization_date,  
+            "total_trades": 0,  
+            "successful_trades": 0,
+            "neutral_trades": 0,
+            "failed_trades": 0,   
+            "last_updated": initialization_date, 
+            "portfolio_value": 50000 
+         })  
+      
+         collections = db.points_tally  
+         collections.insert_one({  
+            "strategy": strategy_name,  
+            "total_points": 0,  
+            "initialized_date": initialization_date,  
+            "last_updated": initialization_date  
+         })  
+            
          
 
       
@@ -161,7 +162,7 @@ def simulate_trade(ticker, strategy, historical_data, current_price, account_cas
    # Find the strategy document in MongoDB
    strategy_doc = holdings_collection.find_one({"strategy": strategy.__name__})
    holdings_doc = strategy_doc.get("holdings", {})
-   time_delta = db.time_delta['time_delta']
+   time_delta = db.time_delta.find_one({})['time_delta']
    
    
    # Update holdings and cash based on trade action
@@ -252,7 +253,7 @@ def simulate_trade(ticker, strategy, historical_data, current_price, account_cas
       # Update the points tally
       points_collection.update_one(
          {"strategy": strategy.__name__},
-         {"$inc": {"points": points}},
+         {"$inc": {"total_points": points}},
          upsert=True
       )
       if holdings_doc[ticker]["quantity"] == 0:      
@@ -338,11 +339,14 @@ def update_ranks():
       based on (points_tally (less points pops first), failed-successful(more neagtive pops first), portfolio value (less value pops first), and then strategy_name), we add to heapq.
       """
       strategy_name = strategy_doc["strategy"]
-      heapq.heappush(q, (points_collection.find_one({"strategy": strategy_name})["total_points"], strategy_doc["failed_trades"] - strategy_doc["successful_trades"], strategy_doc["portfolio_value"], strategy_doc["strategy"]))
+      if strategy_name == "test" or strategy_name == "test_strategy":
+         continue
+
+      heapq.heappush(q, (points_collection.find_one({"strategy": strategy_name})["total_points"]/10 + (strategy_doc["portfolio_value"] / 50000), strategy_doc["successful_trades"] - strategy_doc["failed_trades"], strategy_doc["strategy"]))
    rank = 1
    while q:
       
-      _, _, _, strategy_name = heapq.heappop(q)
+      _, _, strategy_name = heapq.heappop(q)
       rank_collection.insert_one({"strategy": strategy_name, "rank": rank})
       rank+=1
    client.close()
@@ -361,8 +365,9 @@ def main():
    
    
    while True: 
-        
+      mongo_client = MongoClient(mongo_url)
       status = mongo_client.market_data.market_status.find_one({})["market_status"]
+      
       
       if status == "open":  
         logging.info("Market is open. Processing strategies.")  
@@ -409,7 +414,7 @@ def main():
         update_portfolio_values()
   
         logging.info("Finished processing all strategies. Waiting for 60 seconds.")  
-        time.sleep(60)  
+        time.sleep(300)  
   
       elif status == "early_hours":  
         if early_hour_first_iteration:  
@@ -442,4 +447,4 @@ def main():
    
   
 if __name__ == "__main__":  
-   find_nans_within_rank_holding()
+   main()

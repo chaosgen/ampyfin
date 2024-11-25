@@ -3,13 +3,15 @@ from datetime import datetime, timedelta
 from alpaca.data.historical import StockHistoricalDataClient  
 from alpaca.data.requests import StockBarsRequest  
 from alpaca.data.timeframe import TimeFrame  
-from config import API_KEY, API_SECRET, FINANCIAL_PREP_API_KEY
+from config import API_KEY, API_SECRET, FINANCIAL_PREP_API_KEY, POLYGON_API_KEY
 import strategies.trading_strategies_v2 as trading_strategies_v2
 import helper_files.client_helper
 from pymongo import MongoClient
+import yfinance as yf
 from helper_files.client_helper import get_ndaq_tickers, get_latest_price
 from config import MONGO_DB_USER, MONGO_DB_PASS
-from helper_files.client_helper import strategies
+from helper_files.client_helper import get_latest_price
+import requests
 mongo_url = f"mongodb+srv://{MONGO_DB_USER}:{MONGO_DB_PASS}@cluster0.0qoxq.mongodb.net"
 
 def get_historical_data(ticker, client, days=100):  
@@ -205,6 +207,13 @@ def test_strategies():
       
    simulate_trade("AAPL", None, None, get_latest_price("AAPL"), 50000, 0, 50000, mongo_url)
 def test_helper():
-   print(helper_files.client_helper.get_latest_price("AAPL"))
+   ticker = "AAPL"  # Replace with your desired ticker
+
+   apple = yf.Ticker(ticker)
+   """
+   print(apple.history(period="1d"))
+   """
+   price = apple.history()['Close'].iloc[-1]
+   print(price)
 if __name__ == "__main__":  
-   test_strategies()
+   test_helper() 
