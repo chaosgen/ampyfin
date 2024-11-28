@@ -27,9 +27,9 @@ to more complex ones that utilize its own AI libraries to recommend trades.
 Each algorithm contributes its unique strength to the overall strategy, and the best-performing ones are given greater influence in the final trading decisions.
 
 ## How Dynamic Ranking Works
-Managing 60 algorithms would be chaos if it weren’t for AmpyFin’s dynamic ranking system. Each algorithm starts with a base score of 0 and is ranked based on its performance—both real and simulated.
+Managing 60 algorithms would be chaos if it weren’t for AmpyFin’s dynamic ranking system. Each algorithm starts with a base score of 50000 and is ranked based on its performance—both real and simulated.
 
-AmpyFin uses a special formula to calculate a coefficient for each algorithm:
+AmpyFin uses a specific generating function to calculate a coefficient for each algorithm to determine how much weight it should have in the final decision-making process. The function looks like this:
 
 $$
 \left( \frac{e^e}{e^2 - 1} \right)^{2i}
@@ -37,6 +37,12 @@ $$
 
 Where \(i\) is the inverse of the algorithm's ranking. This ranking system adjusts the influence each algorithm has on the bot’s decisions, ensuring that the highest-ranked algorithms are given more weight during trading.
 
+The ranking system is dynamic, meaning it can change based on the performance of each algorithm. If an algorithm performs well, it gains more influence in the final trading decisions. Conversely, if an algorithm underperforms, its influence decreases. This ensures that the bot remains agile and responsive to market changes. Time_delta is utilized so that the ranking system is biased towards the most recent trades, but not too heavily biased.
+
+The rank system is determined by this formula:
+$$
+\left(\frac{successful trades - unsuccessful trades}{total trades}) + \frac{current_portfolio_value}{initial_portfolio_value}\right
+$$
 The dynamic ranking system helps AmpyFin:
 - Adapt to changing market conditions.
 - Balance risk and reward.
