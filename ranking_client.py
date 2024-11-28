@@ -381,7 +381,7 @@ def main():
   
             account_cash = strategy_doc["amount_cash"]  
             total_portfolio_value = strategy_doc["portfolio_value"] 
-           
+            
             for ticker in ndaq_tickers:  
                try:  
                   current_price = None
@@ -414,7 +414,7 @@ def main():
         update_portfolio_values()
   
         logging.info("Finished processing all strategies. Waiting for 60 seconds.")  
-        time.sleep(300)  
+        time.sleep(600)  
   
       elif status == "early_hours":  
         if early_hour_first_iteration:  

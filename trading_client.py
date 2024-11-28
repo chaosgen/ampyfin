@@ -160,7 +160,7 @@ def main():
                     print(f"Ticker{ticker} holding is currently at percentage of portfolio value: {(portfolio_qty * current_price) / portfolio_value}")
                     if decision == "buy" and float(account.cash) > 15000 and (((quantity + portfolio_qty) * current_price) / portfolio_value) < 0.1:
                         
-                        heapq.heappush(buy_heap, (-(buy_weight-sell_weight), quantity, ticker))
+                        heapq.heappush(buy_heap, (-(buy_weight-(sell_weight + hold_weight)), quantity, ticker))
                     elif decision == "sell" and portfolio_qty > 0:
                         order = place_order(trading_client, ticker, OrderSide.SELL, qty=quantity, mongo_url=mongo_url)  # Place order using helper
                         
@@ -188,8 +188,8 @@ def main():
                     break
             
                 
-            print("Sleeping for 30 seconds...")
-            time.sleep(30)
+            print("Sleeping for 60 seconds...")
+            time.sleep(60)
 
         elif status == "early_hours":
             if early_hour_first_iteration:
