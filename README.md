@@ -35,14 +35,8 @@ $$
 \left( \frac{e^e}{e^2 - 1} \right)^{2i}
 $$
 
-Where \(i\) is the inverse of the algorithm's ranking. This ranking system adjusts the influence each algorithm has on the bot’s decisions, ensuring that the highest-ranked algorithms are given more weight during trading.
+Where \(i\) is the inverse of the algorithm's ranking. This ranking system adjusts the influence each algorithm has on the bot’s decisions, ensuring that the highest-ranked algorithms are given more weight during trading. The ranking system is dynamic, meaning it can change based on the performance of each algorithm. If an algorithm performs well, it gains more influence in the final trading decisions. Conversely, if an algorithm underperforms, its influence decreases. This ensures that the bot remains agile and responsive to market changes. A time delta coefficient is utilized so that the ranking system is biased towards the most recent trades, but not too heavily biased.
 
-The ranking system is dynamic, meaning it can change based on the performance of each algorithm. If an algorithm performs well, it gains more influence in the final trading decisions. Conversely, if an algorithm underperforms, its influence decreases. This ensures that the bot remains agile and responsive to market changes. Time_delta is utilized so that the ranking system is biased towards the most recent trades, but not too heavily biased.
-
-The rank system is determined by this formula:
-$$
-\left(\frac{\text{successful trades} - \text{unsuccessful trades}}{\text{total trades}}\right) + \frac{\text{current\_portfolio\_value}}{\text{initial\_portfolio\_value}}
-$$
 
 The dynamic ranking system helps AmpyFin:
 - Adapt to changing market conditions.
