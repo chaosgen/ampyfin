@@ -41,8 +41,9 @@ The ranking system is dynamic, meaning it can change based on the performance of
 
 The rank system is determined by this formula:
 $$
-\left(\frac{successful trades - unsuccessful trades}{total trades}) + \frac{current_portfolio_value}{initial_portfolio_value}\right
+\left(\frac{\text{successful trades} - \text{unsuccessful trades}}{\text{total trades}}\right) + \frac{\text{current\_portfolio\_value}}{\text{initial\_portfolio\_value}}
 $$
+
 The dynamic ranking system helps AmpyFin:
 - Adapt to changing market conditions.
 - Balance risk and reward.
