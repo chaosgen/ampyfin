@@ -13,10 +13,10 @@ AmpyFin doesn't stop there—it's constantly checking market status in real-time
 
 All of this data is stored securely in **MongoDB**, ensuring quick access to market information and trading activity logs, giving AmpyFin a real edge over the competition.
 
-## 60 Algorithms at Work
-Imagine having 60 of the world's top traders working for you 24/7. That’s what AmpyFin does with its diverse collection of algorithms.
+## Algorithms at Work
+Imagine having numerous trading strategies but not knowing which is the best to use for the current market. That’s what AmpyFin aims to solve with its diverse collection of algorithms.
 
-These 60 algorithms range from basic strategies like **mean reversion** to more complex, **AI-driven** approaches. Each algorithm runs simulated trades during market hours, logging every success and failure. This constant testing helps AmpyFin refine its strategies and learn from every move, all while minimizing risk in the process.
+These algorithms range from basic strategies like **mean reversion** to more complex, **AI-driven** approaches. Each algorithm runs simulated trades during market hours, logging every success and failure. This constant testing helps AmpyFin refine its strategies and learn from every move, all while minimizing risk in the process.
 
 In practice, AmpyFin uses simple strategies such as:
 - **Mean Reversion**: Asset prices return to their historical averages.
