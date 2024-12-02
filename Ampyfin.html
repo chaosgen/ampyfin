@@ -3,35 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AmpyFin Dashboard</title>
+    <title>AmpyFin Portfolio</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            padding: 20px;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
-        }
-        table, th, td {
-            border: 1px solid #ddd;
+            margin-bottom: 20px;
         }
         th, td {
-            padding: 10px;
-            text-align: left;
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
         }
         th {
-            background-color: #f2f2f2;
+            background-color: #f4f4f4;
         }
     </style>
 </head>
 <body>
-    <h1>AmpyFin Dashboard</h1>
+    <h1>AmpyFin Portfolio</h1>
 
-    <!-- Holdings Table -->
-    <h2>Holdings</h2>
-    <table id="holdings-table">
+    <h2>Current Holdings</h2>
+    <table id="holdingsTable">
         <thead>
             <tr>
                 <th>Symbol</th>
@@ -43,9 +43,8 @@
         </tbody>
     </table>
 
-    <!-- Rankings Table -->
     <h2>Algorithm Rankings</h2>
-    <table id="rankings-table">
+    <table id="rankingsTable">
         <thead>
             <tr>
                 <th>Strategy</th>
@@ -58,48 +57,63 @@
     </table>
 
     <script>
-        // Fetch holdings data from the API
+        // Function to fetch and update holdings
         async function fetchHoldings() {
-            const response = await fetch('/holdings');
-            const holdings = await response.json();
+            try {
+                const response = await fetch('https://ampyfin-api-app.onrender.com/holdings');
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const holdings = await response.json();
+                const holdingsTableBody = document.querySelector('#holdingsTable tbody');
+                holdingsTableBody.innerHTML = ''; // Clear the table before updating
 
-            const holdingsTable = document.getElementById('holdings-table').getElementsByTagName('tbody')[0];
-            // Clear the table before injecting new data
-            holdingsTable.innerHTML = ''; 
-
-            holdings.forEach(holding => {
-                const row = holdingsTable.insertRow();
-                row.insertCell(0).textContent = holding.symbol;
-                row.insertCell(1).textContent = holding.quantity;
-            });
-            console.log(holdings);
+                holdings.forEach(holding => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${holding.symbol}</td>
+                        <td>${holding.quantity}</td>
+                    `;
+                    holdingsTableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error fetching holdings:', error);
+            }
         }
 
-        // Fetch rankings data from the API
+        // Function to fetch and update rankings
         async function fetchRankings() {
-            console.log('Fetching rankings...');
-            const response = await fetch('/rankings');
-            const rankings = await response.json();
+            try {
+                const response = await fetch('https://ampyfin-api-app.onrender.com/rankings');
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const rankings = await response.json();
+                const rankingsTableBody = document.querySelector('#rankingsTable tbody');
+                rankingsTableBody.innerHTML = ''; // Clear the table before updating
 
-            const rankingsTable = document.getElementById('rankings-table').getElementsByTagName('tbody')[0];
-            // Clear the table before injecting new data
-            rankingsTable.innerHTML = '';
-
-            rankings.forEach(ranking => {
-                const row = rankingsTable.insertRow();
-                row.insertCell(0).textContent = ranking.strategy;
-                row.insertCell(1).textContent = ranking.rank;
-                console.log(ranking);
-            });
+                rankings.forEach(ranking => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${ranking.strategy}</td>
+                        <td>${ranking.rank}</td>
+                    `;
+                    rankingsTableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error fetching rankings:', error);
+            }
         }
 
-        // Call the fetch functions initially
-        fetchHoldings();
-        fetchRankings();
+        // Function to update both holdings and rankings every minute
+        function updateData() {
+            fetchHoldings();
+            fetchRankings();
+        }
 
-        // Update the tables every 1 minute (60000 milliseconds)
-        setInterval(fetchHoldings, 60000);  // Fetch holdings every minute
-        setInterval(fetchRankings, 60000);  // Fetch rankings every minute
+        // Initial fetch and set interval to update every 1 minute (60000 ms)
+        updateData();
+        setInterval(updateData, 60000);
     </script>
 </body>
 </html>
