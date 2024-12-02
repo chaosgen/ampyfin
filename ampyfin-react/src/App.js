@@ -86,23 +86,26 @@ function HoldingsTable({ holdings }) {
 
 function RankingsTable({ rankings }) {
   return (
-    <table className="styled-table">
-      <thead>
-        <tr>
-          <th>Strategy</th>
-          <th>Rank</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rankings.map((ranking) => (
-          <tr key={ranking.id}>
-            <td>{ranking.strategy}</td>
-            <td>{ranking.rank}</td>
+    <div className="scrollable-table-container">
+      <table className="styled-table">
+        <thead>
+          <tr>
+            <th>Strategy</th>
+            <th>Rank</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {rankings.map((ranking) => (
+            <tr key={ranking.id}>
+              <td>{ranking.strategy}</td>
+              <td>{ranking.rank}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
+
 
 export default App;
