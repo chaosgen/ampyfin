@@ -43,6 +43,11 @@ The dynamic ranking system helps AmpyFin:
 - Balance risk and reward.
 - Prioritize high-performing strategies automatically.
 
+## API Endpoints
+ - **https://ampyfin-api-app.onrender.com/**: This is the main API endpoint for the AmpyFin trading bot.
+ - **https://ampyfin-api-app.onrender.com/rankings**: This endpoint provides the current ranking of the trading algorithms. The higher the ranks, the better the algorithm is performing.
+ - **https://ampyfin-api-app.onrender.com/holdings**: This endpoint provides the current holdings of the trading bot.
+
 ## Features
 - **NASDAQ-100 Ticker Retrieval**: Fetches tickers using the Financial Modeling Prep API during early market hours.
 - **Market Status Monitoring**: Monitors market status (open, closed, premarket) in real-time with the Polygon API.
