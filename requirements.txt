@@ -3,9 +3,11 @@ pymongo
 certifi
 alpaca-py
 yfinance
-pymongo==4.0.0
+pymongo
 bson==0.5.10
 scipy
 pandas
+cython
 fastapi
 uvicorn
+motor
