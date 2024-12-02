@@ -27,7 +27,7 @@ try:
     db = client.get_database("trades")
     holdings_collection = db.get_collection("assets_quantities")
     portfolio_value_collection = db.get_collection("portfolio_value")
-    
+
     db = client.get_database("trading_simulator")
     rankings_collection = db.get_collection("rank")
     print("MongoDB collections are connected and ready.")
@@ -105,12 +105,10 @@ async def get_portfolio_percentage():
             raise HTTPException(status_code=404, detail="Portfolio value not found")
 
         # Calculate the portfolio percentage increase
-        initial_value = portfolio.get("initial_value")
-        current_value = portfolio.get("current_value")
+        initial_value = portfolio.get('portfolio_percentage')
         
-        if initial_value and current_value:
-            percentage_increase = (current_value - initial_value) / initial_value
-            return {"portfolio_percentage": percentage_increase}
+        if initial_value:
+            return {"portfolio_percentage": initial_value}
         else:
             raise HTTPException(status_code=400, detail="Missing portfolio values")
 
