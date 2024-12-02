@@ -7,105 +7,99 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            text-align: center;
+            padding: 20px;
         }
         table {
-            width: 80%;
-            margin: 20px auto;
+            width: 100%;
             border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
         }
         th, td {
             padding: 10px;
-            border: 1px solid #ccc;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
         }
     </style>
 </head>
 <body>
     <h1>AmpyFin Dashboard</h1>
 
-    <h2>Current Holdings</h2>
-    <table id="holdingsTable">
+    <!-- Holdings Table -->
+    <h2>Holdings</h2>
+    <table id="holdings-table">
         <thead>
             <tr>
-                <th>Ticker</th>
+                <th>Symbol</th>
                 <th>Quantity</th>
-                <th>Current Price (USD)</th>
             </tr>
         </thead>
         <tbody>
-            <tr><td colspan="3">Loading...</td></tr>
+            <!-- Data will be injected here -->
         </tbody>
     </table>
 
+    <!-- Rankings Table -->
     <h2>Algorithm Rankings</h2>
-    <table id="rankingsTable">
+    <table id="rankings-table">
         <thead>
             <tr>
-                <th>Rank</th>
                 <th>Strategy</th>
+                <th>Rank</th>
             </tr>
         </thead>
         <tbody>
-            <tr><td colspan="2">Loading...</td></tr>
+            <!-- Data will be injected here -->
         </tbody>
     </table>
 
     <script>
-        const apiUrl = 'https://ampyfin-backend.onrender.com';  // Backend URL
-
-        // Function to fetch data from /holdings endpoint
+        // Fetch holdings data from the API
         async function fetchHoldings() {
-            try {
-                const response = await fetch(`${apiUrl}/holdings`);
-                const data = await response.json();
-                updateHoldingsTable(data.holdings);
-            } catch (error) {
-                console.error('Error fetching holdings:', error);
-            }
+            const response = await fetch('/holdings');
+            const holdings = await response.json();
+
+            const holdingsTable = document.getElementById('holdings-table').getElementsByTagName('tbody')[0];
+            // Clear the table before injecting new data
+            holdingsTable.innerHTML = ''; 
+
+            holdings.forEach(holding => {
+                const row = holdingsTable.insertRow();
+                row.insertCell(0).textContent = holding.symbol;
+                row.insertCell(1).textContent = holding.quantity;
+            });
+            console.log(holdings);
         }
 
-        // Function to fetch data from /rankings endpoint
+        // Fetch rankings data from the API
         async function fetchRankings() {
-            try {
-                const response = await fetch(`${apiUrl}/rankings`);
-                const data = await response.json();
-                updateRankingsTable(data.rankings);
-            } catch (error) {
-                console.error('Error fetching rankings:', error);
-            }
+            console.log('Fetching rankings...');
+            const response = await fetch('/rankings');
+            const rankings = await response.json();
+
+            const rankingsTable = document.getElementById('rankings-table').getElementsByTagName('tbody')[0];
+            // Clear the table before injecting new data
+            rankingsTable.innerHTML = '';
+
+            rankings.forEach(ranking => {
+                const row = rankingsTable.insertRow();
+                row.insertCell(0).textContent = ranking.strategy;
+                row.insertCell(1).textContent = ranking.rank;
+                console.log(ranking);
+            });
         }
 
-        // Update the Holdings Table with fetched data
-        function updateHoldingsTable(holdings) {
-            const tableBody = document.querySelector('#holdingsTable tbody');
-            tableBody.innerHTML = holdings.map(data => `
-                <tr>
-                    <td>${data.ticker}</td>
-                    <td>${data.quantity}</td>
-                    <td>$${data.current_price.toFixed(2)}</td>
-                </tr>
-            `).join('');
-        }
+        // Call the fetch functions initially
+        fetchHoldings();
+        fetchRankings();
 
-        // Update the Rankings Table with fetched data
-        function updateRankingsTable(rankings) {
-            const tableBody = document.querySelector('#rankingsTable tbody');
-            tableBody.innerHTML = rankings.map(data => `
-                <tr>
-                    <td>${data.rank}</td>
-                    <td>${data.strategy}</td>
-                </tr>
-            `).join('');
-        }
-
-        // Fetch data initially and every 10 minutes
-        async function fetchData() {
-            await fetchHoldings();
-            await fetchRankings();
-        }
-
-        fetchData();  // Initial fetch
-        setInterval(fetchData, 600000);  // Refresh data every 10 minutes (600,000 ms)
+        // Update the tables every 1 minute (60000 milliseconds)
+        setInterval(fetchHoldings, 60000);  // Fetch holdings every minute
+        setInterval(fetchRankings, 60000);  // Fetch rankings every minute
     </script>
 </body>
 </html>
