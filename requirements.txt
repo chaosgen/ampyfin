@@ -4,7 +4,6 @@ certifi
 alpaca-py
 yfinance
 pymongo
-bson==0.5.10
 scipy
 pandas
 cython
