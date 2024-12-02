@@ -3,11 +3,9 @@ pymongo
 certifi
 alpaca-py
 yfinance
-pymongo
 scipy
 pandas
 cython
 fastapi
 uvicorn
 motor
-python-dotenv

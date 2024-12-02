@@ -5,15 +5,13 @@ from pydantic import BaseModel
 from typing import List
 from bson import ObjectId
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
 
 # FastAPI app initialization
 app = FastAPI()
 
 # MongoDB credentials from environment variables (imported from config)
+
+
 MONGO_DB_USER = os.getenv("MONGO_DB_USER")
 MONGO_DB_PASS = os.getenv("MONGO_DB_PASS")
 
