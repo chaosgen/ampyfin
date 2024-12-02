@@ -253,7 +253,12 @@ def simulate_trade(ticker, strategy, historical_data, current_price, account_cas
       # Update the points tally
       points_collection.update_one(
          {"strategy": strategy.__name__},
-         {"$inc": {"total_points": points}},
+         {
+            "$set" : {
+               "last_updated": datetime.now()
+            },
+            "$inc": {"total_points": points}
+         },
          upsert=True
       )
       if holdings_doc[ticker]["quantity"] == 0:      

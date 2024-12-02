@@ -135,7 +135,7 @@ def get_ndaq_tickers(mongo_url, FINANCIAL_PREP_API_KEY):
             :param url: The API endpoint to retrieve data from.
             :return: Parsed JSON data as a dictionary.
             """
-            response = urlopen(url, cafile=certifi.where())
+            response = urlopen(url)
             data = response.read().decode("utf-8")
             return json.loads(data)
 
