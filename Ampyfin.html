@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AmpyFin Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <h1>AmpyFin Dashboard</h1>
+
+    <h2>Current Holdings</h2>
+    <table id="holdingsTable">
+        <thead>
+            <tr>
+                <th>Ticker</th>
+                <th>Quantity</th>
+                <th>Current Price (USD)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td colspan="3">Loading...</td></tr>
+        </tbody>
+    </table>
+
+    <h2>Algorithm Rankings</h2>
+    <table id="rankingsTable">
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Strategy</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td colspan="2">Loading...</td></tr>
+        </tbody>
+    </table>
+
+    <script>
+        const apiUrl = 'https://ampyfin-backend.onrender.com';  // Backend URL
+
+        // Function to fetch data from /holdings endpoint
+        async function fetchHoldings() {
+            try {
+                const response = await fetch(`${apiUrl}/holdings`);
+                const data = await response.json();
+                updateHoldingsTable(data.holdings);
+            } catch (error) {
+                console.error('Error fetching holdings:', error);
+            }
+        }
+
+        // Function to fetch data from /rankings endpoint
+        async function fetchRankings() {
+            try {
+                const response = await fetch(`${apiUrl}/rankings`);
+                const data = await response.json();
+                updateRankingsTable(data.rankings);
+            } catch (error) {
+                console.error('Error fetching rankings:', error);
+            }
+        }
+
+        // Update the Holdings Table with fetched data
+        function updateHoldingsTable(holdings) {
+            const tableBody = document.querySelector('#holdingsTable tbody');
+            tableBody.innerHTML = holdings.map(data => `
+                <tr>
+                    <td>${data.ticker}</td>
+                    <td>${data.quantity}</td>
+                    <td>$${data.current_price.toFixed(2)}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Update the Rankings Table with fetched data
+        function updateRankingsTable(rankings) {
+            const tableBody = document.querySelector('#rankingsTable tbody');
+            tableBody.innerHTML = rankings.map(data => `
+                <tr>
+                    <td>${data.rank}</td>
+                    <td>${data.strategy}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Fetch data initially and every 10 minutes
+        async function fetchData() {
+            await fetchHoldings();
+            await fetchRankings();
+        }
+
+        fetchData();  // Initial fetch
+        setInterval(fetchData, 600000);  // Refresh data every 10 minutes (600,000 ms)
+    </script>
+</body>
+</html>
