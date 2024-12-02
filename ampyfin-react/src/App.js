@@ -7,12 +7,14 @@ const API_URL = "https://ampyfin-api-app.onrender.com";
 function App() {
   const [holdings, setHoldings] = useState([]);
   const [rankings, setRankings] = useState([]);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   // Fetch Holdings
   const fetchHoldings = async () => {
     try {
       const response = await axios.get(`${API_URL}/holdings`);
       setHoldings(response.data);
+      setLastUpdated(new Date().toLocaleString());  // Update last updated time when holdings are fetched
     } catch (error) {
       console.error('Error fetching holdings:', error);
     }
@@ -23,6 +25,7 @@ function App() {
     try {
       const response = await axios.get(`${API_URL}/rankings`);
       setRankings(response.data);
+      setLastUpdated(new Date().toLocaleString());  // Update last updated time when rankings are fetched
     } catch (error) {
       console.error('Error fetching rankings:', error);
     }
@@ -35,7 +38,7 @@ function App() {
     const interval = setInterval(() => {
       fetchHoldings();
       fetchRankings();
-    }, 60000); // 1 minute
+    }, 60000); // Update every 1 minute
 
     return () => clearInterval(interval); // Cleanup on component unmount
   }, []);
@@ -59,6 +62,12 @@ function App() {
           <RankingsTable rankings={rankings} />
         </section>
       </main>
+
+      {/* Last Updated Timestamp */}
+      <footer className="App-footer">
+        <p>Last updated: {lastUpdated}</p>
+        <p>&copy; 2024 AmpyFin. All rights reserved.</p>
+      </footer>
     </div>
   );
 }
@@ -106,6 +115,5 @@ function RankingsTable({ rankings }) {
     </div>
   );
 }
-
 
 export default App;

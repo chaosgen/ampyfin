@@ -123,3 +123,17 @@ h2 {
   background-color: #555;
 }
 
+/* Footer Styling */
+footer.App-footer {
+  background-color: #1e1e1e;
+  color: white;
+  padding: 10px;
+  position: fixed;
+  width: 100%;
+  bottom: 0;
+  font-size: 0.9rem;
+}
+
+footer p {
+  margin: 0;
+}
