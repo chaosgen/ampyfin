@@ -99,13 +99,13 @@ async def get_rankings():
 async def get_portfolio_percentage():
     try:
         # Fetch portfolio value entry from MongoDB by _id
-        portfolio = await portfolio_value_collection.find_one({"_id": ObjectId("674e33dfbba019ec96cf4762")})
+        portfolio = await portfolio_value_collection.find({}).to_list(length=1)
         
         if not portfolio:
             raise HTTPException(status_code=404, detail="Portfolio value not found")
 
         # Calculate the portfolio percentage increase
-        initial_value = portfolio.get('portfolio_percentage')
+        initial_value = portfolio[0]['portfolio_percentage']
         
         if initial_value:
             return {"portfolio_percentage": initial_value}
