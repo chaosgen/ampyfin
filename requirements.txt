@@ -3,8 +3,8 @@ pymongo
 certifi
 alpaca-py
 yfinance
-bson
-pymongo
+pymongo==4.0.0
+bson==0.5.10
 scipy
 pandas
 fastapi
