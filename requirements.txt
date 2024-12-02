@@ -9,3 +9,4 @@ cython
 fastapi
 uvicorn
 motor
+python-dotenv
