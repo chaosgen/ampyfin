@@ -52,17 +52,63 @@ h2 {
   margin-bottom: 10px;
 }
 
+/* Flexbox Layout for Portfolio and Sections */
+.main-content {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px;
+}
+
+.portfolio-section {
+  width: 30%; /* Portfolio percentage section on the left */
+  text-align: left;
+}
+
+.right-sections {
+  width: 65%; /* Holdings and Rankings on the right */
+}
+
+.portfolio-percentage {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  display: inline-block;
+}
+
+.portfolio-percentage.green {
+  color: #28a745; /* Green for positive percentage */
+}
+
+.portfolio-percentage.red {
+  color: #dc3545; /* Red for negative percentage */
+}
+
+.portfolio-percentage.gray {
+  color: #6c757d; /* Gray if no percentage data */
+}
+
+/* New Styling for "Live Since" */
+.live-since {
+  font-size: 1rem;
+  color: #888;
+  margin-top: 5px;
+}
+
 /* General Style for Tables */
 .styled-table {
   border-collapse: collapse;
-  width: 100%; /* Full width of the container */
-  max-width: 600px; /* Set maximum width for both tables */
-  margin: 20px auto; /* Center the table */
+  width: 100%;
+  max-width: 600px;
+  margin: 20px auto;
 }
 
 .styled-table th, .styled-table td {
   padding: 12px 15px;
-  text-align: center; /* Center the text */
+  text-align: center;
 }
 
 .styled-table thead tr {
@@ -82,7 +128,7 @@ h2 {
   border-bottom: 2px solid #009879;
 }
 
-/* Scrollable Rankings Table with Mini Scrollbar */
+/* Scrollable Table Container */
 .scrollable-table-container {
   max-height: 300px; /* Height of the scrollable area */
   overflow-y: auto; /* Enable vertical scrolling */
@@ -92,21 +138,6 @@ h2 {
   max-width: 600px; /* Set maximum width to match the styled-table */
   margin: 20px auto; /* Center the table horizontally */
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-}
-
-/* Ensure the table fits exactly within the container */
-.scrollable-table-container table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 0;
-  padding: 0;
-}
-
-/* Remove extra padding and margins from the container and its content */
-.scrollable-table-container * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
 }
 
 /* Minimal Scrollbar Styling */

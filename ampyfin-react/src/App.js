@@ -7,14 +7,13 @@ const API_URL = "https://ampyfin-api-app.onrender.com";
 function App() {
   const [holdings, setHoldings] = useState([]);
   const [rankings, setRankings] = useState([]);
-  const [lastUpdated, setLastUpdated] = useState(null);
+  const [portfolioPercentage, setPortfolioPercentage] = useState(null);
 
   // Fetch Holdings
   const fetchHoldings = async () => {
     try {
       const response = await axios.get(`${API_URL}/holdings`);
       setHoldings(response.data);
-      setLastUpdated(new Date().toLocaleString());  // Update last updated time when holdings are fetched
     } catch (error) {
       console.error('Error fetching holdings:', error);
     }
@@ -25,9 +24,19 @@ function App() {
     try {
       const response = await axios.get(`${API_URL}/rankings`);
       setRankings(response.data);
-      setLastUpdated(new Date().toLocaleString());  // Update last updated time when rankings are fetched
     } catch (error) {
       console.error('Error fetching rankings:', error);
+    }
+  };
+
+  // Fetch Portfolio Percentage
+  const fetchPortfolioPercentage = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/portfolio_percentage`);
+      const percentage = response.data.portfolio_percentage;
+      setPortfolioPercentage(percentage);
+    } catch (error) {
+      console.error('Error fetching portfolio percentage:', error);
     }
   };
 
@@ -35,13 +44,25 @@ function App() {
   useEffect(() => {
     fetchHoldings();
     fetchRankings();
+    fetchPortfolioPercentage();
+
     const interval = setInterval(() => {
       fetchHoldings();
       fetchRankings();
+      fetchPortfolioPercentage();
     }, 60000); // Update every 1 minute
 
     return () => clearInterval(interval); // Cleanup on component unmount
   }, []);
+
+  const formatPercentage = (percentage) => {
+    const formatted = (percentage * 100).toFixed(2); // Convert to percentage and round to 2 decimal places
+    const sign = formatted >= 0 ? '+' : ''; // Add '+' for positive numbers
+    const color = formatted >= 0 ? 'green' : 'red'; // Determine the color based on the value
+    return { formatted, sign, color };
+  };
+
+  const { formatted, sign, color } = portfolioPercentage !== null ? formatPercentage(portfolioPercentage) : { formatted: '0.00', sign: '', color: 'gray' };
 
   return (
     <div className="App">
@@ -52,20 +73,30 @@ function App() {
           <span>LIVE</span>
         </div>
       </header>
-      <main>
-        <section>
-          <h2>Current Holdings</h2>
-          <HoldingsTable holdings={holdings} />
+      <main className="main-content">
+        {/* Portfolio Percentage on the Left */}
+        <section className="portfolio-section">
+          <h2>Total Percentage Profit/Loss</h2>
+          <p className={`portfolio-percentage ${color}`}>
+            {sign}{formatted}%
+          </p>
+          <p className="live-since">Live since November 15, 2024 at 8:00 AM</p> {/* Live since date */}
         </section>
-        <section>
-          <h2>Algorithm Rankings</h2>
-          <RankingsTable rankings={rankings} />
+
+        {/* Holdings and Rankings on the Right */}
+        <section className="right-sections">
+          <div>
+            <h2>Current Holdings</h2>
+            <HoldingsTable holdings={holdings} />
+          </div>
+          <div>
+            <h2>Algorithm Rankings</h2>
+            <RankingsTable rankings={rankings} />
+          </div>
         </section>
       </main>
-
-      {/* Last Updated Timestamp */}
       <footer className="App-footer">
-        <p>Last updated: {lastUpdated}</p>
+        <p>Last updated: {new Date().toLocaleString()}</p>
         <p>&copy; 2024 AmpyFin. All rights reserved.</p>
       </footer>
     </div>
@@ -74,22 +105,24 @@ function App() {
 
 function HoldingsTable({ holdings }) {
   return (
-    <table className="styled-table">
-      <thead>
-        <tr>
-          <th>Symbol</th>
-          <th>Quantity</th>
-        </tr>
-      </thead>
-      <tbody>
-        {holdings.map((holding) => (
-          <tr key={holding.id}>
-            <td>{holding.symbol}</td>
-            <td>{holding.quantity}</td>
+    <div className="scrollable-table-container">
+      <table className="styled-table">
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Quantity</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {holdings.map((holding) => (
+            <tr key={holding.id}>
+              <td>{holding.symbol}</td>
+              <td>{holding.quantity}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -117,3 +150,4 @@ function RankingsTable({ rankings }) {
 }
 
 export default App;
+
