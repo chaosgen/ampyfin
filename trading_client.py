@@ -114,18 +114,23 @@ def main():
                     early_hour_first_iteration = False
                     post_hour_first_iteration = True
             account = trading_client.get_account()
+            
             buy_heap = []
             for ticker in ndaq_tickers:
                 decisions_and_quantities = []
                 try:
                     trading_client = TradingClient(API_KEY, API_SECRET)
                     account = trading_client.get_account()
-                
+
                     buying_power = float(account.cash)
                     portfolio_value = float(account.portfolio_value)
                     cash_to_portfolio_ratio = buying_power / portfolio_value
-                
-                
+                    mongo_client = MongoClient(mongo_url)
+                    trades_db = mongo_client.trades
+                    portfolio_collection = trades_db.portfolio_value
+                    portfolio_collection.delete_many({})
+                    portfolio_collection.insert_one({'portfolio_percentage': (portfolio_value-50000)/50000})
+                    
                     historical_data = get_historical_data(ticker, data_client)
                     ticker_yahoo = yf.Ticker(ticker)
                     data = ticker_yahoo.history()

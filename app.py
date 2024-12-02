@@ -26,7 +26,8 @@ client = AsyncIOMotorClient(MONGODB_URL)
 try:
     db = client.get_database("trades")
     holdings_collection = db.get_collection("assets_quantities")
-
+    portfolio_value_collection = db.get_collection("portfolio_value")
+    
     db = client.get_database("trading_simulator")
     rankings_collection = db.get_collection("rank")
     print("MongoDB collections are connected and ready.")
@@ -94,7 +95,28 @@ async def get_rankings():
         raise HTTPException(status_code=500, detail="Failed to fetch rankings")
     
     return rankings
+@app.get("/portfolio_percentage")
+async def get_portfolio_percentage():
+    try:
+        # Fetch portfolio value entry from MongoDB by _id
+        portfolio = await portfolio_value_collection.find_one({"_id": ObjectId("674e33dfbba019ec96cf4762")})
+        
+        if not portfolio:
+            raise HTTPException(status_code=404, detail="Portfolio value not found")
 
+        # Calculate the portfolio percentage increase
+        initial_value = portfolio.get("initial_value")
+        current_value = portfolio.get("current_value")
+        
+        if initial_value and current_value:
+            percentage_increase = (current_value - initial_value) / initial_value
+            return {"portfolio_percentage": percentage_increase}
+        else:
+            raise HTTPException(status_code=400, detail="Missing portfolio values")
+
+    except Exception as e:
+        print(f"Error fetching portfolio percentage: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch portfolio percentage")
 @app.get("/")
 async def root():
     return {"message": "AmpyFin API is running!"}
