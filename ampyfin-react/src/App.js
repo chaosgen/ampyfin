@@ -100,7 +100,12 @@ function App() {
   };
 
   return (
+
+
     <div className="App">
+      <Helmet>
+        <title>AmpyFin</title>
+      </Helmet>
       <header className="App-header">
         <h1>AmpyFin</h1>
         <nav>
