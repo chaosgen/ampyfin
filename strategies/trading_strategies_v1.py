@@ -2,7 +2,7 @@ from alpaca.data.historical import StockHistoricalDataClient
 from alpaca.data.requests import StockBarsRequest
 from alpaca.data.timeframe import TimeFrame
 from datetime import datetime, timedelta
-from config import API_KEY, API_SECRET, BASE_URL
+
 
 import numpy as np
 import pandas as pd
