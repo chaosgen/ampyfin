@@ -1911,7 +1911,7 @@ def wavelet_decomposition_strategy(ticker, current_price, historical_data, accou
       
     # Calculate the maximum level based on data length  
     max_level = pywt.dwt_max_level(len(returns), 'db4')  
-    level = min(3, max_level)  # Use 3 or the maximum possible level, whichever is smaller  
+    level = min(2, max_level)  # Use 2 or the maximum possible level, whichever is smaller  
       
     # Wavelet decomposition using PyWavelets  
     coeffs = pywt.wavedec(returns, 'db4', level=level)  
