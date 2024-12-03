@@ -1,4 +1,4 @@
-/* General Body Style */
+/* General App Styling */
 body {
   font-family: 'Arial', sans-serif;
   background-color: #f5f5f5;
@@ -6,31 +6,143 @@ body {
   padding: 0;
 }
 
-/* App Layout */
 .App {
   text-align: center;
 }
 
-/* Header Styling */
 header {
   background-color: #1e1e1e;
   color: white;
-  padding: 20px 0;
+  padding-top: 20px;
+  padding-bottom: 0;
+  margin-bottom: 0;
   position: relative;
 }
 
 h1 {
   font-size: 2.5rem;
+  margin: 0;
 }
 
-/* Live Status Indicator */
-.live-status {
+h2 {
+  text-align: center;
+}
+
+/* Navigation Bar */
+nav ul {
+  list-style: none;
+  padding: 0;
   display: flex;
-  align-items: center;
   justify-content: center;
+  background-color: #333;
+  margin-top: 10px;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+nav ul li {
+  padding: 15px 30px;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+nav ul li:hover {
+  background-color: #555;
+}
+
+/* Section Styling */
+.content-section {
+  padding: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+h2 {
+  color: #333;
+  margin-bottom: 10px;
+}
+
+/* Flexbox Layout for Portfolio and Sections */
+.main-content {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px;
+}
+
+.portfolio-section {
+  width: 30%; /* Portfolio percentage section on the left */
+  text-align: left;
+}
+
+.right-sections {
+  width: 65%; /* Holdings and Rankings on the right */
+}
+
+/* Portfolio Percentage Styling */
+.portfolio-percentage {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 10px 0;
+  padding: 10px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  display: inline-block;
+}
+
+.portfolio-percentage.green {
+  color: #28a745; /* Green for positive percentage */
+}
+
+.portfolio-percentage.red {
+  color: #dc3545; /* Red for negative percentage */
+}
+
+/* Benchmark Section Styling */
+.benchmark-section {
+  display: flex;
+  justify-content: space-around;
+  padding: 20px;
+}
+
+.benchmark-section div {
+  font-size: 1.5rem;
+  background-color: #fff;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  width: 30%;
+  text-align: center;
+}
+
+.benchmark-section div.green {
+  color: #28a745;
+}
+
+.benchmark-section div.red {
+  color: #dc3545;
+}
+
+.live-since {
+  font-size: 0.9rem;
+  color: #888;
+  margin-top: 5px;
+}
+
+/* Live Status */
+.live-status {
   position: absolute;
   right: 20px;
   top: 20px;
+  text-align: right;
+}
+
+.last-updated {
+  font-size: 0.9rem;
+  color: #888;
+  margin-top: 5px;
 }
 
 .live-dot {
@@ -49,64 +161,6 @@ h1 {
   50% {
     opacity: 0;
   }
-}
-
-/* Section Headers */
-h2, h3 {
-  color: #333;
-  margin-bottom: 10px;
-}
-
-/* Flexbox Layout for Portfolio and Sections */
-.main-content {
-  display: flex;
-  justify-content: space-between;
-  padding: 20px;
-}
-
-.portfolio-section {
-  width: 30%;
-  padding: 20px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  text-align: left;
-}
-
-/* Portfolio Percentage Display */
-.portfolio-percentage {
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin-top: 10px;
-  padding: 10px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  display: inline-block;
-}
-
-.portfolio-percentage.green {
-  color: #28a745; /* Green for positive percentage */
-}
-
-.portfolio-percentage.red {
-  color: #dc3545; /* Red for negative percentage */
-}
-
-.portfolio-percentage.gray {
-  color: #6c757d; /* Gray if no percentage data */
-}
-
-/* New Styling for "Live Since" */
-.live-since {
-  font-size: 1rem;
-  color: #888;
-  margin-top: 5px;
-}
-
-/* Right Sections Styling (Holdings & Rankings) */
-.right-sections {
-  width: 65%;
 }
 
 /* General Style for Tables */
@@ -139,19 +193,18 @@ h2, h3 {
   border-bottom: 2px solid #009879;
 }
 
-/* Scrollable Table Container for Holdings & Rankings */
+/* Scrollable Table Container */
 .scrollable-table-container {
   max-height: 300px; /* Height of the scrollable area */
   overflow-y: auto; /* Enable vertical scrolling */
   overflow-x: hidden; /* Disable horizontal scrolling */
   border: 1px solid #ddd;
-  width: 100%; /* Full width of parent container */
+  width: 100%;
   max-width: 600px; /* Set maximum width to match the styled-table */
   margin: 20px auto; /* Center the table horizontally */
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-/* Minimal Scrollbar Styling */
 .scrollable-table-container::-webkit-scrollbar {
   width: 8px;
 }
@@ -180,15 +233,38 @@ footer p {
   margin: 0;
 }
 
-/* Responsive Design for Smaller Screens */
-@media screen and (max-width: 768px) {
-  .main-content {
+/* Responsive Styling */
+@media (max-width: 768px) {
+  .benchmark-section {
     flex-direction: column;
     align-items: center;
   }
+}
 
-  .portfolio-section,
-  .right-sections {
-    width: 90%;
+/* Live Status Indicator */
+.live-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  right: 20px;
+  top: 20px;
+}
+
+.live-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: red;
+  margin-right: 5px;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
   }
 }

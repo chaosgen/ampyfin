@@ -1,20 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Helmet } from 'react-helmet';
 import './App.css';
 
 const API_URL = "https://ampyfin-api-app.onrender.com";
 
 function App() {
+  const [activeTab, setActiveTab] = useState('how-it-works');
   const [holdings, setHoldings] = useState([]);
   const [rankings, setRankings] = useState([]);
-  const [portfolioData, setPortfolioData] = useState({
-    portfolio_percentage: null,
-    ndaq_percentage: null,
-    spy_percentage: null,
-  });
+  const [portfolioPercentage, setPortfolioPercentage] = useState(null);
+  const [ndaqPercentage, setNdaqPercentage] = useState(null);
+  const [spyPercentage, setSpyPercentage] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState('');
 
-  // Fetch Holdings
+  // Fetch Data from API
+  const fetchPortfolioPercentage = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/portfolio_percentage`);
+      setPortfolioPercentage(response.data.portfolio_percentage);
+      setNdaqPercentage(response.data.ndaq_percentage);
+      setSpyPercentage(response.data.spy_percentage);
+      setLastUpdated(new Date().toLocaleString());
+    } catch (error) {
+      console.error('Error fetching portfolio percentage:', error);
+    }
+  };
+
   const fetchHoldings = async () => {
     try {
       const response = await axios.get(`${API_URL}/holdings`);
@@ -24,7 +35,6 @@ function App() {
     }
   };
 
-  // Fetch Rankings
   const fetchRankings = async () => {
     try {
       const response = await axios.get(`${API_URL}/rankings`);
@@ -34,96 +44,82 @@ function App() {
     }
   };
 
-  // Fetch Portfolio Percentages
-  const fetchPortfolioData = async () => {
-    try {
-      const response = await axios.get(`${API_URL}/portfolio_percentage`);
-      setPortfolioData(response.data);
-    } catch (error) {
-      console.error('Error fetching portfolio data:', error);
+  useEffect(() => {
+    fetchPortfolioPercentage();
+    fetchHoldings();
+    fetchRankings();
+    const interval = setInterval(() => {
+      fetchPortfolioPercentage();
+      fetchHoldings();
+      fetchRankings();
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'how-it-works':
+        return (
+          <div className="content-section">
+            <h2>How AmpyFin Works</h2>
+            <p>
+              AmpyFin is a cutting-edge, <strong>AI-powered trading bot</strong> designed specifically for navigating the complexities of the <strong>NASDAQ-100</strong>. By utilizing a machine learning strategy called <strong>Supervised Ensembled Learning</strong>, AmpyFin leverages a range of diverse trading strategies, dynamically ranking each algorithm based on performance and current market conditions. 
+              This allows the bot to intelligently allocate its resources and optimize trades, ensuring both high efficiency and adaptability in real-time.
+            </p>
+            <p>
+              At the heart of AmpyFin is its <strong>dynamic ranking system</strong>, which adjusts the influence of each algorithm according to its recent success rates. This dynamic system ensures that AmpyFin consistently prioritizes the most effective strategies while minimizing risk exposure. All algorithms are rigorously tested in simulated environments to ensure that only the best-performing models contribute to real-time trading decisions.
+            </p>
+            <p>
+              With an ever-adapting approach to market conditions, AmpyFin ensures optimal risk management, continually evaluating and adjusting its strategies to remain ahead in a volatile market environment. The system seamlessly combines fundamental trading strategies like <strong>Mean Reversion</strong> and <strong> Momentum</strong> with more advanced AI-driven methods like <strong>Entropy Flow Strategy</strong>, ensuring that every trade is backed by the most robust analysis available.
+            </p>
+
+          </div>
+        );
+      case 'portfolio':
+        return (
+          <div className="content-section">
+            <h2>Portfolio & Trading Results</h2>
+            <HoldingsTable holdings={holdings} />
+            <RankingsTable rankings={rankings} />
+          </div>
+        );
+      case 'benchmark':
+        return (
+          <div className="content-section">
+            <h2>Performance Benchmarked Against Major ETFs</h2>
+            <BenchmarkSection 
+              portfolioPercentage={portfolioPercentage} 
+              ndaqPercentage={ndaqPercentage} 
+              spyPercentage={spyPercentage} 
+            />
+          </div>
+        );
+      default:
+        return null;
     }
   };
 
-  // Fetch data initially and every minute
-  useEffect(() => {
-    fetchHoldings();
-    fetchRankings();
-    fetchPortfolioData();
-
-    const interval = setInterval(() => {
-      fetchHoldings();
-      fetchRankings();
-      fetchPortfolioData();
-    }, 60000); // Update every 1 minute
-
-    return () => clearInterval(interval); // Cleanup on component unmount
-  }, []);
-
-  const formatPercentage = (percentage) => {
-    const formatted = (percentage * 100).toFixed(2); // Convert to percentage and round to 2 decimal places
-    const sign = formatted >= 0 ? '+' : ''; // Add '+' for positive numbers
-    const color = formatted >= 0 ? 'green' : 'red'; // Determine the color based on the value
-    return { formatted, sign, color };
-  };
-
-  const portfolio = portfolioData.portfolio_percentage !== null 
-    ? formatPercentage(portfolioData.portfolio_percentage) 
-    : { formatted: '0.00', sign: '', color: 'gray' };
-
-  const ndaq = portfolioData.ndaq_percentage !== null 
-    ? formatPercentage(portfolioData.ndaq_percentage) 
-    : { formatted: '0.00', sign: '', color: 'gray' };
-
-  const spy = portfolioData.spy_percentage !== null 
-    ? formatPercentage(portfolioData.spy_percentage) 
-    : { formatted: '0.00', sign: '', color: 'gray' };
-
   return (
     <div className="App">
-      <Helmet>
-        <title>AmpyFin Dashboard</title>
-      </Helmet>
-
       <header className="App-header">
-        <h1>AmpyFin Portfolio</h1>
+        <h1>AmpyFin</h1>
+        <nav>
+          <ul>
+            <li onClick={() => setActiveTab('how-it-works')}>How It Works</li>
+            <li onClick={() => setActiveTab('portfolio')}>Portfolio & Results</li>
+            <li onClick={() => setActiveTab('benchmark')}>Benchmark</li>
+          </ul>
+        </nav>
         <div className="live-status">
           <span className="live-dot"></span>
           <span>LIVE</span>
+          
         </div>
       </header>
-
-      <main className="main-content">
-        <section className="portfolio-section">
-          <h3>Total Ampyfin Percentage since November 20, 2024</h3>
-          <p className={`portfolio-percentage ${portfolio.color}`}>
-            {portfolio.sign}{portfolio.formatted}%
-          </p>
-          <h3>Total NASDAQ Percentage since November 20, 2024</h3>
-          <p className={`portfolio-percentage ${ndaq.color}`}>
-            {ndaq.sign}{ndaq.formatted}%
-          </p>
-          <h3>Total S&P 500 Percentage since November 20, 2024</h3>
-          <p className={`portfolio-percentage ${spy.color}`}>
-            {spy.sign}{spy.formatted}%
-          </p>
-          <p className="live-since">Live since November 20, 2024 at 8:00 AM</p>
-        </section>
-
-        <section className="right-sections">
-          <div>
-            <h2>Current Holdings</h2>
-            <HoldingsTable holdings={holdings} />
-          </div>
-          <div>
-            <h2>Algorithm Rankings</h2>
-            <RankingsTable rankings={rankings} />
-          </div>
-        </section>
-      </main>
-
+      <main>{renderTabContent()}</main>
       <footer className="App-footer">
-        <p>Last updated: {new Date().toLocaleString()}</p>
-        <p>&copy; 2024 AmpyFin. All rights reserved.</p>
+        <p className="last-updated">Last Updated: {lastUpdated}</p>
+        <p>&copy; 2024 AmpyFin Trading Bot</p>
       </footer>
     </div>
   );
@@ -175,5 +171,25 @@ function RankingsTable({ rankings }) {
   );
 }
 
-export default App;
+function BenchmarkSection({ portfolioPercentage, ndaqPercentage, spyPercentage }) {
+  const formatPercentage = (value) => `${value > 0 ? '+' : ''}${(value * 100).toFixed(2)}%`;
 
+  return (
+    <div className="benchmark-section">
+      <div className={`portfolio-percentage ${portfolioPercentage > 0 ? 'green' : 'red'}`}>
+        AmpyFin: {formatPercentage(portfolioPercentage)}
+        <p className="live-since">Total Percentage since November 20, 2024, at 8:00 AM</p>
+      </div>
+      <div className={`portfolio-percentage ${ndaqPercentage > 0 ? 'green' : 'red'}`}>
+        NDAQ: {formatPercentage(ndaqPercentage)}
+        <p className="live-since">Total Percentage since November 20, 2024, at 8:00 AM</p>
+      </div>
+      <div className={`portfolio-percentage ${spyPercentage > 0 ? 'green' : 'red'}`}>
+        SPY: {formatPercentage(spyPercentage)}
+        <p className="live-since">Total Percentage since November 20, 2024, at 8:00 AM</p>
+      </div>
+    </div>
+  );
+}
+
+export default App;
