@@ -13,9 +13,11 @@ app = FastAPI()
 
 # MongoDB credentials from environment variables (imported from config)
 
-
+"""
 MONGO_DB_USER = os.getenv("MONGO_DB_USER")
 MONGO_DB_PASS = os.getenv("MONGO_DB_PASS")
+"""
+from config import MONGO_DB_USER, MONGO_DB_PASS
 
 MONGODB_URL = f"mongodb+srv://{MONGO_DB_USER}:{MONGO_DB_PASS}@cluster0.0qoxq.mongodb.net/?retryWrites=true&w=majority"
 print(MONGODB_URL)
@@ -98,23 +100,38 @@ async def get_rankings():
 @app.get("/portfolio_percentage")
 async def get_portfolio_percentage():
     try:
-        # Fetch portfolio value entry from MongoDB by _id
-        portfolio = await portfolio_value_collection.find({}).to_list(length=1)
-        
-        if not portfolio:
-            raise HTTPException(status_code=404, detail="Portfolio value not found")
+        # Fetch all documents from the portfolio_value collection
+        portfolio = await portfolio_value_collection.find({}).to_list(length=3)
 
-        # Calculate the portfolio percentage increase
-        initial_value = portfolio[0]['portfolio_percentage']
-        
-        if initial_value:
-            return {"portfolio_percentage": initial_value}
-        else:
-            raise HTTPException(status_code=400, detail="Missing portfolio values")
+        # Initialize dictionary to store values
+        percentage_data = {
+            "portfolio_percentage": None,
+            "ndaq_percentage": None,
+            "spy_percentage": None,
+        }
+
+        # Extract percentage values
+        for entry in portfolio:
+            if "portfolio_percentage" in entry:
+                percentage_data["portfolio_percentage"] = entry["portfolio_percentage"]
+            elif "ndaq_percentage" in entry:
+                percentage_data["ndaq_percentage"] = entry["ndaq_percentage"]
+            elif "spy_percentage" in entry:
+                percentage_data["spy_percentage"] = entry["spy_percentage"]
+
+        # Check if all values are found
+        if (
+            percentage_data["portfolio_percentage"] is None
+            or percentage_data["ndaq_percentage"] is None
+            or percentage_data["spy_percentage"] is None
+        ):
+            raise HTTPException(status_code=404, detail="One or more percentages not found")
+
+        return percentage_data
 
     except Exception as e:
         print(f"Error fetching portfolio percentage: {e}")
-        raise HTTPException(status_code=500, detail="Failed to fetch portfolio percentage")
+        raise HTTPException(status_code=500, detail="Failed to fetch portfolio percentages")
 @app.get("/")
 async def root():
     return {"message": "AmpyFin API is running!"}
