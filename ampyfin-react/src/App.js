@@ -79,8 +79,9 @@ function App() {
       case 'portfolio':
         return (
           <div className="content-section">
-            <h2>Portfolio & Trading Results</h2>
+            <h2>Current Portfolio</h2>
             <HoldingsTable holdings={holdings} />
+            <h2>Current Rankings</h2>
             <RankingsTable rankings={rankings} />
           </div>
         );
