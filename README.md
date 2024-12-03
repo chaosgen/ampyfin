@@ -54,10 +54,17 @@ The dynamic ranking system allows **AmpyFin** to:
   This is the main entry point for the AmpyFin trading bot, offering access to all available endpoints.
 
 - **Rankings Endpoint**: [https://ampyfin-api-app.onrender.com/rankings](https://ampyfin-api-app.onrender.com/rankings)  
-  This endpoint returns the current rankings of the trading algorithms. Higher ranks indicate better performance.
+  This GET endpoint returns the current rankings of the trading algorithms. Higher ranks indicate better performance.
 
 - **Holdings Endpoint**: [https://ampyfin-api-app.onrender.com/holdings](https://ampyfin-api-app.onrender.com/holdings)  
-  This endpoint provides the current holdings of the trading bot.
+  This GET endpoint provides the current holdings of the trading bot.
+
+- **Portfolio & Major ETFs Endpoint**: [https://ampyfin-api-app.onrender.com/portfolio_percentage](https://ampyfin-api-app.onrender.com/portfolio_percentage)  
+  This GET endpoint provides the current total profit percentage of the trading bot since going live. It also provides the current percentage of the portfolio the NDAQ and SPY etfs.
+
+- **Test Endpoint**: [https://ampyfin-api-app.onrender.com/ticker/](https://ampyfin-api-app.onrender.com/ticker/{ticker})  
+  This GET endpoint provides the current sentiment of the trading bot on the particular ticker. Replace {ticker} with an actual ticker symbol. The ticker symbol should be in all caps. It doesn't need to be in the NDAQ-100 but must be listed in the NYSE or NASDAQ.
+
 
 ## **Features**
 

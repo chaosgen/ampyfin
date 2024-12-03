@@ -237,8 +237,20 @@ async def get_ticker_result(ticker: str):
             coefficient = coefficient_doc[0].get('coefficient', 0)
             strategy_to_coefficient[strategy.__name__] = coefficient
         
+        try:
+            current_price = get_latest_price(ticker)
+        except Exception as e:
+            print(f"Error fetching latest price for {ticker}: {e}")
+            return {
+                "ticker": ticker,
+                "decision": "ERROR",
+                "median_quantity": 0,
+                "buy_weight": 0,
+                "sell_weight": 0,
+                "hold_weight": 0,
+            }
+
         
-        current_price = get_latest_price(ticker)
         historical_data = get_historical_data(ticker, data_client)
         buying_power = 50000.00
         portfolio_qty = 5
