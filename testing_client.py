@@ -79,13 +79,9 @@ def test_strategies():
       
    
 def test_helper():
-   ticker = "AAPL"  # Replace with your desired ticker
+   ticker = 'SPY'  # Replace with your desired ticker
 
-   apple = yf.Ticker(ticker)
-   """
-   print(apple.history(period="1d"))
-   """
-   price = apple.history()['Close'].iloc[-1]
-   print(price)
+   
+   print(get_latest_price(ticker))
 if __name__ == "__main__":  
-   test_strategies()
+   test_helper()
