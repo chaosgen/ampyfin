@@ -11,3 +11,5 @@ uvicorn
 motor
 python-dotenv
 stats
+PyWavelets
+ripser
