@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Helmet } from 'react-helmet'; // For custom tab title
+import { Helmet } from 'react-helmet';
 import './App.css';
 
 const API_URL = "https://ampyfin-api-app.onrender.com";
@@ -8,7 +8,11 @@ const API_URL = "https://ampyfin-api-app.onrender.com";
 function App() {
   const [holdings, setHoldings] = useState([]);
   const [rankings, setRankings] = useState([]);
-  const [portfolioPercentage, setPortfolioPercentage] = useState(null);
+  const [portfolioData, setPortfolioData] = useState({
+    portfolio_percentage: null,
+    ndaq_percentage: null,
+    spy_percentage: null,
+  });
 
   // Fetch Holdings
   const fetchHoldings = async () => {
@@ -30,14 +34,13 @@ function App() {
     }
   };
 
-  // Fetch Portfolio Percentage
-  const fetchPortfolioPercentage = async () => {
+  // Fetch Portfolio Percentages
+  const fetchPortfolioData = async () => {
     try {
       const response = await axios.get(`${API_URL}/portfolio_percentage`);
-      const percentage = response.data.portfolio_percentage;
-      setPortfolioPercentage(percentage);
+      setPortfolioData(response.data);
     } catch (error) {
-      console.error('Error fetching portfolio percentage:', error);
+      console.error('Error fetching portfolio data:', error);
     }
   };
 
@@ -45,12 +48,12 @@ function App() {
   useEffect(() => {
     fetchHoldings();
     fetchRankings();
-    fetchPortfolioPercentage();
+    fetchPortfolioData();
 
     const interval = setInterval(() => {
       fetchHoldings();
       fetchRankings();
-      fetchPortfolioPercentage();
+      fetchPortfolioData();
     }, 60000); // Update every 1 minute
 
     return () => clearInterval(interval); // Cleanup on component unmount
@@ -63,14 +66,22 @@ function App() {
     return { formatted, sign, color };
   };
 
-  const { formatted, sign, color } = portfolioPercentage !== null 
-    ? formatPercentage(portfolioPercentage) 
+  const portfolio = portfolioData.portfolio_percentage !== null 
+    ? formatPercentage(portfolioData.portfolio_percentage) 
+    : { formatted: '0.00', sign: '', color: 'gray' };
+
+  const ndaq = portfolioData.ndaq_percentage !== null 
+    ? formatPercentage(portfolioData.ndaq_percentage) 
+    : { formatted: '0.00', sign: '', color: 'gray' };
+
+  const spy = portfolioData.spy_percentage !== null 
+    ? formatPercentage(portfolioData.spy_percentage) 
     : { formatted: '0.00', sign: '', color: 'gray' };
 
   return (
     <div className="App">
       <Helmet>
-        <title>AmpyFin</title> {/* Set the custom tab title */}
+        <title>AmpyFin Dashboard</title>
       </Helmet>
 
       <header className="App-header">
@@ -82,16 +93,22 @@ function App() {
       </header>
 
       <main className="main-content">
-        {/* Portfolio Percentage on the Left */}
         <section className="portfolio-section">
           <h2>Total Percentage Profit/Loss</h2>
-          <p className={`portfolio-percentage ${color}`}>
-            {sign}{formatted}%
+          <p className={`portfolio-percentage ${portfolio.color}`}>
+            {portfolio.sign}{portfolio.formatted}%
           </p>
-          <p className="live-since">Live since November 15, 2024 at 8:00 AM</p> {/* Live since date */}
+          <h3>NASDAQ Percentage</h3>
+          <p className={`portfolio-percentage ${ndaq.color}`}>
+            {ndaq.sign}{ndaq.formatted}%
+          </p>
+          <h3>S&P 500 Percentage</h3>
+          <p className={`portfolio-percentage ${spy.color}`}>
+            {spy.sign}{spy.formatted}%
+          </p>
+          <p className="live-since">Live since November 15, 2024 at 8:00 AM</p>
         </section>
 
-        {/* Holdings and Rankings on the Right */}
         <section className="right-sections">
           <div>
             <h2>Current Holdings</h2>
