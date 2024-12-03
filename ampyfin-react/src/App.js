@@ -79,16 +79,16 @@ function App() {
       case 'portfolio':
         return (
           <div className="content-section">
-            <h2>Current Portfolio</h2>
+            <h2>Live Portfolio</h2>
             <HoldingsTable holdings={holdings} />
-            <h2>Current Rankings</h2>
+            <h2>Live Rankings</h2>
             <RankingsTable rankings={rankings} />
           </div>
         );
       case 'benchmark':
         return (
           <div className="content-section">
-            <h2>Performance Benchmarked Against Major ETFs</h2>
+            <h2>Live Performance Benchmarked Against Major ETFs</h2>
             <BenchmarkSection 
               portfolioPercentage={portfolioPercentage} 
               ndaqPercentage={ndaqPercentage} 
