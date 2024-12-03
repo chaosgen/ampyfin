@@ -13,6 +13,9 @@ function App() {
   const [ndaqPercentage, setNdaqPercentage] = useState(null);
   const [spyPercentage, setSpyPercentage] = useState(null);
   const [lastUpdated, setLastUpdated] = useState('');
+  const [ticker, setTicker] = useState('');
+  const [ampyfinResult, setAmpyfinResult] = useState(null);
+  const [isLoading, setIsLoading] = useState(false); // Add state for loading
 
   // Fetch Data from API
   const fetchPortfolioPercentage = async () => {
@@ -45,6 +48,23 @@ function App() {
     }
   };
 
+  
+  
+
+  const fetchAmpyfinRecommendation = async (ticker) => {
+    setIsLoading(true);  // Set loading to true when starting the request
+    try {
+      const response = await axios.get(`${API_URL}/ticker/${ticker}`);
+      setAmpyfinResult(response.data);
+    } catch (error) {
+      console.error('Error fetching AmpyFin recommendation:', error);
+      setAmpyfinResult(null);
+    } finally {
+      setIsLoading(false);  // Set loading to false once the request finishes
+    }
+  };
+
+
   useEffect(() => {
     fetchPortfolioPercentage();
     fetchHoldings();
@@ -73,7 +93,6 @@ function App() {
             <p>
               With an ever-adapting approach to market conditions, AmpyFin ensures optimal risk management, continually evaluating and adjusting its strategies to remain ahead in a volatile market environment. The system seamlessly combines fundamental trading strategies like <strong>Mean Reversion</strong> and <strong> Momentum</strong> with more advanced AI-driven methods like <strong>Entropy Flow Strategy</strong>, ensuring that every trade is backed by the most robust analysis available.
             </p>
-
           </div>
         );
       case 'portfolio':
@@ -96,14 +115,56 @@ function App() {
             />
           </div>
         );
+        case 'test-ampyfin':
+          return (
+            <div className="content-section">
+              <h2>Test AmpyFin</h2>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  fetchAmpyfinRecommendation(ticker);
+                }}
+              >
+                <input 
+                  type="text" 
+                  value={ticker} 
+                  onChange={(e) => setTicker(e.target.value)} 
+                  placeholder="Enter Ticker" 
+                  required 
+                />
+                <button type="submit">Process</button>
+              </form>
+        
+              {isLoading ? (
+                <div className="loading-message">
+                  <p>Processing...</p>
+                  {/* You can also use a spinner here */}
+                  <div className="spinner"></div>
+                </div>
+              ) : ampyfinResult ? (
+                <div className="ampyfin-result">
+                  <h3>{ampyfinResult.ticker}</h3>
+                  <p 
+                    className={`decision ${ampyfinResult.decision}`}
+                  >
+                    Decision: <strong>{ampyfinResult.decision}</strong>
+                  </p>
+                  <p>Buy Weight: {ampyfinResult.buy_weight}</p>
+                  <p>Sell Weight: {ampyfinResult.sell_weight}</p>
+                  <p>Hold Weight: {ampyfinResult.hold_weight}</p>
+                </div>
+              ) : (
+                <p>No data available. Please enter a valid ticker.</p>
+              )}
+            </div>
+          );
+        
       default:
         return null;
     }
   };
 
   return (
-
-
     <div className="App">
       <Helmet>
         <title>AmpyFin</title>
@@ -115,12 +176,12 @@ function App() {
             <li onClick={() => setActiveTab('how-it-works')}>How It Works</li>
             <li onClick={() => setActiveTab('portfolio')}>Portfolio & Results</li>
             <li onClick={() => setActiveTab('benchmark')}>Benchmark</li>
+            <li onClick={() => setActiveTab('test-ampyfin')}>Test AmpyFin</li>
           </ul>
         </nav>
         <div className="live-status">
           <span className="live-dot"></span>
           <span>LIVE</span>
-          
         </div>
       </header>
       <main>{renderTabContent()}</main>

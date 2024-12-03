@@ -268,3 +268,44 @@ footer p {
     opacity: 0;
   }
 }
+
+.decision {
+  font-weight: bold;
+}
+
+.decision.buy {
+  color: green;
+}
+
+.decision.sell {
+  color: red;
+}
+
+.decision.hold {
+  color: black;
+}
+
+/* Loading message */
+.loading-message {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.2em;
+  color: #333;
+}
+
+/* Spinner animation */
+.spinner {
+  border: 4px solid #f3f3f3; /* Light grey background */
+  border-top: 4px solid #3498db; /* Blue color */
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 2s linear infinite;
+  margin-left: 10px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
