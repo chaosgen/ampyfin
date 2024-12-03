@@ -18,12 +18,12 @@ app = FastAPI()
 
 # MongoDB credentials from environment variables (imported from config)
 
-"""
+
 MONGO_DB_USER = os.getenv("MONGO_DB_USER")
 MONGO_DB_PASS = os.getenv("MONGO_DB_PASS")
 API_KEY = os.getenv("API_KEY")
 API_SECRET = os.getenv("API_SECRET")
-"""
+
 from config import MONGO_DB_USER, MONGO_DB_PASS, API_KEY, API_SECRET
 
 MONGODB_URL = f"mongodb+srv://{MONGO_DB_USER}:{MONGO_DB_PASS}@cluster0.0qoxq.mongodb.net/?retryWrites=true&w=majority"
