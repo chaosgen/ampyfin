@@ -94,19 +94,19 @@ function App() {
 
       <main className="main-content">
         <section className="portfolio-section">
-          <h2>Total Percentage Profit/Loss</h2>
+          <h3>Total Ampyfin Percentage since November 20, 2024</h3>
           <p className={`portfolio-percentage ${portfolio.color}`}>
             {portfolio.sign}{portfolio.formatted}%
           </p>
-          <h3>NASDAQ Percentage</h3>
+          <h3>Total NASDAQ Percentage since November 20, 2024</h3>
           <p className={`portfolio-percentage ${ndaq.color}`}>
             {ndaq.sign}{ndaq.formatted}%
           </p>
-          <h3>S&P 500 Percentage</h3>
+          <h3>Total S&P 500 Percentage since November 20, 2024</h3>
           <p className={`portfolio-percentage ${spy.color}`}>
             {spy.sign}{spy.formatted}%
           </p>
-          <p className="live-since">Live since November 15, 2024 at 8:00 AM</p>
+          <p className="live-since">Live since November 20, 2024 at 8:00 AM</p>
         </section>
 
         <section className="right-sections">
