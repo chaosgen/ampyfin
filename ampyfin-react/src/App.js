@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Helmet } from 'react-helmet'; // For custom tab title
 import './App.css';
 
 const API_URL = "https://ampyfin-api-app.onrender.com";
@@ -62,10 +63,16 @@ function App() {
     return { formatted, sign, color };
   };
 
-  const { formatted, sign, color } = portfolioPercentage !== null ? formatPercentage(portfolioPercentage) : { formatted: '0.00', sign: '', color: 'gray' };
+  const { formatted, sign, color } = portfolioPercentage !== null 
+    ? formatPercentage(portfolioPercentage) 
+    : { formatted: '0.00', sign: '', color: 'gray' };
 
   return (
     <div className="App">
+      <Helmet>
+        <title>AmpyFin</title> {/* Set the custom tab title */}
+      </Helmet>
+
       <header className="App-header">
         <h1>AmpyFin Portfolio</h1>
         <div className="live-status">
@@ -73,6 +80,7 @@ function App() {
           <span>LIVE</span>
         </div>
       </header>
+
       <main className="main-content">
         {/* Portfolio Percentage on the Left */}
         <section className="portfolio-section">
@@ -95,6 +103,7 @@ function App() {
           </div>
         </section>
       </main>
+
       <footer className="App-footer">
         <p>Last updated: {new Date().toLocaleString()}</p>
         <p>&copy; 2024 AmpyFin. All rights reserved.</p>
