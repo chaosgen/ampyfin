@@ -18,12 +18,16 @@ app = FastAPI()
 
 # MongoDB credentials from environment variables (imported from config)
 
-
+"""
 MONGO_DB_USER = os.getenv("MONGO_DB_USER")
 MONGO_DB_PASS = os.getenv("MONGO_DB_PASS")
 API_KEY = os.getenv("API_KEY")
 API_SECRET = os.getenv("API_SECRET")
-
+"""
+"""
+comment out when uploading for change
+"""
+from config import MONGO_DB_USER, MONGO_DB_PASS, API_KEY, API_SECRET
 
 
 MONGODB_URL = f"mongodb+srv://{MONGO_DB_USER}:{MONGO_DB_PASS}@cluster0.0qoxq.mongodb.net/?retryWrites=true&w=majority"
@@ -144,6 +148,7 @@ async def get_portfolio_percentage():
 # Pydantic model for Ticker output (Result of algorithm)
 class TickerResult(BaseModel):
     ticker: str
+    current_price: float
     decision: str
     median_quantity: int
     buy_weight: float
@@ -199,6 +204,7 @@ async def run_algorithm_on_ticker(ticker: str):
         # Construct result
         result = {
             "ticker": ticker,
+            "current_price": current_price,
             "decision": decision,
             "median_quantity": median_qty,
             "buy_weight": buy_weight,
@@ -243,6 +249,7 @@ async def get_ticker_result(ticker: str):
             print(f"Error fetching latest price for {ticker}: {e}")
             return {
                 "ticker": ticker,
+                "current_price": 0,
                 "decision": "ERROR",
                 "median_quantity": 0,
                 "buy_weight": 0,
@@ -274,6 +281,7 @@ async def get_ticker_result(ticker: str):
         # Construct result
         result = {
             "ticker": ticker,
+            "current_price": current_price,
             "decision": decision,
             "median_quantity": median_qty,
             "buy_weight": buy_weight,
