@@ -30,6 +30,7 @@ comment out when uploading for change
 from config import MONGO_DB_USER, MONGO_DB_PASS, API_KEY, API_SECRET
 """
 
+
 MONGODB_URL = f"mongodb+srv://{MONGO_DB_USER}:{MONGO_DB_PASS}@cluster0.0qoxq.mongodb.net/?retryWrites=true&w=majority"
 
 # Initialize MongoDB client

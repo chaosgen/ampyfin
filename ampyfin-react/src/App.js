@@ -147,7 +147,7 @@ function App() {
                   <p 
                     className={`decision ${ampyfinResult.decision}`}
                   >
-                    Decision: <strong>{ampyfinResult.decision}</strong> @ current price of {ampyfinResult.current_price}
+                    Decision: <strong>{ampyfinResult.decision}</strong> @ current price of ${ampyfinResult.current_price}
                   </p>
                   
                   <p>Buy Weight: {ampyfinResult.buy_weight}</p>

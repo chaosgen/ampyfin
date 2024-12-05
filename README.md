@@ -134,6 +134,10 @@ The dynamic ranking system allows **AmpyFin** to:
 3. **Set Up MongoDB**:
    - Sign up for a MongoDB cluster (e.g., via [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)).
    - Get your MongoDB connection string and create a database for stock data storage.
+   - Replace my MongoDB string in the mongo_url variable in trading_client.py and ranking_client.py.
+   - Make sure to give yourself database access for both network and database itself. For network, add your IP or add 0.0.0.0/0. For database, give yourself access to the database by creating a user and password.
+   - Run initialize_rank and insert_rank_to_coefficient(100) in ranking_client.py to initialize the trading simulator.
+   
 
 ## **Configuration**
 
