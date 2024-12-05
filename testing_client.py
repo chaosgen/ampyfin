@@ -79,8 +79,10 @@ def test_strategies():
       
    
 def test_helper():
-   ticker = 'QQQ'  # Replace with your desired ticker
-
+   ticker = 'MSFT'  # Replace with your desired ticker
+   # Initialize the StockHistoricalDataClient
+   client = StockHistoricalDataClient(API_KEY, API_SECRET)
+   get_historical_data(ticker, client)
    
    print(get_latest_price(ticker))
 if __name__ == "__main__":  
