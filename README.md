@@ -133,15 +133,15 @@ pip install -r requirements.txt
 
 ### 4️⃣ API Setup
 
-*** Polygon API ***
+- Polygon API
 1. Sign up at [Polygon.io](https://polygon.io/) and get an API key.
 2. Add it to `config.py` as `POLYGON_API_KEY`.
 
-*** Financial Modeling Prep API ***
+- Financial Modeling Prep API
 1. Sign up at [Financial Modeling Prep](https://financialmodelingprep.com/) and get an API key.
 2. Add it to `config.py` as `FINANCIAL_PREP_API_KEY`.
 
-*** Alpaca API ***
+- Alpaca API
 1. Sign up at [Alpaca](https://alpaca.markets/) and get API keys.
 2. Add them to `config.py` as `API_KEY` and `API_SECRET`.
 
