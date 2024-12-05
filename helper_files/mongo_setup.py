@@ -76,7 +76,15 @@ def initialize_time_delta():
    collection.insert_one({"time_delta": 0.01})
    client.close()
 
+def initialize_market_setup():
+   client = MongoClient(mongo_url)
+   db = client.market_data
+   collection = client.market_status
+   collection.insert_one({"market_status": "closed"})
+   client.close()
+
 if __name__ == "__main__":
    insert_rank_to_coefficient(100)
    initialize_rank()
    initialize_time_delta()
+   initialize_market_setup()
