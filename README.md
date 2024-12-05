@@ -95,6 +95,10 @@ This ensures that recent trades have a greater influence on decision-making whil
 
 **Objective**: Helper Files to help with both trading client and ranking client
 
+**Features**:
+
+- Houses functions for retrieving a Mongo Client, getting latest prices, current strategies implemented etc.
+
 - **client_helper.py**: Contains common functions for client operations in both ranking and trading.
 
 
@@ -103,8 +107,8 @@ This ensures that recent trades have a greater influence on decision-making whil
 ### 1️⃣ Clone the Repository
 
 ```bash
-git clone https://github.com/yeonholee50/polygon-trading-bot.git
-cd polygon-trading-bot
+git clone https://github.com/yeonholee50/AmpyFin.git
+cd AmpyFin
 ```
 
 ### 2️⃣ Install Dependencies
@@ -113,7 +117,35 @@ cd polygon-trading-bot
 pip install -r requirements.txt
 ```
 
-### 3️⃣ Set Up MongoDB
+### 3️⃣ Configuration
+
+1. **Create `config.py`**:
+   - Copy `config_template.py` to `config.py` and enter your API keys and MongoDB credentials.
+    ```python
+    POLYGON_API_KEY = "your_polygon_api_key"
+    FINANCIAL_PREP_API_KEY = "your_fmp_api_key"
+    MONGO_DB_USER = "your_mongo_user"
+    MONGO_DB_PASS = "your_mongo_password"
+    API_KEY = "your_alpaca_api_key"
+    API_SECRET = "your_alpaca_secret_key"
+    BASE_URL = "https://paper-api.alpaca.markets"
+    ```
+
+### 4️⃣ API Setup
+
+*** Polygon API ***
+1. Sign up at [Polygon.io](https://polygon.io/) and get an API key.
+2. Add it to `config.py` as `POLYGON_API_KEY`.
+
+*** Financial Modeling Prep API ***
+1. Sign up at [Financial Modeling Prep](https://financialmodelingprep.com/) and get an API key.
+2. Add it to `config.py` as `FINANCIAL_PREP_API_KEY`.
+
+*** Alpaca API ***
+1. Sign up at [Alpaca](https://alpaca.markets/) and get API keys.
+2. Add them to `config.py` as `API_KEY` and `API_SECRET`.
+
+### 5️⃣ Set Up MongoDB
 
 - Sign up for a MongoDB cluster (e.g., via MongoDB Atlas).
 - Create a database for stock data storage and replace the `mongo_url` in `trading_client.py` and `ranking_client.py` with your connection string.
@@ -124,7 +156,9 @@ initialize_rank()
 insert_rank_to_coefficient(100)
 ```
 
-- The rest of the database will set itself up on the first minute in trading.
+- The rest of the database will set itself up on the first minute in trading for both ranking and trading.
+
+
 ## ⚡ Usage
 
 To run the bot, execute on two separate terminals:
