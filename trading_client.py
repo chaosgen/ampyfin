@@ -128,11 +128,17 @@ def main():
                     mongo_client = MongoClient(mongo_url)
                     trades_db = mongo_client.trades
                     portfolio_collection = trades_db.portfolio_value
-                    portfolio_collection.delete_many({})
-                    portfolio_collection.insert_one({'portfolio_percentage': (portfolio_value-50000)/50000})
-                    portfolio_collection.insert_one({'ndaq_percentage': (get_latest_price('QQQ')-503.17)/503.17})
-                    portfolio_collection.insert_one({'spy_percentage': (get_latest_price('SPY')-590.50)/590.50})
-                    portfolio_collection.insert
+                    previous_portfolio_value = portfolio_collection.find_one({'portfolio_percentage': {'$exists': True}})['portfolio_percentage']
+                    previous_ndaq_percentage = portfolio_collection.find_one({'ndaq_percentage': {'$exists': True}})['ndaq_percentage']
+                    previous_spy_percentage = portfolio_collection.find_one({'spy_percentage': {'$exists': True}})['spy_percentage']
+                    """
+                    we update instead of insert
+                    """
+                    portfolio_collection.update_one({}, {"$set": {"portfolio_percentage": (portfolio_value-50000)/50000}})
+                    portfolio_collection.update_one({}, {"$set": {"ndaq_percentage": (get_latest_price('QQQ')-503.17)/503.17}})
+                    portfolio_collection.update_one({}, {"$set": {"spy_percentage": (get_latest_price('SPY')-590.50)/590.50}})
+                    
+                    
                     historical_data = get_historical_data(ticker, data_client)
                     ticker_yahoo = yf.Ticker(ticker)
                     data = ticker_yahoo.history()
