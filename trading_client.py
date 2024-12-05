@@ -1,5 +1,5 @@
 from polygon import RESTClient
-from config import POLYGON_API_KEY, FINANCIAL_PREP_API_KEY, MONGO_DB_USER, MONGO_DB_PASS, API_KEY, API_SECRET, BASE_URL
+from config import POLYGON_API_KEY, FINANCIAL_PREP_API_KEY, MONGO_DB_USER, MONGO_DB_PASS, API_KEY, API_SECRET, BASE_URL, mongo_url
 import json
 import certifi
 from urllib.request import urlopen
@@ -24,7 +24,6 @@ import requests
 
 
 # MongoDB connection string
-mongo_url = f"mongodb+srv://{MONGO_DB_USER}:{MONGO_DB_PASS}@cluster0.0qoxq.mongodb.net"
 
 # Set up logging configuration
 logging.basicConfig(

@@ -1,5 +1,5 @@
 from polygon import RESTClient
-from config import POLYGON_API_KEY, FINANCIAL_PREP_API_KEY, MONGO_DB_USER, MONGO_DB_PASS, API_KEY, API_SECRET, BASE_URL
+from config import POLYGON_API_KEY, FINANCIAL_PREP_API_KEY, MONGO_DB_USER, MONGO_DB_PASS, API_KEY, API_SECRET, BASE_URL, mongo_url
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
@@ -63,8 +63,7 @@ logging.basicConfig(
     ]
 )
 
-# Connect to MongoDB  
-mongo_url = f"mongodb+srv://{MONGO_DB_USER}:{MONGO_DB_PASS}@cluster0.0qoxq.mongodb.net"
+
 
 def find_nans_within_rank_holding():
    mongo_client = MongoClient(mongo_url)

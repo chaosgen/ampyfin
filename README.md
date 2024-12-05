@@ -1,4 +1,4 @@
-
+﻿
 # 🌟 AmpyFin Trading Bot
 
 ## 🚀 Introduction
@@ -129,6 +129,7 @@ pip install -r requirements.txt
     API_KEY = "your_alpaca_api_key"
     API_SECRET = "your_alpaca_secret_key"
     BASE_URL = "https://paper-api.alpaca.markets"
+    mongo_url = "your mongo connection string"
     ```
 
 ### 4️⃣ API Setup
@@ -148,15 +149,9 @@ pip install -r requirements.txt
 ### 5️⃣ Set Up MongoDB
 
 - Sign up for a MongoDB cluster (e.g., via MongoDB Atlas).
-- Create a database for stock data storage and replace the `mongo_url` in `trading_client.py` and `ranking_client.py` with your connection string.
-- Initialize the trading simulator in MongoDB using the following functions in `ranking_client.py`:
-
-```python
-initialize_rank()
-insert_rank_to_coefficient(100)
-```
-
-- The rest of the database will set itself up on the first minute in trading for both ranking and trading.
+- Create a database for stock data storage and replace the `mongo_url` in 'config.py' with your connection string. Make sure to give yourself Network Access.
+- Run the mongo setup script `helper_files/mongo_setup.py`:
+- After running the mongo setup script, the MongoDB setup for the rest will be completed on the first minute in trading for both ranking and trading.
 
 
 ## ⚡ Usage
