@@ -69,6 +69,14 @@ def initialize_rank():
       
    client.close()
 
+def initialize_time_delta():
+   client = MongoClient(mongo_url)
+   db = client.trading_simulator
+   collection = db.time_delta
+   collection.insert_one({"time_delta": 0.01})
+   client.close()
+
 if __name__ == "__main__":
    insert_rank_to_coefficient(100)
    initialize_rank()
+   initialize_time_delta()
