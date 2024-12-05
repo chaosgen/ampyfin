@@ -79,7 +79,7 @@ def test_strategies():
       
    
 def test_helper():
-   ticker = 'SPY'  # Replace with your desired ticker
+   ticker = 'QQQ'  # Replace with your desired ticker
 
    
    print(get_latest_price(ticker))

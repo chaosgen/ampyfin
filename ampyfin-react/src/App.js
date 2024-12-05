@@ -250,7 +250,7 @@ function BenchmarkSection({ portfolioPercentage, ndaqPercentage, spyPercentage }
         <p className="live-since">Total Percentage since November 20, 2024, at 8:00 AM</p>
       </div>
       <div className={`portfolio-percentage ${ndaqPercentage > 0 ? 'green' : 'red'}`}>
-        NDAQ: {formatPercentage(ndaqPercentage)}
+        QQQ: {formatPercentage(ndaqPercentage)}
         <p className="live-since">Total Percentage since November 20, 2024, at 8:00 AM</p>
       </div>
       <div className={`portfolio-percentage ${spyPercentage > 0 ? 'green' : 'red'}`}>

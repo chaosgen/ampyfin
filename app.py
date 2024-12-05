@@ -24,6 +24,7 @@ MONGO_DB_PASS = os.getenv("MONGO_DB_PASS")
 API_KEY = os.getenv("API_KEY")
 API_SECRET = os.getenv("API_SECRET")
 
+from config import MONGO_DB_USER, MONGO_DB_PASS, API_KEY, API_SECRET
 """
 comment out when uploading for change
 
