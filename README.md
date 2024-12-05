@@ -186,7 +186,7 @@ The bot logs all major events and errors to a `system.log` file, including API e
 
 ## Contributing
 
-Contributions are welcome! Feel free to open a pull request or submit issues for bugs or feature requests. Future improvements may focus on optimizing the ranking system or expanding the bot's capabilities for more advanced trading strategies.
+Contributions are welcome! Feel free to open a pull request or submit issues for bugs or feature requests. Future improvements may focus on optimizing the ranking system or expanding the bot's capabilities for more advanced trading strategies. All contributions should be made on the test branch. Please do not make it on the main branch
 
 ## License
 
