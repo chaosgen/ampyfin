@@ -87,7 +87,13 @@ This ensures that recent trades have a greater influence on decision-making whil
 
 - Houses strategies like mean reversion, momentum, and arbitrage.
 
-### 🔧 Helper Files
+- **trading_strategies_v1.py**: First iteration of AmpyFin used 5 strategies. This file is not supported anymore but is a great reference material
+- **trading_strategies_v2.py**: Houses most of the older strategies being used in the ranking system. Contains 50 strategies with a lot leaning towards momentum.
+- **trading_strategies_v2_1.py**: Newer version that complements the older strategies. Houses 10 more strategies. This is where newer strategies will be implemented until it caps at 50 strategies as well.
+
+### 🔧 helper_files/*
+
+**Objective**: Helper Files to help with both trading client and ranking client
 
 - **client_helper.py**: Contains common functions for client operations in both ranking and trading.
 
