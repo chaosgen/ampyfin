@@ -79,11 +79,9 @@ This ensures that strategies with better recent performance have a greater influ
 
 ### 📜 strategies/*
 
-**Objective**: Defines various trading strategies.
+**Objective**: Defines various trading strategies. Houses strategies like mean reversion, momentum, and arbitrage.
 
 **Features**:
-
-- Houses strategies like mean reversion, momentum, and arbitrage.
 
 - **trading_strategies_v1.py**: First iteration of AmpyFin used 5 strategies. This file is not supported anymore but is a great reference material
 - **trading_strategies_v2.py**: Houses most of the older strategies being used in the ranking system. Contains 50 strategies with a lot leaning towards momentum.
@@ -91,11 +89,9 @@ This ensures that strategies with better recent performance have a greater influ
 
 ### 🔧 helper_files/*
 
-**Objective**: Helper Files to help with both trading client and ranking client
+**Objective**: Helper Files to help with both trading client and ranking client. Houses functions for retrieving a Mongo Client, getting latest prices, current strategies implemented etc.
 
 **Features**:
-
-- Houses functions for retrieving a Mongo Client, getting latest prices, current strategies implemented etc.
 
 - **client_helper.py**: Contains common functions for client operations in both ranking and trading.
 
