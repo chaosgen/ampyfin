@@ -20,7 +20,7 @@ All data and trading logs are securely stored in **MongoDB**, allowing fast acce
 
 ## 🤖 Algorithms at Work
 
-At the core of AmpyFin are diverse algorithms optimized for different market conditions. Rather than relying on a single strategy, AmpyFin simultaneously employs multiple approaches, each designed to excel in various scenarios.
+At the core of AmpyFin are diverse algorithms optimized for different market conditions. Rather than relying on a single strategy or multiple strategies, AmpyFin relies on a ranked ensemble learning system that dynamically ranks each strategy and gives more influence in the final decision to strategies with better performance.
 
 ### 📈 Trading Strategies
 
@@ -49,7 +49,7 @@ Where \(i\) is the inverse of the algorithm’s ranking.
 
 #### ⏳ Time Delta Coefficient
 
-This ensures that recent trades have a greater influence on decision-making while maintaining balance to avoid extreme bias toward any single trade.
+This ensures that strategies with better recent performance have a greater influence on decision-making while maintaining balance by also accounting for old performance as well.
 
 ### 💡 Benefits of Dynamic Ranking
 
