@@ -16,7 +16,7 @@ Welcome to **AmpyFin**, an advanced AI-powered trading bot designed for the NASD
 
 All data and trading logs are securely stored in **MongoDB**, allowing fast access to historical trading information and supporting in-depth analysis.
 
-## 🤖 Algorithms at Work
+## 🤖 Machine Learning at Work
 
 At the core of AmpyFin are diverse algorithms optimized for different market conditions. Rather than relying on a single strategy or multiple strategies, AmpyFin relies on a ranked ensemble learning system that dynamically ranks each strategy and gives more influence in the final decision to strategies with better performance.
 
