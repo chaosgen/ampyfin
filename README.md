@@ -144,7 +144,7 @@ pip install -r requirements.txt
 
 - Sign up for a MongoDB cluster (e.g., via MongoDB Atlas).
 - Create a database for stock data storage and replace the `mongo_url` in 'config.py' with your connection string. Make sure to give yourself Network Access.
-- Run the mongo setup script `helper_files/mongo_setup.py`:
+- Run the mongo setup script `mongo_setup.py`:
 - After running the mongo setup script, the MongoDB setup for the rest will be completed on the first minute in trading for both ranking and trading.
 
 
