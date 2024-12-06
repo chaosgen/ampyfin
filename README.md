@@ -5,8 +5,6 @@
 
 Welcome to **AmpyFin**, an advanced AI-powered trading bot designed for the NASDAQ-100. Imagine having expert traders working for you 24/7—AmpyFin makes this a reality.
 
-Built with cutting-edge technology, AmpyFin constantly monitors market conditions, executes trades, and refines its strategies to ensure optimal performance. Whether you're an experienced trader or new to algorithmic trading, AmpyFin offers a robust, highly adaptable system that elevates your trading game.
-
 ## 📊 AmpyFin’s Data Collection Power
 
 ### 🔍 Data Sources
