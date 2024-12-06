@@ -157,6 +157,10 @@ python ranking_client.py
 python trading_client.py
 ```
 
+## ⚠️ IMPORTANT
+
+For people looking to do live trading, I suggest training via running ranking_client.py for about two weeks before running the trading bot altogether. This way, you're running with a client that has been trained to a certain extent (with strategies ranked) and is ready to go. Otherwise, you will most likely be buying random stocks.
+
 ## 📑 Logging
 
 - **system.log**: Tracks major events like API errors and MongoDB operations.
