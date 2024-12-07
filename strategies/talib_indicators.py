@@ -2,8 +2,10 @@ import yfinance as yf
 import talib as ta 
 import numpy as np
 
-def get_data(ticker, period='max'):  
+def get_data(ticker, period='1y'): 
+
    """Retrieve historical data for a given ticker."""  
+   
    ticker = yf.Ticker(ticker)
    data = ticker.history(period=period)
    return data  
