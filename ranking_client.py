@@ -2,7 +2,6 @@ from polygon import RESTClient
 from config import POLYGON_API_KEY, FINANCIAL_PREP_API_KEY, MONGO_DB_USER, MONGO_DB_PASS, API_KEY, API_SECRET, BASE_URL, mongo_url
 import threading
 from concurrent.futures import ThreadPoolExecutor
-
 from urllib.request import urlopen
 from zoneinfo import ZoneInfo
 from pymongo import MongoClient
@@ -41,14 +40,14 @@ from alpaca.trading.enums import (
     QueryOrderStatus
 )
 from alpaca.common.exceptions import APIError
-import strategies.trading_strategies_v2 as trading_strategies
+from strategies.talib_indicators import *
 import math
 import yfinance as yf
 import logging
 from collections import Counter
 from trading_client import market_status
 from helper_files.client_helper import strategies, get_latest_price, get_ndaq_tickers
-
+import time
 from datetime import datetime 
 import heapq 
 
@@ -63,33 +62,61 @@ logging.basicConfig(
     ]
 )
 
+def process_ticker(ticker, mongo_client):
+   try:
+      
+      current_price = None
+      historical_data = None
+      while current_price is None:
+         try:
+            current_price = get_latest_price(ticker)
+         except Exception as fetch_error:
+            logging.warning(f"Error fetching price for {ticker}. Retrying... {fetch_error}")
+            time.sleep(10)
+      while historical_data is None:
+         try:
+            historical_data = get_data(ticker)
+         except Exception as fetch_error:
+            logging.warning(f"Error fetching historical data for {ticker}. Retrying... {fetch_error}")
+            time.sleep(10)
 
+      for strategy in strategies:
+         try:  
+            
+            db = mongo_client.trading_simulator  
+            holdings_collection = db.algorithm_holdings
+            print(f"Processing {strategy.__name__} for {ticker}")
+            strategy_doc = holdings_collection.find_one({"strategy": strategy.__name__})
+            if not strategy_doc:
+               logging.warning(f"Strategy {strategy.__name__} not found in database. Skipping.")
+               continue
 
-def find_nans_within_rank_holding():
-   mongo_client = MongoClient(mongo_url)
-   db = mongo_client.trading_simulator
-   collections = db.algorithm_holdings
-   for strategy in strategies:
-      strategy_doc = collections.find_one({"strategy": strategy.__name__})
-      holdings_doc = strategy_doc.get("holdings", {})
-      for ticker in holdings_doc:
-         if holdings_doc[ticker]['quantity'] == 0:
-            print(f"{ticker} : {strategy.__name__}")
+            account_cash = strategy_doc["amount_cash"]
+            total_portfolio_value = strategy_doc["portfolio_value"]
 
+            
+            portfolio_qty = strategy_doc["holdings"].get(ticker, {}).get("quantity", 0)
 
+            simulate_trade(ticker, strategy, historical_data, current_price,
+                           account_cash, portfolio_qty, total_portfolio_value, mongo_client)
+         except Exception as e:
+               logging.error(f"Error processing {ticker} for {strategy.__name__}: {e}")
+      print(f"{ticker} processing completed.")
+   except Exception as e:
+      logging.error(f"Error in thread for {ticker}: {e}")
 
-def simulate_trade(ticker, strategy, historical_data, current_price, account_cash, portfolio_qty, total_portfolio_value, mongo_url):
+def simulate_trade(ticker, strategy, historical_data, current_price, account_cash, portfolio_qty, total_portfolio_value, mongo_client):
    """
    Simulates a trade based on the given strategy and updates MongoDB.
    """
     
    # Simulate trading action from strategy
    print(f"Simulating trade for {ticker} with strategy {strategy.__name__} and quantity of {portfolio_qty}")
-   action, quantity, _ = strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value)
+   action, quantity = simulate_strategy(strategy, ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value)
    
    # MongoDB setup
-   client = MongoClient(mongo_url)
-   db = client.trading_simulator
+   
+   db = mongo_client.trading_simulator
    holdings_collection = db.algorithm_holdings
    points_collection = db.points_tally
    
@@ -100,7 +127,7 @@ def simulate_trade(ticker, strategy, historical_data, current_price, account_cas
    
    
    # Update holdings and cash based on trade action
-   if action in ["buy", "strong buy"] and strategy_doc["amount_cash"] - quantity * current_price > 15000 and quantity > 0:
+   if action in ["buy"] and strategy_doc["amount_cash"] - quantity * current_price > 15000 and quantity > 0 and ((portfolio_qty + quantity) * current_price) / total_portfolio_value < 0.10:
       logging.info(f"Action: {action} | Ticker: {ticker} | Quantity: {quantity} | Price: {current_price}")
       # Calculate average price if already holding some shares of the ticker
       if ticker in holdings_doc:
@@ -132,7 +159,7 @@ def simulate_trade(ticker, strategy, historical_data, current_price, account_cas
       )
       
 
-   elif action in ["sell", "strong sell"] and str(ticker) in holdings_doc and holdings_doc[str(ticker)]["quantity"] > 0:
+   elif action in ["sell"] and str(ticker) in holdings_doc and holdings_doc[str(ticker)]["quantity"] > 0:
       
       logging.info(f"Action: {action} | Ticker: {ticker} | Quantity: {quantity} | Price: {current_price}")
       current_qty = holdings_doc[ticker]["quantity"]
@@ -220,7 +247,6 @@ def simulate_trade(ticker, strategy, historical_data, current_price, account_cas
       logging.info(f"Action: {action} | Ticker: {ticker} | Quantity: {quantity} | Price: {current_price}")
    print(f"Action: {action} | Ticker: {ticker} | Quantity: {quantity} | Price: {current_price}")
    # Close the MongoDB connection
-   client.close()
 
 def update_portfolio_values():
    """
@@ -275,17 +301,17 @@ def update_ranks():
    q = []
    for strategy_doc in algo_holdings.find({}):
       """
-      based on (points_tally (less points pops first), failed-successful(more neagtive pops first), portfolio value (less value pops first), and then strategy_name), we add to heapq.
+      based on (points_tally (less points pops first), failed-successful(more negtive pops first), portfolio value (less value pops first), and then strategy_name), we add to heapq.
       """
       strategy_name = strategy_doc["strategy"]
       if strategy_name == "test" or strategy_name == "test_strategy":
          continue
 
-      heapq.heappush(q, (points_collection.find_one({"strategy": strategy_name})["total_points"]/10 + ((strategy_doc["portfolio_value"] / 50000) * 2), strategy_doc["successful_trades"] - strategy_doc["failed_trades"], strategy_doc["strategy"]))
+      heapq.heappush(q, (points_collection.find_one({"strategy": strategy_name})["total_points"]/10 + ((strategy_doc["portfolio_value"] / 50000) * 2), strategy_doc["successful_trades"] - strategy_doc["failed_trades"], strategy_doc["amount_cash"], strategy_doc["strategy"]))
    rank = 1
    while q:
       
-      _, _, strategy_name = heapq.heappop(q)
+      _, _, _, strategy_name = heapq.heappop(q)
       rank_collection.insert_one({"strategy": strategy_name, "rank": rank})
       rank+=1
    client.close()
@@ -297,10 +323,6 @@ def main():
    ndaq_tickers = []  
    early_hour_first_iteration = True
    post_market_hour_first_iteration = True
-   data_client = StockHistoricalDataClient(API_KEY, API_SECRET)  
-   mongo_client = MongoClient(mongo_url)  
-   db = mongo_client.trading_simulator  
-   holdings_collection = db.algorithm_holdings  
    
    
    while True: 
@@ -309,60 +331,34 @@ def main():
       
       
       if status == "open":  
-        logging.info("Market is open. Processing strategies.")  
-        if not ndaq_tickers:  
-           ndaq_tickers = get_ndaq_tickers(mongo_url, FINANCIAL_PREP_API_KEY) 
-        for strategy in strategies:  
-            strategy_doc = holdings_collection.find_one({"strategy": strategy.__name__})  
-            if not strategy_doc:
-               logging.warning(f"Strategy {strategy.__name__} not found in database. Skipping.")  
-               continue  
-  
-            account_cash = strategy_doc["amount_cash"]  
-            total_portfolio_value = strategy_doc["portfolio_value"] 
-            
-            for ticker in ndaq_tickers:  
-               try:  
-                  current_price = None
-                  while current_price is None:
-                     try:
-                        current_price = get_latest_price(ticker)
-                     except:
-                        print(f"Error fetching price for {ticker}. Retrying...")
-                  print(f"Current price of {ticker}: {current_price}") 
-                  if current_price is None:  
-                     logging.warning(f"Could not fetch price for {ticker}. Skipping.")  
-                     continue  
-  
-                  historical_data = trading_strategies.get_historical_data(ticker, data_client)  
-                  portfolio_qty = strategy_doc["holdings"].get(ticker, 0)
-                  if portfolio_qty:
-                     portfolio_qty = portfolio_qty["quantity"]
-                  
-                  
-                  simulate_trade(ticker, strategy, historical_data, current_price,  
-                          account_cash, portfolio_qty, total_portfolio_value, mongo_url)  
-                  
-                  if mongo_client.market_data.market_status.find_one({})["market_status"] == "closed":
-                     break
-               except Exception as e:  
-                  logging.error(f"Error processing {ticker} for {strategy.__name__}: {e}")
-            if mongo_client.market_data.market_status.find_one({})["market_status"] == "closed":
-               break 
-            print(f"{strategy} completed")
-        update_portfolio_values()
-  
-        logging.info("Finished processing all strategies. Waiting for 60 seconds.")  
-        time.sleep(600)  
-  
+         logging.info("Market is open. Processing strategies.")  
+         if not ndaq_tickers:
+            ndaq_tickers = get_ndaq_tickers(mongo_url, FINANCIAL_PREP_API_KEY)
+
+         threads = []
+
+         for ticker in ndaq_tickers:
+            thread = threading.Thread(target=process_ticker, args=(ticker, mongo_client))
+            threads.append(thread)
+            thread.start()
+
+         # Wait for all threads to complete
+         for thread in threads:
+            thread.join()
+
+         
+         update_portfolio_values()
+         logging.info("Finished processing all strategies. Waiting for 60 seconds.")
+         time.sleep(60)  
+      
       elif status == "early_hours":  
-        if early_hour_first_iteration:  
-           
-           ndaq_tickers = get_ndaq_tickers(mongo_url, FINANCIAL_PREP_API_KEY)  
-           early_hour_first_iteration = False  
-           post_market_hour_first_iteration = True
-        logging.info("Market is in early hours. Waiting for 60 seconds.")  
-        time.sleep(60)  
+            if early_hour_first_iteration:  
+               
+               ndaq_tickers = get_ndaq_tickers(mongo_url, FINANCIAL_PREP_API_KEY)  
+               early_hour_first_iteration = False  
+               post_market_hour_first_iteration = True
+            logging.info("Market is in early hours. Waiting for 60 seconds.")  
+            time.sleep(60)  
   
       elif status == "closed":  
          
@@ -382,7 +378,8 @@ def main():
         time.sleep(60)  
       else:  
         logging.error("An error occurred while checking market status.")  
-        time.sleep(60)  
+        time.sleep(60)
+      mongo_client.close()
    
   
 if __name__ == "__main__":  

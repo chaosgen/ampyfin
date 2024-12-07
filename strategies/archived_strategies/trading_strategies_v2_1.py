@@ -13,6 +13,8 @@ import ripser  # For topological data analysis
 from scipy.spatial.distance import pdist, squareform
 from scipy.special import zeta  # For Riemann zeta function
 
+#12/7/2024 talib is now available so please use those functions. This file is no longer in use
+
 def pairs_trading_strategy(ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
     """
     Pairs Trading Strategy using correlation and z-score

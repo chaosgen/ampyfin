@@ -5,54 +5,25 @@ from alpaca.trading.enums import OrderSide, TimeInForce
 from datetime import datetime
 import logging
 import yfinance as yf
-from strategies.trading_strategies_v2 import (  
-   rsi_strategy, bollinger_bands_strategy, momentum_strategy, mean_reversion_strategy,  
-   triple_moving_average_strategy, volume_price_trend_strategy, keltner_channel_strategy,  
-   dual_thrust_strategy, adaptive_momentum_strategy, hull_moving_average_strategy,  
-   elder_ray_strategy, chande_momentum_strategy, dema_strategy, price_channel_strategy,  
-   mass_index_strategy, vortex_indicator_strategy, aroon_strategy, ultimate_oscillator_strategy,  
-   trix_strategy, kst_strategy, psar_strategy, stochastic_momentum_strategy,  
-   williams_vix_fix_strategy, conners_rsi_strategy, dpo_strategy, fisher_transform_strategy,  
-   ehlers_fisher_strategy, schaff_trend_cycle_strategy, rainbow_oscillator_strategy,  
-   heikin_ashi_strategy, volume_weighted_macd_strategy, fractal_adaptive_moving_average_strategy,  
-   relative_vigor_index_strategy, center_of_gravity_strategy, kauffman_efficiency_strategy,  
-   phase_change_strategy, volatility_breakout_strategy, momentum_divergence_strategy,  
-   adaptive_channel_strategy, wavelet_decomposition_strategy, entropy_flow_strategy,  
-   bollinger_band_width_strategy, commodity_channel_index_strategy, force_index_strategy,  
-   ichimoku_cloud_strategy, klinger_oscillator_strategy, money_flow_index_strategy,  
-   on_balance_volume_strategy, stochastic_oscillator_strategy, euler_fibonacci_zone_strategy  
-)
-from strategies.trading_strategies_v2_1 import (
-    pairs_trading_strategy, kalman_filter_strategy, regime_switching_strategy, adaptive_momentum_filter_strategy,
-    topological_data_analysis_strategy, levy_distribution_strategy,
-    wavelet_momentum_strategy, complex_network_strategy, quantum_oscillator_strategy, simple_trend_reversal_strategy
-)
 
-
-beta_strategies = [pairs_trading_strategy, kalman_filter_strategy, regime_switching_strategy, adaptive_momentum_filter_strategy,
-                   topological_data_analysis_strategy, levy_distribution_strategy,
-                   wavelet_momentum_strategy, complex_network_strategy, quantum_oscillator_strategy, simple_trend_reversal_strategy]
-
-strategies = [rsi_strategy, bollinger_bands_strategy, momentum_strategy, mean_reversion_strategy,  
-   triple_moving_average_strategy, volume_price_trend_strategy, keltner_channel_strategy,  
-   dual_thrust_strategy, adaptive_momentum_strategy, hull_moving_average_strategy,  
-   elder_ray_strategy, chande_momentum_strategy, dema_strategy, price_channel_strategy,  
-   mass_index_strategy, vortex_indicator_strategy, aroon_strategy, ultimate_oscillator_strategy,  
-   trix_strategy, kst_strategy, psar_strategy, stochastic_momentum_strategy,  
-   williams_vix_fix_strategy, conners_rsi_strategy, dpo_strategy, fisher_transform_strategy,  
-   ehlers_fisher_strategy, schaff_trend_cycle_strategy, rainbow_oscillator_strategy,  
-   heikin_ashi_strategy, volume_weighted_macd_strategy, fractal_adaptive_moving_average_strategy,  
-   relative_vigor_index_strategy, center_of_gravity_strategy, kauffman_efficiency_strategy,  
-   phase_change_strategy, volatility_breakout_strategy, momentum_divergence_strategy,  
-   adaptive_channel_strategy, wavelet_decomposition_strategy, entropy_flow_strategy,  
-   bollinger_band_width_strategy, commodity_channel_index_strategy, force_index_strategy,  
-   ichimoku_cloud_strategy, klinger_oscillator_strategy, money_flow_index_strategy,  
-   on_balance_volume_strategy, stochastic_oscillator_strategy, euler_fibonacci_zone_strategy] + beta_strategies
+from strategies.talib_indicators import (BBANDS_indicator, DEMA_indicator, EMA_indicator, HT_TRENDLINE_indicator, KAMA_indicator, MA_indicator, MAMA_indicator, MAVP_indicator, MIDPOINT_indicator, MIDPRICE_indicator, SAR_indicator, SAREXT_indicator, SMA_indicator, T3_indicator, TEMA_indicator, TRIMA_indicator, WMA_indicator, ADX_indicator, ADXR_indicator, APO_indicator, AROON_indicator, AROONOSC_indicator, BOP_indicator, CCI_indicator, CMO_indicator, DX_indicator, MACD_indicator, MACDEXT_indicator, MACDFIX_indicator, MFI_indicator, MINUS_DI_indicator, MINUS_DM_indicator, MOM_indicator, PLUS_DI_indicator, PLUS_DM_indicator, PPO_indicator, ROC_indicator, ROCP_indicator, ROCR_indicator, ROCR100_indicator, RSI_indicator, STOCH_indicator, STOCHF_indicator, STOCHRSI_indicator, TRIX_indicator, ULTOSC_indicator, WILLR_indicator, AD_indicator, ADOSC_indicator, OBV_indicator, HT_DCPERIOD_indicator, HT_DCPHASE_indicator, HT_PHASOR_indicator, HT_SINE_indicator, HT_TRENDMODE_indicator, AVGPRICE_indicator, MEDPRICE_indicator, TYPPRICE_indicator, WCLPRICE_indicator, ATR_indicator, NATR_indicator, TRANGE_indicator, CDL2CROWS_indicator, CDL3BLACKCROWS_indicator, CDL3INSIDE_indicator, CDL3LINESTRIKE_indicator, CDL3OUTSIDE_indicator, CDL3STARSINSOUTH_indicator, CDL3WHITESOLDIERS_indicator, CDLABANDONEDBABY_indicator, CDLADVANCEBLOCK_indicator, CDLBELTHOLD_indicator, CDLBREAKAWAY_indicator, CDLCLOSINGMARUBOZU_indicator, CDLCONCEALBABYSWALL_indicator, CDLCOUNTERATTACK_indicator, CDLDARKCLOUDCOVER_indicator, CDLDOJI_indicator, CDLDOJISTAR_indicator, CDLDRAGONFLYDOJI_indicator, CDLENGULFING_indicator, CDLEVENINGDOJISTAR_indicator, CDLEVENINGSTAR_indicator, CDLGAPSIDESIDEWHITE_indicator, CDLGRAVESTONEDOJI_indicator, CDLHAMMER_indicator, CDLHANGINGMAN_indicator, CDLHARAMI_indicator, CDLHARAMICROSS_indicator, CDLHIGHWAVE_indicator, CDLHIKKAKE_indicator, CDLHIKKAKEMOD_indicator, CDLHOMINGPIGEON_indicator, CDLIDENTICAL3CROWS_indicator, CDLINNECK_indicator, CDLINVERTEDHAMMER_indicator, CDLKICKING_indicator, CDLKICKINGBYLENGTH_indicator, CDLLADDERBOTTOM_indicator, CDLLONGLEGGEDDOJI_indicator, CDLLONGLINE_indicator, CDLMARUBOZU_indicator, CDLMATCHINGLOW_indicator, CDLMATHOLD_indicator, CDLMORNINGDOJISTAR_indicator, CDLMORNINGSTAR_indicator, CDLONNECK_indicator, CDLPIERCING_indicator, CDLRICKSHAWMAN_indicator, CDLRISEFALL3METHODS_indicator, CDLSEPARATINGLINES_indicator, CDLSHOOTINGSTAR_indicator, CDLSHORTLINE_indicator, CDLSPINNINGTOP_indicator, CDLSTALLEDPATTERN_indicator, CDLSTICKSANDWICH_indicator, CDLTAKURI_indicator, CDLTASUKIGAP_indicator, CDLTHRUSTING_indicator, CDLTRISTAR_indicator, CDLUNIQUE3RIVER_indicator, CDLUPSIDEGAP2CROWS_indicator, CDLXSIDEGAP3METHODS_indicator, BETA_indicator, CORREL_indicator, LINEARREG_indicator, LINEARREG_ANGLE_indicator, LINEARREG_INTERCEPT_indicator, LINEARREG_SLOPE_indicator, STDDEV_indicator, TSF_indicator, VAR_indicator)
+   
 from urllib.request import urlopen
 import json
 import certifi
 from zoneinfo import ZoneInfo
 import time
+
+overlap_studies = [BBANDS_indicator, DEMA_indicator, EMA_indicator, HT_TRENDLINE_indicator, KAMA_indicator, MA_indicator, MAMA_indicator, MAVP_indicator, MIDPOINT_indicator, MIDPRICE_indicator, SAR_indicator, SAREXT_indicator, SMA_indicator, T3_indicator, TEMA_indicator, TRIMA_indicator, WMA_indicator]
+momentum_indicators = [ADX_indicator, ADXR_indicator, APO_indicator, AROON_indicator, AROONOSC_indicator, BOP_indicator, CCI_indicator, CMO_indicator, DX_indicator, MACD_indicator, MACDEXT_indicator, MACDFIX_indicator, MFI_indicator, MINUS_DI_indicator, MINUS_DM_indicator, MOM_indicator, PLUS_DI_indicator, PLUS_DM_indicator, PPO_indicator, ROC_indicator, ROCP_indicator, ROCR_indicator, ROCR100_indicator, RSI_indicator, STOCH_indicator, STOCHF_indicator, STOCHRSI_indicator, TRIX_indicator, ULTOSC_indicator, WILLR_indicator]
+volume_indicators = [AD_indicator, ADOSC_indicator, OBV_indicator]
+cycle_indicators = [HT_DCPERIOD_indicator, HT_DCPHASE_indicator, HT_PHASOR_indicator, HT_SINE_indicator, HT_TRENDMODE_indicator]
+price_transforms = [AVGPRICE_indicator, MEDPRICE_indicator, TYPPRICE_indicator, WCLPRICE_indicator]
+volatility_indicators = [ATR_indicator, NATR_indicator, TRANGE_indicator]
+pattern_recognition = [CDL2CROWS_indicator, CDL3BLACKCROWS_indicator, CDL3INSIDE_indicator, CDL3LINESTRIKE_indicator, CDL3OUTSIDE_indicator, CDL3STARSINSOUTH_indicator, CDL3WHITESOLDIERS_indicator, CDLABANDONEDBABY_indicator, CDLADVANCEBLOCK_indicator, CDLBELTHOLD_indicator, CDLBREAKAWAY_indicator, CDLCLOSINGMARUBOZU_indicator, CDLCONCEALBABYSWALL_indicator, CDLCOUNTERATTACK_indicator, CDLDARKCLOUDCOVER_indicator, CDLDOJI_indicator, CDLDOJISTAR_indicator, CDLDRAGONFLYDOJI_indicator, CDLENGULFING_indicator, CDLEVENINGDOJISTAR_indicator, CDLEVENINGSTAR_indicator, CDLGAPSIDESIDEWHITE_indicator, CDLGRAVESTONEDOJI_indicator, CDLHAMMER_indicator, CDLHANGINGMAN_indicator, CDLHARAMI_indicator, CDLHARAMICROSS_indicator, CDLHIGHWAVE_indicator, CDLHIKKAKE_indicator, CDLHIKKAKEMOD_indicator, CDLHOMINGPIGEON_indicator, CDLIDENTICAL3CROWS_indicator, CDLINNECK_indicator, CDLINVERTEDHAMMER_indicator, CDLKICKING_indicator, CDLKICKINGBYLENGTH_indicator, CDLLADDERBOTTOM_indicator, CDLLONGLEGGEDDOJI_indicator, CDLLONGLINE_indicator, CDLMARUBOZU_indicator, CDLMATCHINGLOW_indicator, CDLMATHOLD_indicator, CDLMORNINGDOJISTAR_indicator, CDLMORNINGSTAR_indicator, CDLONNECK_indicator, CDLPIERCING_indicator, CDLRICKSHAWMAN_indicator, CDLRISEFALL3METHODS_indicator, CDLSEPARATINGLINES_indicator, CDLSHOOTINGSTAR_indicator, CDLSHORTLINE_indicator, CDLSPINNINGTOP_indicator, CDLSTALLEDPATTERN_indicator, CDLSTICKSANDWICH_indicator, CDLTAKURI_indicator, CDLTASUKIGAP_indicator, CDLTHRUSTING_indicator, CDLTRISTAR_indicator, CDLUNIQUE3RIVER_indicator, CDLUPSIDEGAP2CROWS_indicator, CDLXSIDEGAP3METHODS_indicator]
+statistical_functions = [BETA_indicator, CORREL_indicator, LINEARREG_indicator, LINEARREG_ANGLE_indicator, LINEARREG_INTERCEPT_indicator, LINEARREG_SLOPE_indicator, STDDEV_indicator, TSF_indicator, VAR_indicator]
+
+strategies = overlap_studies + momentum_indicators + volume_indicators + cycle_indicators + price_transforms + volatility_indicators + pattern_recognition + statistical_functions
 
 # MongoDB connection helper
 def connect_to_mongo(mongo_url):
@@ -79,7 +50,6 @@ def place_order(trading_client, symbol, side, qty, mongo_url):
     )
     order = trading_client.submit_order(market_order_data)
     qty = round(qty, 3)
-
     # Log trade details to MongoDB
     mongo_client = connect_to_mongo(mongo_url)
     db = mongo_client.trades
@@ -90,8 +60,6 @@ def place_order(trading_client, symbol, side, qty, mongo_url):
         'time_in_force': TimeInForce.DAY.name,
         'time': datetime.now()
     })
-    
-
     #Track assets as well
     db = mongo_client.trades
     assets = db.assets_quantities
@@ -105,10 +73,7 @@ def place_order(trading_client, symbol, side, qty, mongo_url):
         if assets.find_one({'symbol': symbol})['quantity'] == 0:
             assets.delete_one({'symbol': symbol})
 
-    mongo_client.close()
-
-    
-    
+    mongo_client.close()    
     return order
 
 # Helper to retrieve NASDAQ-100 tickers from MongoDB
@@ -119,8 +84,6 @@ def get_ndaq_tickers(mongo_url, FINANCIAL_PREP_API_KEY):
     :param mongo_url: MongoDB connection URL
     :return: List of NASDAQ-100 ticker symbols.
     """
-    
-
     def call_ndaq_100():
         """
         Fetches the list of NASDAQ 100 tickers using the Financial Modeling Prep API and stores it in a MongoDB collection.
@@ -138,7 +101,6 @@ def get_ndaq_tickers(mongo_url, FINANCIAL_PREP_API_KEY):
             response = urlopen(url)
             data = response.read().decode("utf-8")
             return json.loads(data)
-
         try:
             # API URL for fetching NASDAQ 100 tickers
             ndaq_url = f"https://financialmodelingprep.com/api/v3/nasdaq_constituent?apikey={FINANCIAL_PREP_API_KEY}"
@@ -147,7 +109,6 @@ def get_ndaq_tickers(mongo_url, FINANCIAL_PREP_API_KEY):
         except Exception as e:
             logging.error(f"Error fetching NASDAQ 100 tickers: {e}")
             return
-
         try:
             # MongoDB connection details
             mongo_client = MongoClient(mongo_url)

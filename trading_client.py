@@ -13,7 +13,7 @@ from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
 from alpaca.data.historical.stock import StockHistoricalDataClient
 from alpaca.trading.requests import MarketOrderRequest
 from alpaca.trading.enums import OrderSide, TimeInForce
-from strategies.trading_strategies_v1 import get_historical_data
+from strategies.archived_strategies.trading_strategies_v1 import get_historical_data
 import yfinance as yf
 import logging
 from collections import Counter
@@ -21,6 +21,7 @@ from statistics import median, mode
 import statistics
 import heapq
 import requests
+from strategies.talib_indicators import *
 
 
 # MongoDB connection string
@@ -98,7 +99,7 @@ def main():
         
         market_collection.update_one({}, {"$set": {"market_status": status}})
         
-
+        
         if status == "open":
             logging.info("Market is open. Waiting for 60 seconds.")
             if not ndaq_tickers:
@@ -119,6 +120,7 @@ def main():
                 decisions_and_quantities = []
                 try:
                     trading_client = TradingClient(API_KEY, API_SECRET)
+                    
                     account = trading_client.get_account()
 
                     buying_power = float(account.cash)
@@ -127,20 +129,16 @@ def main():
                     mongo_client = MongoClient(mongo_url)
                     trades_db = mongo_client.trades
                     portfolio_collection = trades_db.portfolio_value
-                    previous_portfolio_value = portfolio_collection.find_one({'portfolio_percentage': {'$exists': True}})['portfolio_percentage']
-                    previous_ndaq_percentage = portfolio_collection.find_one({'ndaq_percentage': {'$exists': True}})['ndaq_percentage']
-                    previous_spy_percentage = portfolio_collection.find_one({'spy_percentage': {'$exists': True}})['spy_percentage']
+                    
                     """
                     we update instead of insert
                     """
-                    portfolio_collection.update_one({}, {"$set": {"portfolio_percentage": (portfolio_value-50000)/50000}})
-                    portfolio_collection.update_one({}, {"$set": {"ndaq_percentage": (get_latest_price('QQQ')-503.17)/503.17}})
-                    portfolio_collection.update_one({}, {"$set": {"spy_percentage": (get_latest_price('SPY')-590.50)/590.50}})
+                    portfolio_collection.update_one({"name" : "portfolio_percentage"}, {"$set": {"portfolio_percentage": (portfolio_value-50000)/50000}})
+                    portfolio_collection.update_one({"name" : "ndaq_percentage"}, {"$set": {"portfolio_percentage": (get_latest_price('QQQ')-503.17)/503.17}})
+                    portfolio_collection.update_one({"name" : "spy_percentage"}, {"$set": {"portfolio_percentage": (get_latest_price('SPY')-590.50)/590.50}})
                     
                     
-                    historical_data = get_historical_data(ticker, data_client)
-                    ticker_yahoo = yf.Ticker(ticker)
-                    data = ticker_yahoo.history()
+                    historical_data = get_data(ticker)
                     current_price = None
                     while current_price is None:
                         try:
@@ -151,13 +149,13 @@ def main():
 
                     asset_info = asset_collection.find_one({'symbol': ticker})
                     portfolio_qty = asset_info['quantity'] if asset_info else 0.0
-                    
+                    print(f"Portfolio quantity for {ticker}: {portfolio_qty}")
                     """
                     use weight from each strategy to determine how much each decision will be weighed. weights will be in decimal
                     """
                     for strategy in strategies:
                         
-                        decision, quantity, _ = strategy(ticker, current_price, historical_data,
+                        decision, quantity = simulate_strategy(strategy, ticker, current_price, historical_data,
                                                       buying_power, portfolio_qty, portfolio_value)
                         weight = strategy_to_coefficient[strategy.__name__]
                         
@@ -169,14 +167,18 @@ def main():
                     for now in bull: 15000
                     for bear: 5000
                     """
-                    print(f"Ticker{ticker} holding is currently at percentage of portfolio value: {(portfolio_qty * current_price) / portfolio_value}")
+                    
                     if decision == "buy" and float(account.cash) > 15000 and (((quantity + portfolio_qty) * current_price) / portfolio_value) < 0.1:
                         
                         heapq.heappush(buy_heap, (-(buy_weight-(sell_weight + hold_weight)), quantity, ticker))
                     elif decision == "sell" and portfolio_qty > 0:
+                        print(f"Executing SELL order for {ticker}")
+                        
+                        
                         order = place_order(trading_client, ticker, OrderSide.SELL, qty=quantity, mongo_url=mongo_url)  # Place order using helper
                         
                         logging.info(f"Executed SELL order for {ticker}: {order}")
+                        
                     else:
                         logging.info(f"Holding for {ticker}, no action taken.")
                     
@@ -189,8 +191,10 @@ def main():
                 try:
                     buy_coeff, quantity, ticker = heapq.heappop(buy_heap)
                     print(f"buy_coeff: {buy_coeff}, quantity: {quantity}, ticker: {ticker}")
+                    
                     order = place_order(trading_client, ticker, OrderSide.BUY, qty=quantity, mongo_url=mongo_url)  # Place order using helper
                     logging.info(f"Executed BUY order for {ticker}: {order}")
+                    
                     trading_client = TradingClient(API_KEY, API_SECRET)
                     account = trading_client.get_account()
                     

@@ -7,7 +7,8 @@ from datetime import datetime, timedelta
 import numpy as np
 import pandas as pd
 
-#V2 is now available so please use those methods instead.
+#12/7/2024 talib is now available so please use those functions. This file is no longer in use
+
 def get_historical_data(ticker, client, days=100):
     """
     Fetch historical bar data for a given stock ticker.

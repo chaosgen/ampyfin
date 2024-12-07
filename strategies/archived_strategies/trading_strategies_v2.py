@@ -13,6 +13,7 @@ import ripser  # For topological data analysis
 from scipy.spatial.distance import pdist, squareform
 from scipy.special import zeta  # For Riemann zeta function
 
+#12/7/2024 talib is now available so please use those functions. This file is no longer in use
 
 # Function to fetch historical bar data using Alpaca StockHistoricalDataClient
 def get_historical_data(ticker, client, days=100):
