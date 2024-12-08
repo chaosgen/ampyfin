@@ -3,7 +3,7 @@ from config import API_KEY, API_SECRET, FINANCIAL_PREP_API_KEY, POLYGON_API_KEY
 from pymongo import MongoClient
 from helper_files.client_helper import get_ndaq_tickers
 from config import MONGO_DB_USER, MONGO_DB_PASS
-from helper_files.client_helper import strategies, get_latest_price
+from helper_files.client_helper import strategies, get_latest_price, dynamic_period_selector
 from strategies.talib_indicators import get_data, simulate_strategy
 import threading
 import random
@@ -15,7 +15,7 @@ def test_strategies():
    mongo_client = MongoClient() 
    tickers = get_ndaq_tickers(mongo_url, FINANCIAL_PREP_API_KEY)
    mongo_client.close()
-   
+   """
    periods = ['1d', '5d','1mo', '3mo', '6mo', '1y', '2y', '5y', 'ytd', 'max']
    account_cash = 50000
    portfolio_qty = 10
@@ -34,6 +34,9 @@ def test_strategies():
          except Exception as e:
             print(f"ERROR processing {ticker} for {strategy.__name__}: {e}")
       time.sleep(5)
+   """
+   for ticker in tickers:
+      print(f"{ticker} : {dynamic_period_selector(ticker)}")
    
    
 

@@ -125,11 +125,13 @@ def initialize_portfolio_percentages():
 
 
 if __name__ == "__main__":
+   
    insert_rank_to_coefficient(200)
    
    initialize_rank()
    
    initialize_time_delta()
+   
    initialize_market_setup()
    
    initialize_portfolio_percentages()

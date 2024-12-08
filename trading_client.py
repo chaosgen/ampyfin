@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 from pymongo import MongoClient
 import time
 from datetime import datetime, timedelta
-from helper_files.client_helper import place_order, get_ndaq_tickers, market_status, strategies, get_latest_price 
+from helper_files.client_helper import place_order, get_ndaq_tickers, market_status, strategies, get_latest_price, dynamic_period_selector
 from alpaca.trading.client import TradingClient
 from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
 from alpaca.data.historical.stock import StockHistoricalDataClient
@@ -136,9 +136,15 @@ def main():
                     portfolio_collection.update_one({"name" : "portfolio_percentage"}, {"$set": {"portfolio_percentage": (portfolio_value-50000)/50000}})
                     portfolio_collection.update_one({"name" : "ndaq_percentage"}, {"$set": {"portfolio_percentage": (get_latest_price('QQQ')-503.17)/503.17}})
                     portfolio_collection.update_one({"name" : "spy_percentage"}, {"$set": {"portfolio_percentage": (get_latest_price('SPY')-590.50)/590.50}})
+                    historical_data = None
+                    while historical_data is None:
+                        try:
+                            period = dynamic_period_selector(ticker)
+                            historical_data = get_data(ticker, period)
+                        except:
+                            print(f"Error fetching data for {ticker}. Retrying...")
                     
                     
-                    historical_data = get_data(ticker)
                     current_price = None
                     while current_price is None:
                         try:
