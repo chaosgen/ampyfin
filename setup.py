@@ -19,7 +19,7 @@ def insert_rank_to_coefficient(i):
       for i in range(1, i + 1):
       
          e = math.e
-         rate = (e**e)/(e**2) - 1
+         rate = ((e**e)/(e**2) - 1)
          coefficient = rate**(2 * i)
          collections.insert_one(
             {"rank": i, 
@@ -126,7 +126,11 @@ def initialize_portfolio_percentages():
 
 if __name__ == "__main__":
    insert_rank_to_coefficient(200)
+   
    initialize_rank()
+   
    initialize_time_delta()
    initialize_market_setup()
+   
    initialize_portfolio_percentages()
+   

@@ -37,13 +37,13 @@ Managing multiple algorithms is simplified with AmpyFin’s dynamic ranking syst
 
 #### 🏆 Ranking System
 
-Each algorithm starts with a base score of 50,000. The system evaluates their performance and assigns a weight based on the following function:
+Each strategy starts with a base score of 50,000. The system evaluates their performance and assigns a weight based on the following function:
 
 $$
-\left( \frac{e^e}{e^2 - 1} \right)^{2i}
+\left( \frac{e^e}{e^2} - 1 \right)^{2i}
 $$
 
-Where \(i\) is the inverse of the algorithm’s ranking.
+Where \(i\) is the strategy's rank. Please keep in mind that the strategy's rank 
 
 #### ⏳ Time Delta Coefficient
 
