@@ -103,9 +103,10 @@ def MAMA_indicator(ticker, data):
     close_prices = data['Close'].values
 
     # Validate enough data
+    """
     if len(close_prices) < 32:  # Minimum length required by MAMA
         raise ValueError("Not enough data to compute MAMA.")
-
+    """
     # Calculate MAMA and FAMA
     try:
         mama, fama = ta.MAMA(close_prices, fastlimit=0.5, slowlimit=0.05)
@@ -136,11 +137,11 @@ def MAVP_indicator(ticker, data):
     """
      
     close_prices = data['Close'].values
-
+    """
     # Validate enough data
     if len(close_prices) < 30:  # Ensure enough data for MAVP calculation
         raise ValueError("Not enough data to compute MAVP.")
-
+    """
     # Define variable periods as a NumPy array
     variable_periods = np.full(len(close_prices), 30, dtype=np.float64)
     # Calculate MAVP

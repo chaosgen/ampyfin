@@ -114,7 +114,8 @@ def main():
                     early_hour_first_iteration = False
                     post_hour_first_iteration = True
             account = trading_client.get_account()
-            
+            qqq_latest = get_latest_price('QQQ')
+            spy_latest = get_latest_price('SPY')
             buy_heap = []
             for ticker in ndaq_tickers:
                 decisions_and_quantities = []
@@ -134,13 +135,15 @@ def main():
                     we update instead of insert
                     """
                     portfolio_collection.update_one({"name" : "portfolio_percentage"}, {"$set": {"portfolio_percentage": (portfolio_value-50000)/50000}})
-                    portfolio_collection.update_one({"name" : "ndaq_percentage"}, {"$set": {"portfolio_percentage": (get_latest_price('QQQ')-503.17)/503.17}})
-                    portfolio_collection.update_one({"name" : "spy_percentage"}, {"$set": {"portfolio_percentage": (get_latest_price('SPY')-590.50)/590.50}})
+                    portfolio_collection.update_one({"name" : "ndaq_percentage"}, {"$set": {"portfolio_percentage": (qqq_latest-503.17)/503.17}})
+                    portfolio_collection.update_one({"name" : "spy_percentage"}, {"$set": {"portfolio_percentage": (spy_latest-590.50)/590.50}})
+                    
                     historical_data = None
                     while historical_data is None:
                         try:
-                            period = dynamic_period_selector(ticker)
-                            historical_data = get_data(ticker, period)
+                            
+
+                            historical_data = get_data(ticker)
                         except:
                             print(f"Error fetching data for {ticker}. Retrying...")
                     
@@ -151,6 +154,7 @@ def main():
                             current_price = get_latest_price(ticker)
                         except:
                             print(f"Error fetching price for {ticker}. Retrying...")
+                            time.sleep(10)
                     print(f"Current price of {ticker}: {current_price}")
 
                     asset_info = asset_collection.find_one({'symbol': ticker})
@@ -199,6 +203,7 @@ def main():
                     print(f"buy_coeff: {buy_coeff}, quantity: {quantity}, ticker: {ticker}")
                     
                     order = place_order(trading_client, ticker, OrderSide.BUY, qty=quantity, mongo_url=mongo_url)  # Place order using helper
+                    
                     logging.info(f"Executed BUY order for {ticker}: {order}")
                     
                     trading_client = TradingClient(API_KEY, API_SECRET)
