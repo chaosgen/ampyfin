@@ -114,7 +114,9 @@ pip install -r requirements.txt
 ```
 
 - We have recently migrated to using Ta-Lib for trading. Please follow the installation instructions here: 
+
 👉 [Ta-Lib Python Original](https://github.com/TA-Lib/ta-lib-python)
+
 👉 [Ta-Lib Python Easy Installation](https://github.com/cgohlke/talib-build/releases)
 
 ### 3️⃣ Configuration
