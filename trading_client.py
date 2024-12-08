@@ -116,6 +116,7 @@ def main():
             account = trading_client.get_account()
             qqq_latest = get_latest_price('QQQ')
             spy_latest = get_latest_price('SPY')
+            print(f"QQQ: {qqq_latest}, SPY: {spy_latest}")
             buy_heap = []
             for ticker in ndaq_tickers:
                 decisions_and_quantities = []
@@ -129,11 +130,12 @@ def main():
                     cash_to_portfolio_ratio = buying_power / portfolio_value
                     mongo_client = MongoClient(mongo_url)
                     trades_db = mongo_client.trades
-                    portfolio_collection = trades_db.portfolio_value
+                    portfolio_collection = trades_db.portfolio_values
                     
                     """
                     we update instead of insert
                     """
+                    
                     portfolio_collection.update_one({"name" : "portfolio_percentage"}, {"$set": {"portfolio_percentage": (portfolio_value-50000)/50000}})
                     portfolio_collection.update_one({"name" : "ndaq_percentage"}, {"$set": {"portfolio_percentage": (qqq_latest-503.17)/503.17}})
                     portfolio_collection.update_one({"name" : "spy_percentage"}, {"$set": {"portfolio_percentage": (spy_latest-590.50)/590.50}})
@@ -200,7 +202,7 @@ def main():
             while buy_heap and float(account.cash) > 15000:  
                 try:
                     buy_coeff, quantity, ticker = heapq.heappop(buy_heap)
-                    print(f"buy_coeff: {buy_coeff}, quantity: {quantity}, ticker: {ticker}")
+                    print(f"Executing BUY order for {ticker}")
                     
                     order = place_order(trading_client, ticker, OrderSide.BUY, qty=quantity, mongo_url=mongo_url)  # Place order using helper
                     

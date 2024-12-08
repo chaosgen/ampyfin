@@ -116,7 +116,7 @@ def initialize_portfolio_percentages():
       })
       collection.insert_one({
          "name" : "spy_percentage",
-         "portfolio_value": (get_latest_price('SPY')-403.17)/403.17,
+         "portfolio_value": (get_latest_price('SPY')-590.50)/590.50,
       })
       client.close()
       print("Successfully initialized portfolio percentages")
