@@ -116,7 +116,7 @@ def main():
             account = trading_client.get_account()
             qqq_latest = get_latest_price('QQQ')
             spy_latest = get_latest_price('SPY')
-            print(f"QQQ: {qqq_latest}, SPY: {spy_latest}")
+            
             buy_heap = []
             for ticker in ndaq_tickers:
                 decisions_and_quantities = []
@@ -136,9 +136,9 @@ def main():
                     we update instead of insert
                     """
                     
-                    portfolio_collection.update_one({"name" : "portfolio_percentage"}, {"$set": {"portfolio_percentage": (portfolio_value-50000)/50000}})
-                    portfolio_collection.update_one({"name" : "ndaq_percentage"}, {"$set": {"portfolio_percentage": (qqq_latest-503.17)/503.17}})
-                    portfolio_collection.update_one({"name" : "spy_percentage"}, {"$set": {"portfolio_percentage": (spy_latest-590.50)/590.50}})
+                    portfolio_collection.update_one({"name" : "portfolio_percentage"}, {"$set": {"portfolio_value": (portfolio_value-50000)/50000}})
+                    portfolio_collection.update_one({"name" : "ndaq_percentage"}, {"$set": {"portfolio_value": (qqq_latest-503.17)/503.17}})
+                    portfolio_collection.update_one({"name" : "spy_percentage"}, {"$set": {"portfolio_value": (spy_latest-590.50)/590.50}})
                     
                     historical_data = None
                     while historical_data is None:
