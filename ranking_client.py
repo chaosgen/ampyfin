@@ -306,7 +306,7 @@ def update_ranks(client):
       if strategy_name == "test" or strategy_name == "test_strategy":
          continue
 
-      heapq.heappush(q, (points_collection.find_one({"strategy": strategy_name})["total_points"]/10 + ((strategy_doc["portfolio_value"] / 50000) * 2), strategy_doc["successful_trades"] - strategy_doc["failed_trades"], strategy_doc["amount_cash"], strategy_doc["strategy"]))
+      heapq.heappush(q, (points_collection.find_one({"strategy": strategy_name})["total_points"]/10 + (strategy_doc["portfolio_value"]), strategy_doc["successful_trades"] - strategy_doc["failed_trades"], strategy_doc["amount_cash"], strategy_doc["strategy"]))
    rank = 1
    while q:
       
