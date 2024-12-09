@@ -72,7 +72,7 @@ def process_ticker(ticker, mongo_client):
             current_price = get_latest_price(ticker)
          except Exception as fetch_error:
             logging.warning(f"Error fetching price for {ticker}. Retrying... {fetch_error}")
-            time.sleep(10)
+            time.sleep(60)
       while historical_data is None:
          try:
             
@@ -247,12 +247,12 @@ def simulate_trade(ticker, strategy, historical_data, current_price, account_cas
    print(f"Action: {action} | Ticker: {ticker} | Quantity: {quantity} | Price: {current_price}")
    # Close the MongoDB connection
 
-def update_portfolio_values():
+def update_portfolio_values(client):
    """
    still need to implement.
    we go through each strategy and update portfolio value buy cash + summation(holding * current price)
    """
-   client = MongoClient(mongo_url)  
+    
    db = client.trading_simulator  
    holdings_collection = db.algorithm_holdings
    # Update portfolio values
@@ -279,13 +279,13 @@ def update_portfolio_values():
       holdings_collection.update_one({"strategy": strategy_doc["strategy"]}, {"$set": {"portfolio_value": portfolio_value}}, upsert=True)
 
    # Update MongoDB with the modified strategy documents
-   client.close()
+   
 
-def update_ranks():
+def update_ranks(client):
    """"
    based on portfolio values, rank the strategies to use for actual trading_simulator
    """
-   client = MongoClient(mongo_url)
+   
    db = client.trading_simulator
    points_collection = db.points_tally
    rank_collection = db.rank
@@ -313,7 +313,7 @@ def update_ranks():
       _, _, _, strategy_name = heapq.heappop(q)
       rank_collection.insert_one({"strategy": strategy_name, "rank": rank})
       rank+=1
-   client.close()
+   
 
 def main():  
    """  
@@ -346,7 +346,6 @@ def main():
             thread.join()
 
          
-         update_portfolio_values()
          logging.info("Finished processing all strategies. Waiting for 60 seconds.")
          time.sleep(60)  
       
@@ -366,19 +365,18 @@ def main():
             logging.info("Market is closed. Performing post-market analysis.") 
             post_market_hour_first_iteration = False
             #increment time_Delta in database by 0.01
-            mongo_client = MongoClient(mongo_url)
+            
             mongo_client.trading_simulator.time_delta.update_one({}, {"$inc": {"time_delta": 0.01}})
-            mongo_client.close()
             
             #Update ranks
-            update_portfolio_values()
-            update_ranks()
+            update_portfolio_values(mongo_client)
+            update_ranks(mongo_client)
         logging.info("Market is closed. Waiting for 60 seconds.")
         time.sleep(60)  
       else:  
         logging.error("An error occurred while checking market status.")  
         time.sleep(60)
-      mongo_client.close()
+      
    
   
 if __name__ == "__main__":  
