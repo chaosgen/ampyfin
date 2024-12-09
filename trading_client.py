@@ -182,7 +182,7 @@ def main():
                     
                     if decision == "buy" and float(account.cash) > 15000 and (((quantity + portfolio_qty) * current_price) / portfolio_value) < 0.1:
                         
-                        heapq.heappush(buy_heap, (-(buy_weight-(sell_weight + hold_weight)), quantity, ticker))
+                        heapq.heappush(buy_heap, (-(buy_weight-(sell_weight + (hold_weight * 0.5))), quantity, ticker))
                     elif decision == "sell" and portfolio_qty > 0:
                         print(f"Executing SELL order for {ticker}")
                         
