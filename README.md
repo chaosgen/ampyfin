@@ -37,7 +37,7 @@ Managing multiple algorithms is simplified with AmpyFin’s dynamic ranking syst
 
 #### 🏆 Ranking System
 
-Each strategy starts with a base score of 50,000. The system evaluates their performance and assigns a weight based on the following function:
+Each strategy starts with a base score of 0 and a mock balance of $50,000. The system evaluates their performance and assigns a weight based on the following function:
 
 $$
 \left( \frac{e^e}{e^2} - 1 \right)^{2i}
