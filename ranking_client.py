@@ -279,7 +279,7 @@ def update_portfolio_values(client):
       holdings_collection.update_one({"strategy": strategy_doc["strategy"]}, {"$set": {"portfolio_value": portfolio_value}}, upsert=True)
 
    # Update MongoDB with the modified strategy documents
-   client.close()
+   
 
 def update_ranks(client):
    """"
@@ -313,7 +313,7 @@ def update_ranks(client):
       _, _, _, strategy_name = heapq.heappop(q)
       rank_collection.insert_one({"strategy": strategy_name, "rank": rank})
       rank+=1
-   client.close()
+   
 
 def main():  
    """  
