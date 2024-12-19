@@ -352,7 +352,7 @@ def main():
          time.sleep(60)  
       
       elif status == "early_hours":  
-            if early_hour_first_iteration:  
+            if early_hour_first_iteration is True:  
                
                ndaq_tickers = get_ndaq_tickers(mongo_url, FINANCIAL_PREP_API_KEY)  
                early_hour_first_iteration = False  
@@ -362,11 +362,12 @@ def main():
   
       elif status == "closed":  
          
-        early_hour_first_iteration = True
-        if post_market_hour_first_iteration:
+        
+        if post_market_hour_first_iteration is True:
+            early_hour_first_iteration = True
             logging.info("Market is closed. Performing post-market analysis.") 
             post_market_hour_first_iteration = False
-            #increment time_Delta in database by 0.01
+            #increment time_delta in database by 0.01
             
             mongo_client.trading_simulator.time_delta.update_one({}, {"$inc": {"time_delta": 0.01}})
             
