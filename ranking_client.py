@@ -263,14 +263,23 @@ def update_portfolio_values(client):
       portfolio_value = strategy_doc["amount_cash"]
       
       for ticker, holding in strategy_doc["holdings"].items():
-          
+          # The current price can be gotten through a cache system maybe
+          # if polygon api is getting clogged - but that hasn't happened yet
+          # Also implement in C++ or C instead of python
           # Get the current price of the ticker from the Polygon API
+          # Use a cache system to store the latest prices
+          # If the cache is empty, fetch the latest price from the Polygon API
+          # Cache should be updated every 60 seconds 
+
           current_price = None
           while current_price is None:
             try:
+               # get latest price shouldn't cache - we should also do a delay
                current_price = get_latest_price(ticker)
             except:
                print(f"Error fetching price for {ticker}. Retrying...")
+               time.sleep(120)
+               # Will sleep 120 seconds before retrying to get latest price
           print(f"Current price of {ticker}: {current_price}")
           # Calculate the value of the holding
           holding_value = holding["quantity"] * current_price
@@ -297,6 +306,8 @@ def update_ranks(client):
    """
    rank_collection.delete_many({})
    """
+   Reason why delete rank is so that rank is intially null and
+   then we can populate it in the order we wish
    now update rank based on successful_trades - failed
    """
    q = []
@@ -342,6 +353,10 @@ def main():
       status = mongo_client.market_data.market_status.find_one({})["market_status"]
       
       if status == "open":  
+         # Connection pool is not thread safe. Create a new client for each thread.
+         # We can use ThreadPoolExecutor to manage threads - maybe use this but this risks clogging
+         # resources if we have too many threads or if a thread is on stall mode
+         # We can also use multiprocessing.Pool to manage threads
          
          if not ndaq_tickers:
             logging.info("Market is open. Processing strategies.")  
@@ -365,6 +380,15 @@ def main():
          time.sleep(120)  
       
       elif status == "early_hours":  
+            # During early hour, currently we only support prep
+            # However, we should add more features here like premarket analysis
+            # Maybe have the sentiment bot located here and closed status and 
+            # Dedicate sentiment bot to a separate thread - maybe a good idea - 
+            # Sentiment bot sources - reddit, twitter, marketbeat, marketwatch, seeking alpha
+            # also yahoo finance, google news, bloomberg, cnbc, etc. - dedicate at least 20 sentiment trackers
+            # And a dedicated one for WSB. - but dedicating each to a thread is too expensive
+            # so why not we have a sentiment bot by itself and have it run on a cloud - different oracle
+            # free account using AD3 server 
             if early_hour_first_iteration is True:  
                
                ndaq_tickers = get_ndaq_tickers(mongo_client, FINANCIAL_PREP_API_KEY)  
@@ -374,7 +398,9 @@ def main():
             time.sleep(60)  
   
       elif status == "closed":  
-         
+        # Performs post-market analysis for next trading day
+        # Will only run once per day to reduce clogging logging
+        # Should self-implementing a delete log process after a certain time - say 1 year
         
         if post_market_hour_first_iteration is True:
             early_hour_first_iteration = True
@@ -387,6 +413,8 @@ def main():
             
             #Update ranks
             update_portfolio_values(mongo_client)
+            # We keep reusing the same mongo client and never close to reduce the number within the connection pool
+
             update_ranks(mongo_client)
         time.sleep(60)  
       else:  

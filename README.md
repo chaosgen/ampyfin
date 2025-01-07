@@ -89,7 +89,7 @@ This ensures that strategies with better recent performance have a greater influ
 - **talib_indicators.py**: Contains all the technical indicators used in the strategies. To visit the documentation for each technical indicator, please visit the following link: [Link to TA](https://ta-lib.org/). These indicators were not developed by me, but I have modified their use to fit the needs of AmpyFin. Each indicator is fine tuned with a specific period and historical data is either retrieved from MongoDB cache system or from yfinance.
 
 ### 🔧 helper_files/*
-
+Fa
 **Objective**: Helper Files to help with both trading client and ranking client. Houses functions for retrieving a Mongo Client, getting latest prices, current strategies implemented etc.
 
 **Features**:
