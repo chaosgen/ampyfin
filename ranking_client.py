@@ -382,13 +382,7 @@ def main():
       elif status == "early_hours":  
             # During early hour, currently we only support prep
             # However, we should add more features here like premarket analysis
-            # Maybe have the sentiment bot located here and closed status and 
-            # Dedicate sentiment bot to a separate thread - maybe a good idea - 
-            # Sentiment bot sources - reddit, twitter, marketbeat, marketwatch, seeking alpha
-            # also yahoo finance, google news, bloomberg, cnbc, etc. - dedicate at least 20 sentiment trackers
-            # And a dedicated one for WSB. - but dedicating each to a thread is too expensive
-            # so why not we have a sentiment bot by itself and have it run on a cloud - different oracle
-            # free account using AD3 server 
+            
             if early_hour_first_iteration is True:  
                
                ndaq_tickers = get_ndaq_tickers(mongo_client, FINANCIAL_PREP_API_KEY)  

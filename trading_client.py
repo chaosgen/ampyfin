@@ -203,14 +203,16 @@ def main():
                         buy_quantity = min(int(max_investment // current_price), int(buying_power // current_price))
                         
 
-                        heapq.heappush(suggestion_heap, (-buy_weight, buy_quantity, ticker))
+                        heapq.heappush(suggestion_heap, (-(buy_weight - sell_weight), buy_quantity, ticker))
                     print(f"Ticker: {ticker}, Decision: {decision}, Quantity: {quantity}, Weights: Buy: {buy_weight}, Sell: {sell_weight}, Hold: {hold_weight}")
                     """
                     later we should implement buying_power regulator depending on vix strategy
                     for now in bull: 15000
                     for bear: 5000
                     """
-                    
+                    if market_status(trading_client) == "closed":
+                        break
+
                     if decision == "buy" and float(account.cash) > 15000 and (((quantity + portfolio_qty) * current_price) / portfolio_value) < 0.1:
                         
                         heapq.heappush(buy_heap, (-(buy_weight-(sell_weight + (hold_weight * 0.5))), quantity, ticker))
