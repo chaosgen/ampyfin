@@ -31,6 +31,7 @@ def connect_to_mongo(mongo_url):
     return MongoClient(mongo_url)
 
 # Helper to place an order
+# Helper to place an order
 def place_order(trading_client, symbol, side, quantity, mongo_client):
     """
     Place a market order and log the order to MongoDB.
@@ -39,7 +40,7 @@ def place_order(trading_client, symbol, side, quantity, mongo_client):
     :param symbol: The stock symbol to trade
     :param side: Order side (OrderSide.BUY or OrderSide.SELL)
     :param qty: Quantity to trade
-    :param mongo_url: MongoDB connection URL
+    :param mongo_client: MongoDB client instance
     :return: Order result from Alpaca API
     """
     
@@ -51,8 +52,11 @@ def place_order(trading_client, symbol, side, quantity, mongo_client):
     )
     order = trading_client.submit_order(market_order_data)
     qty = round(quantity, 3)
+    current_price = get_latest_price(symbol)
+    stop_loss_price = round(current_price * 0.97, 2)  # 3% loss
+    take_profit_price = round(current_price * 1.10, 2)  # 10% profit
+
     # Log trade details to MongoDB
-    
     db = mongo_client.trades
     db.paper.insert_one({
         'symbol': symbol,
@@ -61,20 +65,24 @@ def place_order(trading_client, symbol, side, quantity, mongo_client):
         'time_in_force': TimeInForce.DAY.name,
         'time': datetime.now()
     })
-    #Track assets as well
-    db = mongo_client.trades
+
+    # Track assets as well
     assets = db.assets_quantities
-    """
-    insert or subtract or delete based on what happened
-    """
+    limits = db.assets_limit
+
     if side == OrderSide.BUY:
         assets.update_one({'symbol': symbol}, {'$inc': {'quantity': qty}}, upsert=True)
+        limits.update_one(
+            {'symbol': symbol},
+            {'$set': {'stop_loss_price': stop_loss_price, 'take_profit_price': take_profit_price}},
+            upsert=True
+        )
     elif side == OrderSide.SELL:
         assets.update_one({'symbol': symbol}, {'$inc': {'quantity': -qty}}, upsert=True)
         if assets.find_one({'symbol': symbol})['quantity'] == 0:
             assets.delete_one({'symbol': symbol})
+            limits.delete_one({'symbol': symbol})
 
-       
     return order
 
 # Helper to retrieve NASDAQ-100 tickers from MongoDB
