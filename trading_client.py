@@ -180,11 +180,7 @@ def main():
                         
                     decision, quantity, buy_weight, sell_weight, hold_weight = weighted_majority_decision_and_median_quantity(decisions_and_quantities)
                     
-                    if portfolio_qty == 0.0 and buy_weight > sell_weight and (((quantity + portfolio_qty) * current_price) / portfolio_value) < 0.1:
-                        print(f"Suggestions for buying for {ticker} with a weight of {buy_weight}")
-                        max_investment = portfolio_value * 0.10
-                        buy_quantity = min(int(max_investment // current_price), int(buying_power // current_price))
-                        heapq.heappush(suggestion_heap, (-(buy_weight - sell_weight), buy_quantity, ticker))
+                    
                     print(f"Ticker: {ticker}, Decision: {decision}, Quantity: {quantity}, Weights: Buy: {buy_weight}, Sell: {sell_weight}, Hold: {hold_weight}")
                     
                     
@@ -197,6 +193,12 @@ def main():
                         quantity = max(quantity, 1)
                         order = place_order(trading_client, symbol=ticker, side=OrderSide.SELL, quantity=quantity, mongo_client=mongo_client)
                         logging.info(f"Executed SELL order for {ticker}: {order}")
+                    elif portfolio_qty == 0.0 and buy_weight > sell_weight and (((quantity + portfolio_qty) * current_price) / portfolio_value) < 0.1:
+                        max_investment = portfolio_value * 0.10
+                        buy_quantity = min(int(max_investment // current_price), int(buying_power // current_price))
+                        print(f"Suggestions for buying for {ticker} with a weight of {buy_weight} and quantity of {buy_quantity}")
+
+                        heapq.heappush(suggestion_heap, (-(buy_weight - sell_weight), buy_quantity, ticker))
                     else:
                         logging.info(f"Holding for {ticker}, no action taken.")
                     
@@ -206,15 +208,24 @@ def main():
             while (buy_heap or suggestion_heap) and float(account.cash) > 15000:
                 try:
                     if buy_heap:
+                        
                         _, quantity, ticker = heapq.heappop(buy_heap)
-                        print(f"Executing BUY order for {ticker}")
+                        print(f"Executing BUY order for {ticker} of quantity {quantity}")
+                        
                         order = place_order(trading_client, symbol=ticker, side=OrderSide.BUY, quantity=quantity, mongo_client=mongo_client)
                         logging.info(f"Executed BUY order for {ticker}: {order}")
+                        
                     elif suggestion_heap:
+                        
+                        
+                    
+                        
                         _, quantity, ticker = heapq.heappop(suggestion_heap)
-                        print(f"Executing BUY order for {ticker}")
+                        print(f"Executing BUY order for {ticker} of quantity {quantity}")
+                        
                         order = place_order(trading_client, symbol=ticker, side=OrderSide.BUY, quantity=quantity, mongo_client=mongo_client)
                         logging.info(f"Executed BUY order for {ticker}: {order}")
+                        
                     trading_client = TradingClient(API_KEY, API_SECRET)
                     account = trading_client.get_account()
                 except:
