@@ -183,7 +183,7 @@ def main():
                     
                     print(f"Ticker: {ticker}, Decision: {decision}, Quantity: {quantity}, Weights: Buy: {buy_weight}, Sell: {sell_weight}, Hold: {hold_weight}")
                     
-                    
+                    print(f"Cash: {account.cash}")
 
                     if decision == "buy" and float(account.cash) > 15000 and (((quantity + portfolio_qty) * current_price) / portfolio_value) < 0.1:
                         heapq.heappush(buy_heap, (-(buy_weight-(sell_weight + (hold_weight * 0.5))), quantity, ticker))
@@ -193,7 +193,7 @@ def main():
                         quantity = max(quantity, 1)
                         order = place_order(trading_client, symbol=ticker, side=OrderSide.SELL, quantity=quantity, mongo_client=mongo_client)
                         logging.info(f"Executed SELL order for {ticker}: {order}")
-                    elif portfolio_qty == 0.0 and buy_weight > sell_weight and (((quantity + portfolio_qty) * current_price) / portfolio_value) < 0.1:
+                    elif portfolio_qty == 0.0 and buy_weight > sell_weight and (((quantity + portfolio_qty) * current_price) / portfolio_value) < 0.1 and float(account.cash) > 15000:
                         max_investment = portfolio_value * 0.10
                         buy_quantity = min(int(max_investment // current_price), int(buying_power // current_price))
                         print(f"Suggestions for buying for {ticker} with a weight of {buy_weight} and quantity of {buy_quantity}")
@@ -204,10 +204,14 @@ def main():
                     
                 except Exception as e:
                     logging.error(f"Error processing {ticker}: {e}")
-
+            trading_client = TradingClient(API_KEY, API_SECRET)
+            account = trading_client.get_account()
             while (buy_heap or suggestion_heap) and float(account.cash) > 15000:
                 try:
-                    if buy_heap:
+                    trading_client = TradingClient(API_KEY, API_SECRET)
+                    account = trading_client.get_account()
+                    print(f"Cash: {account.cash}")
+                    if buy_heap and float(account.cash) > 15000:
                         
                         _, quantity, ticker = heapq.heappop(buy_heap)
                         print(f"Executing BUY order for {ticker} of quantity {quantity}")
@@ -215,10 +219,7 @@ def main():
                         order = place_order(trading_client, symbol=ticker, side=OrderSide.BUY, quantity=quantity, mongo_client=mongo_client)
                         logging.info(f"Executed BUY order for {ticker}: {order}")
                         
-                    elif suggestion_heap:
-                        
-                        
-                    
+                    elif suggestion_heap and float(account.cash) > 15000:
                         
                         _, quantity, ticker = heapq.heappop(suggestion_heap)
                         print(f"Executing BUY order for {ticker} of quantity {quantity}")
@@ -226,8 +227,10 @@ def main():
                         order = place_order(trading_client, symbol=ticker, side=OrderSide.BUY, quantity=quantity, mongo_client=mongo_client)
                         logging.info(f"Executed BUY order for {ticker}: {order}")
                         
-                    trading_client = TradingClient(API_KEY, API_SECRET)
-                    account = trading_client.get_account()
+                    time.sleep(5)
+                    """
+                    This is here so order will propage through and we will have an accurate cash balance recorded
+                    """
                 except:
                     print("Error occurred while executing buy order. Continuing...")
                     break
