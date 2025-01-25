@@ -196,9 +196,14 @@ def main():
                     elif portfolio_qty == 0.0 and buy_weight > sell_weight and (((quantity + portfolio_qty) * current_price) / portfolio_value) < 0.1 and float(account.cash) > 15000:
                         max_investment = portfolio_value * 0.10
                         buy_quantity = min(int(max_investment // current_price), int(buying_power // current_price))
-                        print(f"Suggestions for buying for {ticker} with a weight of {buy_weight} and quantity of {buy_quantity}")
+                        if buy_weight > 2050000:
+                            buy_quantity = max(buy_quantity, 2)
+                            buy_quantity = buy_quantity // 2
+                            print(f"Suggestions for buying for {ticker} with a weight of {buy_weight} and quantity of {buy_quantity}")
 
-                        heapq.heappush(suggestion_heap, (-(buy_weight - sell_weight), buy_quantity, ticker))
+                            heapq.heappush(suggestion_heap, (-(buy_weight - sell_weight), buy_quantity, ticker))
+                        else:
+                            logging.info(f"Holding for {ticker}, no action taken.")
                     else:
                         logging.info(f"Holding for {ticker}, no action taken.")
                     
