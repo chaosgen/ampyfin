@@ -15,7 +15,7 @@ def test_strategies():
    mongo_client = MongoClient() 
    tickers = get_ndaq_tickers(mongo_url, FINANCIAL_PREP_API_KEY)
    mongo_client.close()
-   """
+   
    periods = ['1d', '5d','1mo', '3mo', '6mo', '1y', '2y', '5y', 'ytd', 'max']
    account_cash = 50000
    portfolio_qty = 10
@@ -34,7 +34,7 @@ def test_strategies():
          except Exception as e:
             print(f"ERROR processing {ticker} for {strategy.__name__}: {e}")
       time.sleep(5)
-   """
+   
    for ticker in tickers:
       print(f"{ticker} : {dynamic_period_selector(ticker)}")
    
