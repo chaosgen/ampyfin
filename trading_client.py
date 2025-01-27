@@ -114,6 +114,7 @@ def main():
                 rank_collection = sim_db.rank
                 r_t_c_collection = sim_db.rank_to_coefficient
                 for strategy in strategies:
+                    
                     rank = rank_collection.find_one({'strategy': strategy.__name__})['rank']
                     coefficient = r_t_c_collection.find_one({'rank': rank})['coefficient']
                     strategy_to_coefficient[strategy.__name__] = coefficient
@@ -137,7 +138,7 @@ def main():
                     trades_db = mongo_client.trades
                     portfolio_collection = trades_db.portfolio_values
                     
-                    portfolio_collection.update_one({"name" : "portfolio_percentage"}, {"$set": {"portfolio_value": (portfolio_value-49500.13)/49500.13}})
+                    portfolio_collection.update_one({"name" : "portfolio_percentage"}, {"$set": {"portfolio_value": (portfolio_value-50491.13)/50491.13}})
                     portfolio_collection.update_one({"name" : "ndaq_percentage"}, {"$set": {"portfolio_value": (qqq_latest-518.58)/518.58}})
                     portfolio_collection.update_one({"name" : "spy_percentage"}, {"$set": {"portfolio_value": (spy_latest-591.95)/591.95}})
                     

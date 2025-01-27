@@ -5,6 +5,7 @@ import pandas as pd
 def get_data(ticker, mongo_client, period='1y'): 
 
    """Retrieve historical data for a given ticker."""  
+
    data = None
    while data is None:
       
@@ -16,6 +17,8 @@ def get_data(ticker, mongo_client, period='1y'):
          
          if data:
             df = pd.DataFrame(data['data'])
+            
+            
             df['Date'] = pd.to_datetime(df['Date'])
             df.set_index('Date', inplace=True)
             
