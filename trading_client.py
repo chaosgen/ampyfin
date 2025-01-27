@@ -137,13 +137,14 @@ def main():
                     trades_db = mongo_client.trades
                     portfolio_collection = trades_db.portfolio_values
                     
-                    portfolio_collection.update_one({"name" : "portfolio_percentage"}, {"$set": {"portfolio_value": (portfolio_value-50491.13)/50491.13}})
+                    portfolio_collection.update_one({"name" : "portfolio_percentage"}, {"$set": {"portfolio_value": (portfolio_value-49500.13)/49500.13}})
                     portfolio_collection.update_one({"name" : "ndaq_percentage"}, {"$set": {"portfolio_value": (qqq_latest-518.58)/518.58}})
                     portfolio_collection.update_one({"name" : "spy_percentage"}, {"$set": {"portfolio_value": (spy_latest-591.95)/591.95}})
                     
                     current_price = None
                     while current_price is None:
                         try:
+                            
                             current_price = get_latest_price(ticker)
                         except:
                             print(f"Error fetching price for {ticker}. Retrying...")
@@ -164,7 +165,7 @@ def main():
                             order = place_order(trading_client, symbol=ticker, side=OrderSide.SELL, quantity=quantity, mongo_client=mongo_client)
                             logging.info(f"Executed SELL order for {ticker}: {order}")
                             continue
-
+                                        
                     for strategy in strategies:
                         historical_data = None
                         while historical_data is None:
