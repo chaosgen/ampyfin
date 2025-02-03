@@ -2,42 +2,44 @@ import yfinance as yf
 import talib as ta 
 import numpy as np
 import pandas as pd
-def get_data(ticker, mongo_client, period='1y'): 
+import time
+def get_data(ticker, mongo_client, period=None, start_date=None, end_date=None): 
 
    """Retrieve historical data for a given ticker."""  
+   if period is not None:
+      data = None
+      while data is None:
+         
+         try:
+            db = mongo_client.HistoricalDatabase
+            collection = db.HistoricalDatabase  
+            data = collection.find_one({"ticker": ticker, "period": period})
+            if data:
+               df = pd.DataFrame(data['data'])
+               df['Date'] = pd.to_datetime(df['Date'])
+               df.set_index('Date', inplace=True)
+               return df
+            else:
 
-   data = None
-   while data is None:
+               ticker_obj = yf.Ticker(ticker)
+               data = ticker_obj.history(period=period)
+               
+               records = data.reset_index().to_dict('records')
+               
+               collection.insert_one({"ticker": ticker, "period": period, 'data': records})
+               
+               print("Data fetched from Yahoo Finance")
+               return data
+         except Exception as e:
+            print(f"Error fetching data for {ticker}: {e}")
       
+      return data  
+   else:
       try:
-         db = mongo_client.HistoricalDatabase
-         collection = db.HistoricalDatabase
-         
-         data = collection.find_one({"ticker": ticker, "period": period})
-         
-         if data:
-            df = pd.DataFrame(data['data'])
-            
-            
-            df['Date'] = pd.to_datetime(df['Date'])
-            df.set_index('Date', inplace=True)
-            
-            return df
-         else:
-
-            ticker_obj = yf.Ticker(ticker)
-            data = ticker_obj.history(period=period)
-            
-            records = data.reset_index().to_dict('records')
-            
-            collection.insert_one({"ticker": ticker, "period": period, 'data': records})
-            
-            print("Data fetched from Yahoo Finance")
-            return data
+         return yf.Ticker(ticker).history(start=start_date, end=end_date)
       except Exception as e:
          print(f"Error fetching data for {ticker}: {e}")
-   
-   return data  
+         time.sleep(10)
   
 def simulate_strategy(strategy, ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
    max_investment = total_portfolio_value * 0.10

@@ -22,9 +22,14 @@ import statistics
 import heapq
 import requests
 from strategies.talib_indicators import *
+import threading
+
+buy_heap = []
+suggestion_heap = []
+sold = False
 
 
-# MongoDB connection string
+ca = certifi.where()
 
 # Set up logging configuration
 logging.basicConfig(
@@ -37,9 +42,6 @@ logging.basicConfig(
     ]
 )
 
-"""
-Determines the majority decision (buy, sell, or hold) and returns the weighted median quantity for the chosen action.
-"""
 def weighted_majority_decision_and_median_quantity(decisions_and_quantities):  
     """  
     Determines the majority decision (buy, sell, or hold) and returns the weighted median quantity for the chosen action.  
@@ -66,7 +68,6 @@ def weighted_majority_decision_and_median_quantity(decisions_and_quantities):
         elif decision == 'hold':
             hold_weight += weight
     
-    
     # Determine the majority decision based on the highest accumulated weight
     if buy_weight > sell_weight and buy_weight > hold_weight:
         return 'buy', median(weighted_buy_quantities) if weighted_buy_quantities else 0, buy_weight, sell_weight, hold_weight
@@ -75,22 +76,112 @@ def weighted_majority_decision_and_median_quantity(decisions_and_quantities):
     else:
         return 'hold', 0, buy_weight, sell_weight, hold_weight
 
+def process_ticker(ticker, client, trading_client, data_client, mongo_client, strategy_to_coefficient):
+    global buy_heap
+    global suggestion_heap
+    global sold
+    if sold is True:
+        print("Sold boolean is True. Exiting process_ticker function.")
+    else:
+        try:
+            decisions_and_quantities = []
+            current_price = None
+            while current_price is None:
+                try:
+                    current_price = get_latest_price(ticker)
+                except Exception as fetch_error:
+                    logging.warning(f"Error fetching price for {ticker}. Retrying... {fetch_error}")
+                    time.sleep(10)
+            print(f"Current price of {ticker}: {current_price}")
+
+            asset_collection = mongo_client.trades.assets_quantities
+            limits_collection = mongo_client.trades.assets_limit
+            account = trading_client.get_account()
+            buying_power = float(account.cash)
+            portfolio_value = float(account.portfolio_value)
+            cash_to_portfolio_ratio = buying_power / portfolio_value
+
+            asset_info = asset_collection.find_one({'symbol': ticker})
+            portfolio_qty = asset_info['quantity'] if asset_info else 0.0
+            print(f"Portfolio quantity for {ticker}: {portfolio_qty}")
+
+            limit_info = limits_collection.find_one({'symbol': ticker})
+            if limit_info:
+                stop_loss_price = limit_info['stop_loss_price']
+                take_profit_price = limit_info['take_profit_price']
+                if current_price <= stop_loss_price or current_price >= take_profit_price:
+                    sold = True
+                    print(f"Executing SELL order for {ticker} due to stop-loss or take-profit condition")
+                    quantity = portfolio_qty
+                    order = place_order(trading_client, symbol=ticker, side=OrderSide.SELL, quantity=quantity, mongo_client=mongo_client)
+                    logging.info(f"Executed SELL order for {ticker}: {order}")
+                    return
+
+            indicator_tb = mongo_client.IndicatorsDatabase
+            indicator_collection = indicator_tb.Indicators
+
+            for strategy in strategies:
+                historical_data = None
+                while historical_data is None:
+                    try:
+                        period = indicator_collection.find_one({'indicator': strategy.__name__})
+                        historical_data = get_data(ticker, mongo_client, period['ideal_period'])
+                    except Exception as fetch_error:
+                        logging.warning(f"Error fetching historical data for {ticker}. Retrying... {fetch_error}")
+                        time.sleep(60)
+
+                decision, quantity = simulate_strategy(strategy, ticker, current_price, historical_data, buying_power, portfolio_qty, portfolio_value)
+                print(f"Strategy: {strategy.__name__}, Decision: {decision}, Quantity: {quantity} for {ticker}")
+                weight = strategy_to_coefficient[strategy.__name__]
+                decisions_and_quantities.append((decision, quantity, weight))
+
+            decision, quantity, buy_weight, sell_weight, hold_weight = weighted_majority_decision_and_median_quantity(decisions_and_quantities)
+            print(f"Ticker: {ticker}, Decision: {decision}, Quantity: {quantity}, Weights: Buy: {buy_weight}, Sell: {sell_weight}, Hold: {hold_weight}")
+
+            if decision == "buy" and float(account.cash) > 15000 and (((quantity + portfolio_qty) * current_price) / portfolio_value) < 0.1:
+                heapq.heappush(buy_heap, (-(buy_weight-(sell_weight + (hold_weight * 0.5))), quantity, ticker))
+            elif decision == "sell" and portfolio_qty > 0:
+                print(f"Executing SELL order for {ticker}")
+                print(f"Executing quantity of {quantity} for {ticker}")
+                sold = True
+                quantity = max(quantity, 1)
+                order = place_order(trading_client, symbol=ticker, side=OrderSide.SELL, quantity=quantity, mongo_client=mongo_client)
+                logging.info(f"Executed SELL order for {ticker}: {order}")
+            elif portfolio_qty == 0.0 and buy_weight > sell_weight and (((quantity + portfolio_qty) * current_price) / portfolio_value) < 0.1 and float(account.cash) > 15000:
+                max_investment = portfolio_value * 0.10
+                buy_quantity = min(int(max_investment // current_price), int(buying_power // current_price))
+                if buy_weight > 1000000:
+                    buy_quantity = max(buy_quantity, 2)
+                    buy_quantity = buy_quantity // 2
+                    print(f"Suggestions for buying for {ticker} with a weight of {buy_weight} and quantity of {buy_quantity}")
+                    heapq.heappush(suggestion_heap, (-(buy_weight - sell_weight), buy_quantity, ticker))
+                else:
+                    logging.info(f"Holding for {ticker}, no action taken.")
+            else:
+                logging.info(f"Holding for {ticker}, no action taken.")
+        
+        except Exception as e:
+            logging.error(f"Error processing {ticker}: {e}")
+
 def main():
     """
     Main function to control the workflow based on the market's status.
     """
+    global buy_heap
+    global suggestion_heap
+    global sold
     ndaq_tickers = []
     early_hour_first_iteration = True
     post_hour_first_iteration = True
     client = RESTClient(api_key=POLYGON_API_KEY)
     trading_client = TradingClient(API_KEY, API_SECRET)
     data_client = StockHistoricalDataClient(API_KEY, API_SECRET)
-    mongo_client = MongoClient(mongo_url)
+    mongo_client = MongoClient(mongo_url, tlsCAFile=ca)
     db = mongo_client.trades
     asset_collection = db.assets_quantities
     limits_collection = db.assets_limit
     strategy_to_coefficient = {}
-
+    sold = False
     while True:
         client = RESTClient(api_key=POLYGON_API_KEY)
         trading_client = TradingClient(API_KEY, API_SECRET)
@@ -120,100 +211,37 @@ def main():
                     strategy_to_coefficient[strategy.__name__] = coefficient
                     early_hour_first_iteration = False
                     post_hour_first_iteration = True
-                    
+            trading_client = TradingClient(API_KEY, API_SECRET)
             account = trading_client.get_account()
+            buying_power = float(account.cash)
+            portfolio_value = float(account.portfolio_value)
+            cash_to_portfolio_ratio = buying_power / portfolio_value
             qqq_latest = get_latest_price('QQQ')
             spy_latest = get_latest_price('SPY')
             buy_heap = []
             suggestion_heap = []
 
+            trades_db = mongo_client.trades
+            portfolio_collection = trades_db.portfolio_values
+
+            portfolio_collection.update_one({"name" : "portfolio_percentage"}, {"$set": {"portfolio_value": (portfolio_value-50491.13)/50491.13}})
+            portfolio_collection.update_one({"name" : "ndaq_percentage"}, {"$set": {"portfolio_value": (qqq_latest-518.58)/518.58}})
+            portfolio_collection.update_one({"name" : "spy_percentage"}, {"$set": {"portfolio_value": (spy_latest-591.95)/591.95}})
+
+            threads = []
+
             for ticker in ndaq_tickers:
-                decisions_and_quantities = []
-                try:
-                    trading_client = TradingClient(API_KEY, API_SECRET)
-                    account = trading_client.get_account()
-                    buying_power = float(account.cash)
-                    portfolio_value = float(account.portfolio_value)
-                    cash_to_portfolio_ratio = buying_power / portfolio_value
-                    trades_db = mongo_client.trades
-                    portfolio_collection = trades_db.portfolio_values
-                    
-                    portfolio_collection.update_one({"name" : "portfolio_percentage"}, {"$set": {"portfolio_value": (portfolio_value-50491.13)/50491.13}})
-                    portfolio_collection.update_one({"name" : "ndaq_percentage"}, {"$set": {"portfolio_value": (qqq_latest-518.58)/518.58}})
-                    portfolio_collection.update_one({"name" : "spy_percentage"}, {"$set": {"portfolio_value": (spy_latest-591.95)/591.95}})
-                    
-                    current_price = None
-                    while current_price is None:
-                        try:
-                            
-                            current_price = get_latest_price(ticker)
-                        except:
-                            print(f"Error fetching price for {ticker}. Retrying...")
-                            time.sleep(10)
-                    print(f"Current price of {ticker}: {current_price}")
+                thread = threading.Thread(target=process_ticker, args=(ticker, client, trading_client, data_client, mongo_client, strategy_to_coefficient))
+                threads.append(thread)
+                thread.start()
 
-                    asset_info = asset_collection.find_one({'symbol': ticker})
-                    portfolio_qty = asset_info['quantity'] if asset_info else 0.0
-                    print(f"Portfolio quantity for {ticker}: {portfolio_qty}")
-                    
-                    limit_info = limits_collection.find_one({'symbol': ticker})
-                    if limit_info:
-                        stop_loss_price = limit_info['stop_loss_price']
-                        take_profit_price = limit_info['take_profit_price']
-                        if current_price <= stop_loss_price or current_price >= take_profit_price:
-                            print(f"Executing SELL order for {ticker} due to stop-loss or take-profit condition")
-                            quantity = portfolio_qty
-                            order = place_order(trading_client, symbol=ticker, side=OrderSide.SELL, quantity=quantity, mongo_client=mongo_client)
-                            logging.info(f"Executed SELL order for {ticker}: {order}")
-                            continue
-                                        
-                    for strategy in strategies:
-                        historical_data = None
-                        while historical_data is None:
-                            try:
-                                period = indicator_collection.find_one({'indicator': strategy.__name__})
-                                historical_data = get_data(ticker, mongo_client, period['ideal_period'])
-                            except:
-                                print(f"Error fetching data for {ticker}. Retrying...")
-                        
-                        decision, quantity = simulate_strategy(strategy, ticker, current_price, historical_data, buying_power, portfolio_qty, portfolio_value)
-                        weight = strategy_to_coefficient[strategy.__name__]
-                        decisions_and_quantities.append((decision, quantity, weight))
-                        
-                    decision, quantity, buy_weight, sell_weight, hold_weight = weighted_majority_decision_and_median_quantity(decisions_and_quantities)
-                    
-                    
-                    print(f"Ticker: {ticker}, Decision: {decision}, Quantity: {quantity}, Weights: Buy: {buy_weight}, Sell: {sell_weight}, Hold: {hold_weight}")
-                    
-                    print(f"Cash: {account.cash}")
+            # Wait for all threads to complete
+            for thread in threads:
+                thread.join()
 
-                    if decision == "buy" and float(account.cash) > 15000 and (((quantity + portfolio_qty) * current_price) / portfolio_value) < 0.1:
-                        heapq.heappush(buy_heap, (-(buy_weight-(sell_weight + (hold_weight * 0.5))), quantity, ticker))
-                    elif (decision == "sell") and portfolio_qty > 0:
-                        print(f"Executing SELL order for {ticker}")
-                        print(f"Executing quantity of {quantity} for {ticker}")
-                        quantity = max(quantity, 1)
-                        order = place_order(trading_client, symbol=ticker, side=OrderSide.SELL, quantity=quantity, mongo_client=mongo_client)
-                        logging.info(f"Executed SELL order for {ticker}: {order}")
-                    elif portfolio_qty == 0.0 and buy_weight > sell_weight and (((quantity + portfolio_qty) * current_price) / portfolio_value) < 0.1 and float(account.cash) > 15000:
-                        max_investment = portfolio_value * 0.10
-                        buy_quantity = min(int(max_investment // current_price), int(buying_power // current_price))
-                        if buy_weight > 2050000:
-                            buy_quantity = max(buy_quantity, 2)
-                            buy_quantity = buy_quantity // 2
-                            print(f"Suggestions for buying for {ticker} with a weight of {buy_weight} and quantity of {buy_quantity}")
-
-                            heapq.heappush(suggestion_heap, (-(buy_weight - sell_weight), buy_quantity, ticker))
-                        else:
-                            logging.info(f"Holding for {ticker}, no action taken.")
-                    else:
-                        logging.info(f"Holding for {ticker}, no action taken.")
-                    
-                except Exception as e:
-                    logging.error(f"Error processing {ticker}: {e}")
             trading_client = TradingClient(API_KEY, API_SECRET)
             account = trading_client.get_account()
-            while (buy_heap or suggestion_heap) and float(account.cash) > 15000:
+            while (buy_heap or suggestion_heap) and float(account.cash) > 15000 and sold is False:
                 try:
                     trading_client = TradingClient(API_KEY, API_SECRET)
                     account = trading_client.get_account()
@@ -241,7 +269,9 @@ def main():
                 except:
                     print("Error occurred while executing buy order. Continuing...")
                     break
-            
+            buy_heap = []
+            suggestion_heap = []
+            sold = False
             print("Sleeping for 60 seconds...")
             time.sleep(60)
 
@@ -272,4 +302,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
