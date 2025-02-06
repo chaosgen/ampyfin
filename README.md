@@ -1,16 +1,16 @@
 ﻿
-# 🌟 AmpyFin Trading Bot
+# 🌟 AmpyFin Trading System
 
 ## 🚀 Introduction
 
-Welcome to **AmpyFin**, an advanced AI-powered trading bot designed for the NASDAQ-100. Imagine having expert traders working for you 24/7—AmpyFin makes this a reality.
+Welcome to **AmpyFin**, an advanced AI-powered trading system designed for the NASDAQ-100. Imagine having expert traders working for you 24/7—AmpyFin makes this a reality.
 
 ## 📊 AmpyFin’s Data Collection Power
 
 ### 🔍 Data Sources
 
 - **Financial Modeling Prep API**: Retrieves NASDAQ-100 tickers to gain crucial market insights.
-- **Polygon API**: Monitors real-time market conditions, ensuring that the bot acts based on the most current data.
+- **Polygon API**: Monitors real-time market conditions, ensuring that the system acts based on the most current data.
 
 ### 💾 Data Storage
 
@@ -166,7 +166,7 @@ pip install -r requirements.txt
 
 ## ⚡ Usage
 
-To run the bot, execute on two separate terminals:
+To run the systemt, execute on two separate terminals:
 
 ```bash
 python ranking_client.py
@@ -175,7 +175,7 @@ python trading_client.py
 
 ## ⚠️ IMPORTANT
 
-For people looking to do live trading, I suggest training via running ranking_client.py for at least two weeks before running the trading bot altogether. This way, you're running with a client that has been trained to a certain extent (with strategies ranked) and is ready to go. Otherwise, you will most likely be buying random stocks.
+For people looking to do live trading, I suggest training via running ranking_client.py for at least two weeks before running the trading system altogether. This way, you're running with a client that has been trained to a certain extent (with strategies ranked) and is ready to go. Otherwise, you will most likely be buying random stocks.
 
 ## 📑 Logging
 
