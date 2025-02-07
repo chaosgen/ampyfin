@@ -61,6 +61,7 @@ logging.basicConfig(
         logging.StreamHandler()             # Log messages to the console
     ]
 )
+from control import rank_mode, time_delta_mode, time_delta_increment, time_delta_multiplicative,time_delta_balanced, rank_liquidity_limit, rank_asset_limit, profit_price_change_ratio_d1, profit_profit_time_d1, profit_price_change_ratio_d2, profit_profit_time_d2, profit_profit_time_else, loss_price_change_ratio_d1, loss_price_change_ratio_d2, loss_profit_time_d1, loss_profit_time_d2, loss_profit_time_else
 
 def process_ticker(ticker, mongo_client):
    try:
@@ -128,7 +129,7 @@ def simulate_trade(ticker, strategy, historical_data, current_price, account_cas
    
    
    # Update holdings and cash based on trade action
-   if action in ["buy"] and strategy_doc["amount_cash"] - quantity * current_price > 15000 and quantity > 0 and ((portfolio_qty + quantity) * current_price) / total_portfolio_value < 0.10:
+   if action in ["buy"] and strategy_doc["amount_cash"] - quantity * current_price > rank_liquidity_limit and quantity > 0 and ((portfolio_qty + quantity) * current_price) / total_portfolio_value < rank_asset_limit:
       logging.info(f"Action: {action} | Ticker: {ticker} | Quantity: {quantity} | Price: {current_price}")
       # Calculate average price if already holding some shares of the ticker
       if ticker in holdings_doc:
@@ -182,12 +183,12 @@ def simulate_trade(ticker, strategy, historical_data, current_price, account_cas
          )
          
          # Calculate points to add if the current price is higher than the purchase price
-         if price_change_ratio < 1.05:
-            points = time_delta * 1
-         elif price_change_ratio < 1.1:
-            points = time_delta * 1.5
+         if price_change_ratio < profit_price_change_ratio_d1:
+            points = time_delta * profit_profit_time_d1
+         elif price_change_ratio < profit_price_change_ratio_d2:
+            points = time_delta * profit_profit_time_d2
          else:
-            points = time_delta * 2
+            points = time_delta * profit_profit_time_else
          
       else:
          # Calculate points to deduct if the current price is lower than the purchase price
@@ -205,12 +206,12 @@ def simulate_trade(ticker, strategy, historical_data, current_price, account_cas
                upsert=True
             )
          
-         if price_change_ratio > 0.975:
-            points = -time_delta * 1
-         elif price_change_ratio > 0.95:
-            points = -time_delta * 1.5
+         if price_change_ratio > loss_price_change_ratio_d1:
+            points = -time_delta * loss_profit_time_d1
+         elif price_change_ratio > loss_price_change_ratio_d2:
+            points = -time_delta * loss_profit_time_d2
          else:
-            points = -time_delta * 2
+            points = -time_delta * loss_profit_time_else
          
       # Update the points tally
       points_collection.update_one(
@@ -343,79 +344,92 @@ def main():
    """  
    Main function to control the workflow based on the market's status.  
    """  
-   ndaq_tickers = []  
-   early_hour_first_iteration = True
-   post_market_hour_first_iteration = True
+   if rank_mode == 'live':
+      ndaq_tickers = []  
+      early_hour_first_iteration = True
+      post_market_hour_first_iteration = True
    
    
-   while True: 
-      mongo_client = MongoClient(mongo_url, tlsCAFile=ca)
+      while True: 
+         mongo_client = MongoClient(mongo_url, tlsCAFile=ca)
       
-      status = mongo_client.market_data.market_status.find_one({})["market_status"]
+         status = mongo_client.market_data.market_status.find_one({})["market_status"]
       
-      if status == "open":  
-         # Connection pool is not thread safe. Create a new client for each thread.
-         # We can use ThreadPoolExecutor to manage threads - maybe use this but this risks clogging
-         # resources if we have too many threads or if a thread is on stall mode
-         # We can also use multiprocessing.Pool to manage threads
+         if status == "open":  
+            # Connection pool is not thread safe. Create a new client for each thread.
+            # We can use ThreadPoolExecutor to manage threads - maybe use this but this risks clogging
+            # resources if we have too many threads or if a thread is on stall mode
+            # We can also use multiprocessing.Pool to manage threads
          
-         if not ndaq_tickers:
-            logging.info("Market is open. Processing strategies.")  
-            ndaq_tickers = get_ndaq_tickers(mongo_client, FINANCIAL_PREP_API_KEY)
+            if not ndaq_tickers:
+               logging.info("Market is open. Processing strategies.")  
+               ndaq_tickers = get_ndaq_tickers(mongo_client, FINANCIAL_PREP_API_KEY)
 
-         threads = []
+            threads = []
 
-         for ticker in ndaq_tickers:
-            thread = threading.Thread(target=process_ticker, args=(ticker, mongo_client))
-            threads.append(thread)
-            thread.start()
+            for ticker in ndaq_tickers:
+               thread = threading.Thread(target=process_ticker, args=(ticker, mongo_client))
+               threads.append(thread)
+               thread.start()
 
-         # Wait for all threads to complete
-         for thread in threads:
-            thread.join()
+            # Wait for all threads to complete
+            for thread in threads:
+               thread.join()
 
          
          
 
-         logging.info("Finished processing all strategies. Waiting for 120 seconds.")
-         time.sleep(120)  
+            logging.info("Finished processing all strategies. Waiting for 120 seconds.")
+            time.sleep(120)  
       
-      elif status == "early_hours":  
-            # During early hour, currently we only support prep
-            # However, we should add more features here like premarket analysis
+         elif status == "early_hours":  
+               # During early hour, currently we only support prep
+               # However, we should add more features here like premarket analysis
             
-            if early_hour_first_iteration is True:  
+               if early_hour_first_iteration is True:  
                
-               ndaq_tickers = get_ndaq_tickers(mongo_client, FINANCIAL_PREP_API_KEY)  
-               early_hour_first_iteration = False  
-               post_market_hour_first_iteration = True
-               logging.info("Market is in early hours. Waiting for 60 seconds.")  
-            time.sleep(60)  
+                  ndaq_tickers = get_ndaq_tickers(mongo_client, FINANCIAL_PREP_API_KEY)  
+                  early_hour_first_iteration = False  
+                  post_market_hour_first_iteration = True
+                  logging.info("Market is in early hours. Waiting for 60 seconds.")  
+               time.sleep(60)  
   
-      elif status == "closed":  
-        # Performs post-market analysis for next trading day
-        # Will only run once per day to reduce clogging logging
-        # Should self-implementing a delete log process after a certain time - say 1 year
+         elif status == "closed":  
+            # Performs post-market analysis for next trading day
+            # Will only run once per day to reduce clogging logging
+            # Should self-implementing a delete log process after a certain time - say 1 year
         
-        if post_market_hour_first_iteration is True:
-            early_hour_first_iteration = True
-            logging.info("Market is closed. Performing post-market analysis.") 
-            post_market_hour_first_iteration = False
-            #increment time_delta in database by 0.01
+            if post_market_hour_first_iteration is True:
+               early_hour_first_iteration = True
+               logging.info("Market is closed. Performing post-market analysis.") 
+               post_market_hour_first_iteration = False
+               # Update time delta based on the mode
+               
+               if time_delta_mode == 'additive':
+                  mongo_client.trading_simulator.time_delta.update_one({}, {"$inc": {"time_delta": time_delta_increment}})
+               elif time_delta_mode == 'multiplicative':
+                  mongo_client.trading_simulator.time_delta.update_one({}, {"$mul": {"time_delta": time_delta_multiplicative}})
+               elif time_delta_mode == 'balanced':
+                  """
+                  retrieve time_delta first
+                  """
+                  time_delta = mongo_client.trading_simulator.time_delta.find_one({})['time_delta']
+                  mongo_client.trading_simulator.time_delta.update_one({}, {"$inc": {"time_delta": time_delta_balanced * time_delta}})
             
-            mongo_client.trading_simulator.time_delta.update_one({}, {"$inc": {"time_delta": 0.01}})
-            
-            
-            #Update ranks
-            update_portfolio_values(mongo_client)
-            # We keep reusing the same mongo client and never close to reduce the number within the connection pool
+               #Update ranks
+               update_portfolio_values(mongo_client)
+               # We keep reusing the same mongo client and never close to reduce the number within the connection pool
 
-            update_ranks(mongo_client)
-        time.sleep(60)  
-      else:  
-        logging.error("An error occurred while checking market status.")  
-        time.sleep(60)
-      mongo_client.close()
+               update_ranks(mongo_client)
+            time.sleep(60)  
+         else:  
+            logging.error("An error occurred while checking market status.")  
+            time.sleep(60)
+         mongo_client.close()
+   elif rank_mode == 'train':
+      return None
+   elif rank_mode == 'test':
+      return None
    
   
 if __name__ == "__main__": 

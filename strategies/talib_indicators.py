@@ -3,6 +3,7 @@ import talib as ta
 import numpy as np
 import pandas as pd
 import time
+from ..control import trade_asset_limit
 def get_data(ticker, mongo_client, period=None, start_date=None, end_date=None): 
 
    """Retrieve historical data for a given ticker."""  
@@ -42,7 +43,7 @@ def get_data(ticker, mongo_client, period=None, start_date=None, end_date=None):
          time.sleep(10)
   
 def simulate_strategy(strategy, ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value):
-   max_investment = total_portfolio_value * 0.10
+   max_investment = total_portfolio_value * trade_asset_limit
    action = strategy(ticker, historical_data)
    
    if action == 'Buy':
