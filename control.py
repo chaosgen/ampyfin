@@ -30,14 +30,14 @@ take_profit = 0.05
 rank_mode = 'live'
 
 """
-time_delta can be multiplicative, additive, or balanced. Additive results in less overfitting but could result in underfitting as time goes on
+time_delta_mode can be multiplicative, additive, or balanced. Additive results in less overfitting but could result in underfitting as time goes on
 Multiplicative results in more overfitting but less underfitting as time goes on. Balanced results in a mix of both where time_delta is going to be a fifth of what the current timestamp is
 and added to time_Delta so it is less overfitting and less underfitting as time goes on.
 time_delta_increment is used for additive purpose
 time_delta_multiplicative is used for multiplicative purpose
-time_delta_balanced is used for balanced purpose
+time_delta_balanced is used for balanced purpose - 0.2 means 0.8 is data influence and 0.2 is current influence
 """
-time_delta = 'additive'
+time_delta_mode = 'additive'
 time_delta_increment = 0.01
 time_delta_multiplicative = 1.01
 time_delta_balanced = 0.2
@@ -63,10 +63,10 @@ the price of the asset goes up but less than by 1% in the trade during sell,
 you should reward the strategy by multiple of time_delta * 1.1
 profit_price_delta_else is the reward you should give to the strategy is it exceeds profit_price_change_ratio_d2
 """
-profit_price_change_ratio_d1 = 1.01
+profit_price_change_ratio_d1 = 1.05
 profit_profit_time_d1 = 1
 profit_price_change_ratio_d2 = 1.1
-profit_profit_time_d2 = 1.1
+profit_profit_time_d2 = 1.5
 profit_profit_time_else = 1.2
 
 """
@@ -77,11 +77,11 @@ the price of the asset goes down but by less than 1% in the trade during sell,
 you should penalize the strategy by a multiple of time_delta * 1.  
 loss_price_delta_else is the penalty you should apply if the loss exceeds loss_price_change_ratio_d2.
 """
-loss_price_change_ratio_d1 = 0.99  
+loss_price_change_ratio_d1 = 0.975  
 loss_profit_time_d1 = 1   
-loss_price_change_ratio_d2 = 0.90  
-loss_profit_time_d2 = 1.1  
-loss_profit_time_else = 1.2  
+loss_price_change_ratio_d2 = 0.95  
+loss_profit_time_d2 = 1.5  
+loss_profit_time_else = 2  
 
 # trading_client.py parameters
 trade_mode = 'live'
