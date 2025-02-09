@@ -379,8 +379,8 @@ def main():
          
          
 
-            logging.info("Finished processing all strategies. Waiting for 120 seconds.")
-            time.sleep(120)  
+            logging.info("Finished processing all strategies. Waiting for 10 seconds.")
+            time.sleep(10)  
       
          elif status == "early_hours":  
                # During early hour, currently we only support prep
@@ -392,7 +392,7 @@ def main():
                   early_hour_first_iteration = False  
                   post_market_hour_first_iteration = True
                   logging.info("Market is in early hours. Waiting for 60 seconds.")  
-               time.sleep(60)  
+               time.sleep(10)  
   
          elif status == "closed":  
             # Performs post-market analysis for next trading day

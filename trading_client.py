@@ -278,8 +278,8 @@ def main():
                 buy_heap = []
                 suggestion_heap = []
                 sold = False
-                print("Sleeping for 60 seconds...")
-                time.sleep(60)
+                print("Sleeping for 5 seconds...")
+                time.sleep(5)
 
             elif status == "early_hours":
                 if early_hour_first_iteration:
@@ -294,7 +294,7 @@ def main():
                         early_hour_first_iteration = False
                         post_hour_first_iteration = True
                     logging.info("Market is in early hours. Waiting for 60 seconds.")
-                time.sleep(30)
+                time.sleep(5)
 
             elif status == "closed":
                 if post_hour_first_iteration:
