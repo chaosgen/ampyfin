@@ -23,6 +23,9 @@ import heapq
 import requests
 from strategies.talib_indicators import *
 import threading
+import sys
+
+
 from control import trade_mode, trade_liquidity_limit, trade_asset_limit, suggestion_heap_limit
 
 buy_heap = []

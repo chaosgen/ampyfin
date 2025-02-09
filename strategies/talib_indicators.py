@@ -3,7 +3,9 @@ import talib as ta
 import numpy as np
 import pandas as pd
 import time
-from ..control import trade_asset_limit
+import sys
+sys.path.append('..')
+from control import trade_asset_limit
 def get_data(ticker, mongo_client, period=None, start_date=None, end_date=None): 
 
    """Retrieve historical data for a given ticker."""  

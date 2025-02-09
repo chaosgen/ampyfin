@@ -7,7 +7,8 @@ import logging
 import yfinance as yf
 import sys
 from pathlib import Path
-from ..control import stop_loss, take_profit
+sys.path.append("..")
+from control import stop_loss, take_profit
 
 parent_dir = Path(__file__).resolve().parent.parent
 sys.path.append(str(parent_dir))
