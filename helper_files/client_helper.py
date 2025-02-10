@@ -59,8 +59,8 @@ def place_order(trading_client, symbol, side, quantity, mongo_client):
     order = trading_client.submit_order(market_order_data)
     qty = round(quantity, 3)
     current_price = get_latest_price(symbol)
-    stop_loss_price = round(current_price * 1 - stop_loss, 2)  # 3% loss
-    take_profit_price = round(current_price * 1 + take_profit, 2)  # 5% profit
+    stop_loss_price = round(current_price * (1 - stop_loss), 2)  # 3% loss
+    take_profit_price = round(current_price * (1 + take_profit), 2)  # 5% profit
 
     # Log trade details to MongoDB
     db = mongo_client.trades

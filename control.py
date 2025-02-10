@@ -27,7 +27,7 @@ take_profit = 0.05
 
 # ranking_client.py parameters
 
-rank_mode = 'live'
+rank_mode = 'train'
 
 """
 time_delta_mode can be multiplicative, additive, or balanced. Additive results in less overfitting but could result in underfitting as time goes on
@@ -83,6 +83,21 @@ loss_price_change_ratio_d2 = 0.95
 loss_profit_time_d2 = 1.5  
 loss_profit_time_else = 2  
 
+
+"""
+training parameters - run purely on ranking_client.py
+period_start and period_end are the start and end date of the period you want to train 
+tickers are the tickers you want to train on. please make sure that during the periods you train, the tickers exist
+at current moment and during the period you train
+otherwise, the bot will not be able to train on the data. 
+also, please make sure the period_start date is at least 2 years after the IPO date of the ticker
+please keep in mind training takes quite a long time. Our team trained it on a 1m tick, but even on a 1d tick, it takes a really long time
+so please understand the time it takes to train.
+"""
+period_start = "2012-01-01"
+period_end = "2021-12-31"
+train_tickers = ["MSFT", "TSLA", "AMZN", "AAPL", "GOOGL", "GOOG", "NFLX", "AVGO", "AMD", "NVDA"]
+
 # trading_client.py parameters
 trade_mode = 'live'
 
@@ -106,3 +121,9 @@ suggestion heap is used in case of when the trading system becomes overpragmatic
 to buy if the system is pragmatic on all other tickers.
 """
 suggestion_heap_limit = 1000000
+
+"""
+when we train, it will be running ranking_client.py
+
+when we backtest, it will be running training_client.pt and ranking_client.py simultaenously
+"""
