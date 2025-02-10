@@ -63,6 +63,7 @@ logging.basicConfig(
 )
 from control import rank_mode, time_delta_mode, time_delta_increment, time_delta_multiplicative,time_delta_balanced, rank_liquidity_limit, rank_asset_limit, profit_price_change_ratio_d1, profit_profit_time_d1, profit_price_change_ratio_d2, profit_profit_time_d2, profit_profit_time_else, loss_price_change_ratio_d1, loss_price_change_ratio_d2, loss_profit_time_d1, loss_profit_time_d2, loss_profit_time_else
 from control import period_start, period_end, train_tickers
+import json
 
 def process_ticker(ticker, mongo_client):
    try:
@@ -568,6 +569,15 @@ def main():
          logging.info(f"time_delta: {time_delta}")
          logging.info(f"Active count: {active_count}")
          logging.info("-------------------------------------------------")
+         results = {
+            "trading_simulator": trading_simulator,
+            "points": points,
+            "date": current_date.strftime('%Y-%m-%d'),
+            "time_delta": time_delta
+         }
+         
+         with open('training_results.json', 'w') as json_file:
+            json.dump(results, json_file, indent=4)
          """
          Update time_delta based on the mode
          """
@@ -585,6 +595,17 @@ def main():
       """
       we can update points tally and rank at the end - since training is only for each strategy
       jsonify the result and put it in system for the user to either input into mongodb or delete it
+      """
+      """
+      results = {
+        "trading_simulator": trading_simulator,
+        "points": points,
+        "date": current_date.strftime('%Y-%m-%d'),
+        "time_delta": time_delta
+      }
+    
+      with open('training_results.json', 'w') as json_file:
+         json.dump(results, json_file, indent=4)
       """
    elif rank_mode == 'test':
       return None
