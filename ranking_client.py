@@ -433,11 +433,12 @@ def main():
       """
       ticker_price_history = {}
       trading_simulator = {}
-      points = {} 
+      points = {}
       """
       need it for time_delta component and we need to adapt time delta for multiple modes - multiplicative, balanced or additive
       """
       for strategy in strategies:
+         points[strategy.__name__] = 0
          trading_simulator[strategy.__name__] = {
                "holdings": {},
                "amount_cash": 50000,
@@ -479,78 +480,107 @@ def main():
          start_date = period_start_date[period]
          
          return ticker_price_history[ticker].loc[start_date.strftime('%Y-%m-%d'):current_date.strftime('%Y-%m-%d')]
+      
       def update_portfolio_values(current_date):
+         active_count = 0
          for strategy in strategies:
-            trading_simulator[strategy.__name__]["portfolio_value"] = trading_simulator[strategy.__name__]["amount_cash"]
-            """
-            update portfolio value here
-            """
-            amount = 0
-            for ticker in trading_simulator[strategy.__name__]["holdings"]:
-               qty = trading_simulator[strategy.__name__]["holdings"][ticker]["quantity"]
-               current_price = ticker_price_history[ticker].loc[current_date.strftime('%Y-%m-%d')]["Close"]
-               amount += qty * current_price
-            cash = trading_simulator[strategy.__name__]["amount_cash"]
-
-            trading_simulator[strategy.__name__]["portfolio_value"] = amount + cash
-
+               trading_simulator[strategy.__name__]["portfolio_value"] = trading_simulator[strategy.__name__]["amount_cash"]
+               """
+               update portfolio value here
+               """
+               amount = 0
+               for ticker in trading_simulator[strategy.__name__]["holdings"]:
+                  qty = trading_simulator[strategy.__name__]["holdings"][ticker]["quantity"]
+                  current_price = ticker_price_history[ticker].loc[current_date.strftime('%Y-%m-%d')]["Close"]
+                  amount += qty * current_price
+               cash = trading_simulator[strategy.__name__]["amount_cash"]
+               trading_simulator[strategy.__name__]["portfolio_value"] = amount + cash
+               if trading_simulator[strategy.__name__]["portfolio_value"] != 50000:
+                  active_count += 1
+         return active_count
       while current_date <= end_date:
          print(f"Simulating strategies for date: {current_date.strftime('%Y-%m-%d')}")
+         if current_date.weekday() >= 5:
+            current_date += timedelta(days=1)
+            continue
+         if current_date.strftime('%Y-%m-%d') not in ticker_price_history[train_tickers[0]].index:
+            current_date += timedelta(days=1)
+            continue
          for ticker in train_tickers:
-            """
-            what we need to simulate:
-            1. strategy - completed
-            2. historical data - must give historical data that is ideal period days/months/years before the current date to current date
-            3. current_price - get from trading simulator
-            4. account_cash - get from trading_simulator
-            5. holdings - get from trading_simulator
-            6. total_portfolio_value
-            """
-            if current_date.strftime('%Y-%m-%d') in ticker_price_history[ticker].index:
-               daily_data = ticker_price_history[ticker].loc[current_date.strftime('%Y-%m-%d')]
-               current_price = daily_data['Close']
-               for strategy in strategies:
-                  historical_data = get_historical_data(ticker, current_date, ideal_period[strategy.__name__])
-                  account_cash = trading_simulator[strategy.__name__]["amount_cash"]
-                  portfolio_qty = trading_simulator[strategy.__name__]["holdings"].get(ticker, {}).get("quantity", 0)
-                  total_portfolio_value = trading_simulator[strategy.__name__]["portfolio_value"]
-                  decision, qty = simulate_strategy(
-                        strategy, ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value
-                  )
-                  print(f"{strategy.__name__} - {decision} - {qty} - {ticker}")
-                  """
-                  now simulate the trade
-                  """
-                  if decision == "buy" and trading_simulator[strategy.__name__]["amount_cash"] > 15000:
-                     trading_simulator[strategy.__name__]["amount_cash"] -= qty * current_price
+               """
+               what we need to simulate:
+               1. strategy - completed
+               2. historical data - must give historical data that is ideal period days/months/years before the current date to current date
+               3. current_price - get from trading simulator
+               4. account_cash - get from trading_simulator
+               5. holdings - get from trading_simulator
+               6. total_portfolio_value
+               """
+               if current_date.strftime('%Y-%m-%d') in ticker_price_history[ticker].index:
+                  daily_data = ticker_price_history[ticker].loc[current_date.strftime('%Y-%m-%d')]
+                  current_price = daily_data['Close']
+                  for strategy in strategies:
+                     historical_data = get_historical_data(ticker, current_date, ideal_period[strategy.__name__])
+                     account_cash = trading_simulator[strategy.__name__]["amount_cash"]
+                     portfolio_qty = trading_simulator[strategy.__name__]["holdings"].get(ticker, {}).get("quantity", 0)
+                     total_portfolio_value = trading_simulator[strategy.__name__]["portfolio_value"]
+                     decision, qty = simulate_strategy(
+                           strategy, ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value
+                     )
+                     print(f"{strategy.__name__} - {decision} - {qty} - {ticker}")
                      """
-                     maybe += quantity
+                     now simulate the trade
                      """
-                     if ticker in trading_simulator[strategy.__name__]["holdings"]:
-                        trading_simulator[strategy.__name__]["holdings"][ticker]["quantity"] += qty
-                     else:
-                        trading_simulator[strategy.__name__]["holdings"][ticker] = {"quantity": qty}
-                     
-                     trading_simulator[strategy.__name__]["holdings"][ticker]["price"] = current_price
-                     trading_simulator[strategy.__name__]["total_trades"] += 1
-                     
-                  elif decision == "sell":
-                     trading_simulator[strategy.__name__]["amount_cash"] += qty * current_price
-                     if current_price > trading_simulator[strategy.__name__]["holdings"][ticker]["price"]:
-                        trading_simulator[strategy.__name__]["successful_trades"] += 1
-                     elif current_price == trading_simulator[strategy.__name__]["holdings"][ticker]["price"]:
-                        trading_simulator[strategy.__name__]["neutral_trades"] += 1
-                     else:
-                        trading_simulator[strategy.__name__]["failed_trades"] += 1
-                     trading_simulator[strategy.__name__]["holdings"][ticker] = {"quantity": -qty}
-                     if trading_simulator[strategy.__name__]["holdings"][ticker]["quantity"] == 0:
-                        del trading_simulator[strategy.__name__]["holdings"][ticker]
+                     if decision == "buy" and trading_simulator[strategy.__name__]["amount_cash"] > rank_liquidity_limit and qty > 0 and ((portfolio_qty + qty) * current_price) / total_portfolio_value < rank_asset_limit:
+                        trading_simulator[strategy.__name__]["amount_cash"] -= qty * current_price
+                        
+                        if ticker in trading_simulator[strategy.__name__]["holdings"]:
+                           trading_simulator[strategy.__name__]["holdings"][ticker]["quantity"] += qty
+                        else:
+                           trading_simulator[strategy.__name__]["holdings"][ticker] = {"quantity": qty}
+                        
+                        trading_simulator[strategy.__name__]["holdings"][ticker]["price"] = current_price
+                        trading_simulator[strategy.__name__]["total_trades"] += 1
+                           
+                     elif decision == "sell" and trading_simulator[strategy.__name__]["holdings"].get(ticker, {}).get("quantity", 0) >= qty:
+                        trading_simulator[strategy.__name__]["amount_cash"] += qty * current_price
+                        if current_price > trading_simulator[strategy.__name__]["holdings"][ticker]["price"]:
+                           trading_simulator[strategy.__name__]["successful_trades"] += 1
+                           points[strategy.__name__] = points.get(strategy.__name__, 0) + time_delta * profit_profit_time_d1
+                        elif current_price == trading_simulator[strategy.__name__]["holdings"][ticker]["price"]:
+                           trading_simulator[strategy.__name__]["neutral_trades"] += 1
+                        else:
+                           trading_simulator[strategy.__name__]["failed_trades"] += 1
+                           points[strategy.__name__] = points.get(strategy.__name__, 0) - time_delta * loss_profit_time_d1
+                        trading_simulator[strategy.__name__]["holdings"][ticker]["quantity"] -= qty
+                        if trading_simulator[strategy.__name__]["holdings"][ticker]["quantity"] == 0:
+                           del trading_simulator[strategy.__name__]["holdings"][ticker]
+                        elif trading_simulator[strategy.__name__]["holdings"][ticker]["quantity"] < 0:
+                           Exception("Quantity cannot be negative")
+                        trading_simulator[strategy.__name__]["total_trades"] += 1
+         active_count = update_portfolio_values(current_date) 
+         """
+         log history of trading_simulator and points
+         """
+         logging.info(f"Trading simulator: {trading_simulator}")
+         logging.info(f"Points: {points}")
+         logging.info(f"Date: {current_date.strftime('%Y-%m-%d')}")
+         logging.info(f"time_delta: {time_delta}")
+         logging.info(f"Active count: {active_count}")
+         logging.info("-------------------------------------------------")
+         """
+         Update time_delta based on the mode
+         """
+         if time_delta_mode == 'additive':
+               time_delta += time_delta_increment
+         elif time_delta_mode == 'multiplicative':
+               time_delta *= time_delta_multiplicative
+         elif time_delta_mode == 'balanced':
+               time_delta += time_delta_balanced * time_delta
 
-                     trading_simulator[strategy.__name__]["total_trades"] += 1
-         update_portfolio_values(current_date) 
-                     
 
          current_date += timedelta(days=1)
+         time.sleep(10)
             
       """
       we can update points tally and rank at the end - since training is only for each strategy
