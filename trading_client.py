@@ -278,8 +278,8 @@ def main():
                 buy_heap = []
                 suggestion_heap = []
                 sold = False
-                print("Sleeping for 5 seconds...")
-                time.sleep(5)
+                print("Sleeping for 30 seconds...")
+                time.sleep(30)
 
             elif status == "early_hours":
                 if early_hour_first_iteration:

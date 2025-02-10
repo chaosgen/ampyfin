@@ -379,8 +379,8 @@ def main():
          
          
 
-            logging.info("Finished processing all strategies. Waiting for 10 seconds.")
-            time.sleep(10)  
+            logging.info("Finished processing all strategies. Waiting for 30 seconds.")
+            time.sleep(30)  
       
          elif status == "early_hours":  
                # During early hour, currently we only support prep
