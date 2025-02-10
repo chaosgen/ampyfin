@@ -293,8 +293,8 @@ def main():
                         strategy_to_coefficient[strategy.__name__] = coefficient
                         early_hour_first_iteration = False
                         post_hour_first_iteration = True
-                    logging.info("Market is in early hours. Waiting for 60 seconds.")
-                time.sleep(5)
+                    logging.info("Market is in early hours. Waiting for 30 seconds.")
+                time.sleep(30)
 
             elif status == "closed":
                 if post_hour_first_iteration:

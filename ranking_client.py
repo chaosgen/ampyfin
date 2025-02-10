@@ -391,8 +391,8 @@ def main():
                   ndaq_tickers = get_ndaq_tickers(mongo_client, FINANCIAL_PREP_API_KEY)  
                   early_hour_first_iteration = False  
                   post_market_hour_first_iteration = True
-                  logging.info("Market is in early hours. Waiting for 60 seconds.")  
-               time.sleep(10)  
+                  logging.info("Market is in early hours. Waiting for 30 seconds.")  
+               time.sleep(30)  
   
          elif status == "closed":  
             # Performs post-market analysis for next trading day
