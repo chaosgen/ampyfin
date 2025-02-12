@@ -69,17 +69,13 @@ def process_ticker(ticker, mongo_client):
    try:
       
       current_price = None
-      retries = 0
       while current_price is None:
          try:
             current_price = get_latest_price(ticker)
          except Exception as fetch_error:
             logging.warning(f"Error fetching price for {ticker}. Retrying... {fetch_error}")
-            time.sleep(10)
-            retries += 1
-            if retries == 3:
-               logging.error(f"Error fetching price for {ticker}. Skipping.")
-               return
+            
+            return
       
       indicator_tb = mongo_client.IndicatorsDatabase
       indicator_collection = indicator_tb.Indicators
@@ -278,24 +274,22 @@ def update_portfolio_values(client):
          # If the cache is empty, fetch the latest price from the Polygon API
          # Cache should be updated every 60 seconds 
          current_price = None
-         retries = 0
          while current_price is None:
             try:
                # get latest price shouldn't cache - we should also do a delay
                current_price = get_latest_price(ticker)
             except:
                print(f"Error fetching price for {ticker}. Retrying...")
-               time.sleep(120)
-               retries += 1
-               if retries == 3:
-                  print(f"Error fetching price for {ticker}. Skipping.")
-                  break
+               break
+               
                # Will sleep 120 seconds before retrying to get latest price
          print(f"Current price of {ticker}: {current_price}")
          if current_price is None:
-            continue
+            current_price = 0
          # Calculate the value of the holding
          holding_value = holding["quantity"] * current_price
+         if current_price == 0:
+            holding_value = 5000
          # Add the holding value to the portfolio value
          portfolio_value += holding_value
           
