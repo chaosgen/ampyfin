@@ -482,7 +482,7 @@ def main():
          
          return ticker_price_history[ticker].loc[start_date.strftime('%Y-%m-%d'):current_date.strftime('%Y-%m-%d')]
       
-      def update_portfolio_values(current_date):
+      def local_update_portfolio_values(current_date):
          active_count = 0
          for strategy in strategies:
                trading_simulator[strategy.__name__]["portfolio_value"] = trading_simulator[strategy.__name__]["amount_cash"]
@@ -559,7 +559,7 @@ def main():
                         elif trading_simulator[strategy.__name__]["holdings"][ticker]["quantity"] < 0:
                            Exception("Quantity cannot be negative")
                         trading_simulator[strategy.__name__]["total_trades"] += 1
-         active_count = update_portfolio_values(current_date) 
+         active_count = local_update_portfolio_values(current_date) 
          """
          log history of trading_simulator and points
          """
@@ -569,15 +569,7 @@ def main():
          logging.info(f"time_delta: {time_delta}")
          logging.info(f"Active count: {active_count}")
          logging.info("-------------------------------------------------")
-         results = {
-            "trading_simulator": trading_simulator,
-            "points": points,
-            "date": current_date.strftime('%Y-%m-%d'),
-            "time_delta": time_delta
-         }
          
-         with open('training_results.json', 'w') as json_file:
-            json.dump(results, json_file, indent=4)
          """
          Update time_delta based on the mode
          """
@@ -592,21 +584,27 @@ def main():
          current_date += timedelta(days=1)
          time.sleep(10)
             
-      """
-      we can update points tally and rank at the end - since training is only for each strategy
-      jsonify the result and put it in system for the user to either input into mongodb or delete it
-      """
-      """
       results = {
-        "trading_simulator": trading_simulator,
-        "points": points,
-        "date": current_date.strftime('%Y-%m-%d'),
-        "time_delta": time_delta
-      }
-    
+            "trading_simulator": trading_simulator,
+            "points": points,
+            "date": current_date.strftime('%Y-%m-%d'),
+            "time_delta": time_delta
+         }
+         
       with open('training_results.json', 'w') as json_file:
          json.dump(results, json_file, indent=4)
+
       """
+      output onto console top 10 strategies with highest portfolio values and top 10 strategies with highest points
+      """
+      top_portfolio_values = sorted(trading_simulator.items(), key=lambda x: x[1]["portfolio_value"], reverse=True)[:10]
+      top_points = sorted(trading_simulator.items(), key=lambda x: x[1]["points"], reverse=True)[:10]
+      print("Top 10 strategies with highest portfolio values")
+      for strategy, value in top_portfolio_values:
+         print(f"{strategy} - {value['portfolio_value']}")
+      print("Top 10 strategies with highest points")
+      for strategy, value in top_points:
+         print(f"{strategy} - {value['points']}")
    elif rank_mode == 'test':
       return None
    

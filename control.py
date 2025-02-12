@@ -27,7 +27,7 @@ take_profit = 0.05
 
 # ranking_client.py parameters
 
-rank_mode = 'live'
+rank_mode = 'train'
 
 """
 time_delta_mode can be multiplicative, additive, or balanced. Additive results in less overfitting but could result in underfitting as time goes on
@@ -95,7 +95,7 @@ please keep in mind training takes quite a long time. Our team trained it on a 1
 so please understand the time it takes to train.
 """
 period_start = "2012-01-01"
-period_end = "2021-12-31"
+period_end = "2022-12-31"
 train_tickers = ["MSFT", "TSLA", "AMZN", "AAPL", "GOOGL", "GOOG", "NFLX", "AVGO", "AMD", "NVDA"]
 
 # trading_client.py parameters
