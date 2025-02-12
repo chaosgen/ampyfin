@@ -69,13 +69,14 @@ def process_ticker(ticker, mongo_client):
    try:
       
       current_price = None
-      
-      while current_price is None:
+      retries = 0
+      while current_price is None and retries <= 3:
          try:
             current_price = get_latest_price(ticker)
          except Exception as fetch_error:
             logging.warning(f"Error fetching price for {ticker}. Retrying... {fetch_error}")
             time.sleep(10)
+            retries += 1
       
       indicator_tb = mongo_client.IndicatorsDatabase
       indicator_collection = indicator_tb.Indicators
@@ -275,13 +276,15 @@ def update_portfolio_values(client):
           # Cache should be updated every 60 seconds 
 
           current_price = None
-          while current_price is None:
+          retries = 0
+          while current_price is None and retries <= 3:
             try:
                # get latest price shouldn't cache - we should also do a delay
                current_price = get_latest_price(ticker)
             except:
                print(f"Error fetching price for {ticker}. Retrying...")
                time.sleep(120)
+               retries += 1
                # Will sleep 120 seconds before retrying to get latest price
           print(f"Current price of {ticker}: {current_price}")
           # Calculate the value of the holding
