@@ -70,13 +70,16 @@ def process_ticker(ticker, mongo_client):
       
       current_price = None
       retries = 0
-      while current_price is None and retries <= 3:
+      while current_price is None:
          try:
             current_price = get_latest_price(ticker)
          except Exception as fetch_error:
             logging.warning(f"Error fetching price for {ticker}. Retrying... {fetch_error}")
             time.sleep(10)
             retries += 1
+            if retries == 3:
+               logging.error(f"Error fetching price for {ticker}. Skipping.")
+               return
       
       indicator_tb = mongo_client.IndicatorsDatabase
       indicator_collection = indicator_tb.Indicators
@@ -267,17 +270,16 @@ def update_portfolio_values(client):
       portfolio_value = strategy_doc["amount_cash"]
       
       for ticker, holding in strategy_doc["holdings"].items():
-          # The current price can be gotten through a cache system maybe
-          # if polygon api is getting clogged - but that hasn't happened yet
-          # Also implement in C++ or C instead of python
-          # Get the current price of the ticker from the Polygon API
-          # Use a cache system to store the latest prices
-          # If the cache is empty, fetch the latest price from the Polygon API
-          # Cache should be updated every 60 seconds 
-
-          current_price = None
-          retries = 0
-          while current_price is None and retries <= 3:
+         # The current price can be gotten through a cache system maybe
+         # if polygon api is getting clogged - but that hasn't happened yet
+         # Also implement in C++ or C instead of python
+         # Get the current price of the ticker from the Polygon API
+         # Use a cache system to store the latest prices
+         # If the cache is empty, fetch the latest price from the Polygon API
+         # Cache should be updated every 60 seconds 
+         current_price = None
+         retries = 0
+         while current_price is None:
             try:
                # get latest price shouldn't cache - we should also do a delay
                current_price = get_latest_price(ticker)
@@ -285,12 +287,17 @@ def update_portfolio_values(client):
                print(f"Error fetching price for {ticker}. Retrying...")
                time.sleep(120)
                retries += 1
+               if retries == 3:
+                  print(f"Error fetching price for {ticker}. Skipping.")
+                  break
                # Will sleep 120 seconds before retrying to get latest price
-          print(f"Current price of {ticker}: {current_price}")
-          # Calculate the value of the holding
-          holding_value = holding["quantity"] * current_price
-          # Add the holding value to the portfolio value
-          portfolio_value += holding_value
+         print(f"Current price of {ticker}: {current_price}")
+         if current_price is None:
+            continue
+         # Calculate the value of the holding
+         holding_value = holding["quantity"] * current_price
+         # Add the holding value to the portfolio value
+         portfolio_value += holding_value
           
       # Update the portfolio value in the strategy document
       holdings_collection.update_one({"strategy": strategy_doc["strategy"]}, {"$set": {"portfolio_value": portfolio_value}}, upsert=True)
