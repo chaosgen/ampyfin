@@ -96,7 +96,7 @@ so please understand the time it takes to train.
 """
 period_start = "2012-01-01"
 period_end = "2022-12-31"
-train_tickers = ["MSFT", "TSLA", "AMZN", "AAPL", "GOOGL", "GOOG", "NFLX", "AVGO", "AMD", "NVDA"]
+train_tickers = ["MSFT", "TSLA", "AMZN", "AAPL", "GOOGL", "GOOG", "NFLX", "AVGO", "AMD", "NVDA", ""]
 
 # trading_client.py parameters
 trade_mode = 'live'

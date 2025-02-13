@@ -461,10 +461,21 @@ def main():
       for strategy in strategies:
          period = indicator_collection.find_one({'indicator': strategy.__name__})
          ideal_period[strategy.__name__] = period['ideal_period']
-      
+
+      start_date = datetime.strptime(period_start, "%Y-%m-%d")
+      data_start_date = (start_date - timedelta(days=730)).strftime("%Y-%m-%d")
+      train_tickers = get_ndaq_tickers(mongo_client, FINANCIAL_PREP_API_KEY)
+
       for ticker in train_tickers:
-         data = yf.Ticker(ticker).history(start=period_start, end=period_end, interval="1d")
-         ticker_price_history[ticker] = data
+         try:
+            data = yf.Ticker(ticker).history(start=data_start_date, end=period_end, interval="1d")
+            logging.info(f'Got data: {ticker}  \t {data.iloc[0].name.date()} to {data.iloc[-1].name.date()}')
+            ticker_price_history[ticker] = data
+         except:
+            data = yf.Ticker(ticker).history(period="max", interval="1d")
+            logging.info(f'Got data: {ticker}  \t {data.iloc[0].name.date()} to {data.iloc[-1].name.date()}')
+            ticker_price_history[ticker] = data
+         
       
       """
       now we have the data loaded, we need to simulate strategy for each day from start day to end day. create a loop that goes from start to end date
@@ -473,7 +484,10 @@ def main():
       start_date = datetime.strptime(period_start, "%Y-%m-%d")
       end_date = datetime.strptime(period_end, "%Y-%m-%d")
       current_date = start_date
-      
+      mongo_client = MongoClient(mongo_url, tlsCAFile=ca)
+
+
+      print(f"Training on tickers: {train_tickers}")
       def get_historical_data(ticker, current_date, period):
          period_start_date = {
                "1mo": current_date - timedelta(days=30),

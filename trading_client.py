@@ -90,17 +90,18 @@ def process_ticker(ticker, client, trading_client, data_client, mongo_client, st
         try:
             decisions_and_quantities = []
             current_price = None
-            retries = 0
+            count = 0
+            
             while current_price is None:
                 try:
                     current_price = get_latest_price(ticker)
                 except Exception as fetch_error:
+                    count+=1
+                    logging.warning(f"count = {count}")
                     logging.warning(f"Error fetching price for {ticker}. Retrying... {fetch_error}")
-                    time.sleep(5)
-                    retries+=1
-                    if retries == 3:
-                        logging.error(f"Failed to fetch price for {ticker}. Exiting process_ticker function.")
-                        return
+                    break
+            if current_price is None:
+                return
             print(f"Current price of {ticker}: {current_price}")
 
             asset_collection = mongo_client.trades.assets_quantities
