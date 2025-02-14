@@ -1,5 +1,4 @@
-from polygon import RESTClient
-from config import POLYGON_API_KEY, FINANCIAL_PREP_API_KEY, MONGO_DB_USER, MONGO_DB_PASS, API_KEY, API_SECRET, BASE_URL, mongo_url
+from config import FINANCIAL_PREP_API_KEY, MONGO_DB_USER, MONGO_DB_PASS, API_KEY, API_SECRET, BASE_URL, mongo_url
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from urllib.request import urlopen
@@ -61,8 +60,8 @@ logging.basicConfig(
         logging.StreamHandler()             # Log messages to the console
     ]
 )
-from control import rank_mode, time_delta_mode, time_delta_increment, time_delta_multiplicative,time_delta_balanced, rank_liquidity_limit, rank_asset_limit, profit_price_change_ratio_d1, profit_profit_time_d1, profit_price_change_ratio_d2, profit_profit_time_d2, profit_profit_time_else, loss_price_change_ratio_d1, loss_price_change_ratio_d2, loss_profit_time_d1, loss_profit_time_d2, loss_profit_time_else
-from control import period_start, period_end, train_tickers
+from control import time_delta_mode, time_delta_increment, time_delta_multiplicative,time_delta_balanced, rank_liquidity_limit, rank_asset_limit, profit_price_change_ratio_d1, profit_profit_time_d1, profit_price_change_ratio_d2, profit_profit_time_d2, profit_profit_time_else, loss_price_change_ratio_d1, loss_price_change_ratio_d2, loss_profit_time_d1, loss_profit_time_d2, loss_profit_time_else
+
 import json
 
 def process_ticker(ticker, mongo_client):
@@ -350,281 +349,88 @@ def main():
    """  
    Main function to control the workflow based on the market's status.  
    """  
-   if rank_mode == 'live':
-      ndaq_tickers = []  
-      early_hour_first_iteration = True
-      post_market_hour_first_iteration = True
+   ndaq_tickers = []  
+   early_hour_first_iteration = True
+   post_market_hour_first_iteration = True
+
+
+   while True: 
+      mongo_client = MongoClient(mongo_url, tlsCAFile=ca)
    
+      status = mongo_client.market_data.market_status.find_one({})["market_status"]
    
-      while True: 
-         mongo_client = MongoClient(mongo_url, tlsCAFile=ca)
+      if status == "open":  
+         # Connection pool is not thread safe. Create a new client for each thread.
+         # We can use ThreadPoolExecutor to manage threads - maybe use this but this risks clogging
+         # resources if we have too many threads or if a thread is on stall mode
+         # We can also use multiprocessing.Pool to manage threads
       
-         status = mongo_client.market_data.market_status.find_one({})["market_status"]
+         if not ndaq_tickers:
+            logging.info("Market is open. Processing strategies.")  
+            ndaq_tickers = get_ndaq_tickers(mongo_client, FINANCIAL_PREP_API_KEY)
+
+         threads = []
+
+         for ticker in ndaq_tickers:
+            thread = threading.Thread(target=process_ticker, args=(ticker, mongo_client))
+            threads.append(thread)
+            thread.start()
+
+         # Wait for all threads to complete
+         for thread in threads:
+            thread.join()
+
       
-         if status == "open":  
-            # Connection pool is not thread safe. Create a new client for each thread.
-            # We can use ThreadPoolExecutor to manage threads - maybe use this but this risks clogging
-            # resources if we have too many threads or if a thread is on stall mode
-            # We can also use multiprocessing.Pool to manage threads
+      
+
+         logging.info("Finished processing all strategies. Waiting for 30 seconds.")
+         time.sleep(30)  
+   
+      elif status == "early_hours":  
+            # During early hour, currently we only support prep
+            # However, we should add more features here like premarket analysis
          
-            if not ndaq_tickers:
-               logging.info("Market is open. Processing strategies.")  
-               ndaq_tickers = get_ndaq_tickers(mongo_client, FINANCIAL_PREP_API_KEY)
-
-            threads = []
-
-            for ticker in ndaq_tickers:
-               thread = threading.Thread(target=process_ticker, args=(ticker, mongo_client))
-               threads.append(thread)
-               thread.start()
-
-            # Wait for all threads to complete
-            for thread in threads:
-               thread.join()
-
-         
-         
-
-            logging.info("Finished processing all strategies. Waiting for 30 seconds.")
+            if early_hour_first_iteration is True:  
+            
+               ndaq_tickers = get_ndaq_tickers(mongo_client, FINANCIAL_PREP_API_KEY)  
+               early_hour_first_iteration = False  
+               post_market_hour_first_iteration = True
+               logging.info("Market is in early hours. Waiting for 30 seconds.")  
             time.sleep(30)  
+
+      elif status == "closed":  
+         # Performs post-market analysis for next trading day
+         # Will only run once per day to reduce clogging logging
+         # Should self-implementing a delete log process after a certain time - say 1 year
       
-         elif status == "early_hours":  
-               # During early hour, currently we only support prep
-               # However, we should add more features here like premarket analysis
+         if post_market_hour_first_iteration is True:
+            early_hour_first_iteration = True
+            logging.info("Market is closed. Performing post-market analysis.") 
+            post_market_hour_first_iteration = False
+            # Update time delta based on the mode
             
-               if early_hour_first_iteration is True:  
-               
-                  ndaq_tickers = get_ndaq_tickers(mongo_client, FINANCIAL_PREP_API_KEY)  
-                  early_hour_first_iteration = False  
-                  post_market_hour_first_iteration = True
-                  logging.info("Market is in early hours. Waiting for 30 seconds.")  
-               time.sleep(30)  
-  
-         elif status == "closed":  
-            # Performs post-market analysis for next trading day
-            # Will only run once per day to reduce clogging logging
-            # Should self-implementing a delete log process after a certain time - say 1 year
-        
-            if post_market_hour_first_iteration is True:
-               early_hour_first_iteration = True
-               logging.info("Market is closed. Performing post-market analysis.") 
-               post_market_hour_first_iteration = False
-               # Update time delta based on the mode
-               
-               if time_delta_mode == 'additive':
-                  mongo_client.trading_simulator.time_delta.update_one({}, {"$inc": {"time_delta": time_delta_increment}})
-               elif time_delta_mode == 'multiplicative':
-                  mongo_client.trading_simulator.time_delta.update_one({}, {"$mul": {"time_delta": time_delta_multiplicative}})
-               elif time_delta_mode == 'balanced':
-                  """
-                  retrieve time_delta first
-                  """
-                  time_delta = mongo_client.trading_simulator.time_delta.find_one({})['time_delta']
-                  mongo_client.trading_simulator.time_delta.update_one({}, {"$inc": {"time_delta": time_delta_balanced * time_delta}})
-            
-               #Update ranks
-               update_portfolio_values(mongo_client)
-               # We keep reusing the same mongo client and never close to reduce the number within the connection pool
-
-               update_ranks(mongo_client)
-            time.sleep(60)  
-         else:  
-            logging.error("An error occurred while checking market status.")  
-            time.sleep(60)
-         mongo_client.close()
-   elif rank_mode == 'train':
-      """
-      initialize
-      """
-      ticker_price_history = {}
-      trading_simulator = {}
-      points = {}
-      """
-      need it for time_delta component and we need to adapt time delta for multiple modes - multiplicative, balanced or additive
-      """
-      for strategy in strategies:
-         points[strategy.__name__] = 0
-         trading_simulator[strategy.__name__] = {
-               "holdings": {},
-               "amount_cash": 50000,
-               "total_trades": 0,
-               "successful_trades": 0,
-               "neutral_trades": 0,
-               "failed_trades": 0,
-               "portfolio_value": 50000
-         }
-      ideal_period = {}
-      time_delta = 0.01
-      mongo_client = MongoClient(mongo_url, tlsCAFile=ca)
-      db = mongo_client.IndicatorsDatabase
-      indicator_collection = db.Indicators
-      for strategy in strategies:
-         period = indicator_collection.find_one({'indicator': strategy.__name__})
-         ideal_period[strategy.__name__] = period['ideal_period']
-
-      start_date = datetime.strptime(period_start, "%Y-%m-%d")
-      data_start_date = (start_date - timedelta(days=730)).strftime("%Y-%m-%d")
-      train_tickers = get_ndaq_tickers(mongo_client, FINANCIAL_PREP_API_KEY)
-
-      for ticker in train_tickers:
-         try:
-            data = yf.Ticker(ticker).history(start=data_start_date, end=period_end, interval="1d")
-            logging.info(f'Got data: {ticker}  \t {data.iloc[0].name.date()} to {data.iloc[-1].name.date()}')
-            ticker_price_history[ticker] = data
-         except:
-            data = yf.Ticker(ticker).history(period="max", interval="1d")
-            logging.info(f'Got data: {ticker}  \t {data.iloc[0].name.date()} to {data.iloc[-1].name.date()}')
-            ticker_price_history[ticker] = data
-         
-      
-      """
-      now we have the data loaded, we need to simulate strategy for each day from start day to end day. create a loop that goes from start to end date
-      """
-      # Now simulate strategy for each day from start date to end date
-      start_date = datetime.strptime(period_start, "%Y-%m-%d")
-      end_date = datetime.strptime(period_end, "%Y-%m-%d")
-      current_date = start_date
-      mongo_client = MongoClient(mongo_url, tlsCAFile=ca)
-
-
-      print(f"Training on tickers: {train_tickers}")
-      def get_historical_data(ticker, current_date, period):
-         period_start_date = {
-               "1mo": current_date - timedelta(days=30),
-               "3mo": current_date - timedelta(days=90),
-               "6mo": current_date - timedelta(days=180),
-               "1y": current_date - timedelta(days=365),
-               "2y": current_date - timedelta(days=730)
-         }
-         start_date = period_start_date[period]
-         
-         return ticker_price_history[ticker].loc[start_date.strftime('%Y-%m-%d'):current_date.strftime('%Y-%m-%d')]
-      
-      def local_update_portfolio_values(current_date):
-         active_count = 0
-         for strategy in strategies:
-               trading_simulator[strategy.__name__]["portfolio_value"] = trading_simulator[strategy.__name__]["amount_cash"]
+            if time_delta_mode == 'additive':
+               mongo_client.trading_simulator.time_delta.update_one({}, {"$inc": {"time_delta": time_delta_increment}})
+            elif time_delta_mode == 'multiplicative':
+               mongo_client.trading_simulator.time_delta.update_one({}, {"$mul": {"time_delta": time_delta_multiplicative}})
+            elif time_delta_mode == 'balanced':
                """
-               update portfolio value here
+               retrieve time_delta first
                """
-               amount = 0
-               for ticker in trading_simulator[strategy.__name__]["holdings"]:
-                  qty = trading_simulator[strategy.__name__]["holdings"][ticker]["quantity"]
-                  current_price = ticker_price_history[ticker].loc[current_date.strftime('%Y-%m-%d')]["Close"]
-                  amount += qty * current_price
-               cash = trading_simulator[strategy.__name__]["amount_cash"]
-               trading_simulator[strategy.__name__]["portfolio_value"] = amount + cash
-               if trading_simulator[strategy.__name__]["portfolio_value"] != 50000:
-                  active_count += 1
-         return active_count
-      while current_date <= end_date:
-         print(f"Simulating strategies for date: {current_date.strftime('%Y-%m-%d')}")
-         if current_date.weekday() >= 5:
-            current_date += timedelta(days=1)
-            continue
-         if current_date.strftime('%Y-%m-%d') not in ticker_price_history[train_tickers[0]].index:
-            current_date += timedelta(days=1)
-            continue
-         for ticker in train_tickers:
-               """
-               what we need to simulate:
-               1. strategy - completed
-               2. historical data - must give historical data that is ideal period days/months/years before the current date to current date
-               3. current_price - get from trading simulator
-               4. account_cash - get from trading_simulator
-               5. holdings - get from trading_simulator
-               6. total_portfolio_value
-               """
-               if current_date.strftime('%Y-%m-%d') in ticker_price_history[ticker].index:
-                  daily_data = ticker_price_history[ticker].loc[current_date.strftime('%Y-%m-%d')]
-                  current_price = daily_data['Close']
-                  for strategy in strategies:
-                     historical_data = get_historical_data(ticker, current_date, ideal_period[strategy.__name__])
-                     account_cash = trading_simulator[strategy.__name__]["amount_cash"]
-                     portfolio_qty = trading_simulator[strategy.__name__]["holdings"].get(ticker, {}).get("quantity", 0)
-                     total_portfolio_value = trading_simulator[strategy.__name__]["portfolio_value"]
-                     decision, qty = simulate_strategy(
-                           strategy, ticker, current_price, historical_data, account_cash, portfolio_qty, total_portfolio_value
-                     )
-                     print(f"{strategy.__name__} - {decision} - {qty} - {ticker}")
-                     """
-                     now simulate the trade
-                     """
-                     if decision == "buy" and trading_simulator[strategy.__name__]["amount_cash"] > rank_liquidity_limit and qty > 0 and ((portfolio_qty + qty) * current_price) / total_portfolio_value < rank_asset_limit:
-                        trading_simulator[strategy.__name__]["amount_cash"] -= qty * current_price
-                        
-                        if ticker in trading_simulator[strategy.__name__]["holdings"]:
-                           trading_simulator[strategy.__name__]["holdings"][ticker]["quantity"] += qty
-                        else:
-                           trading_simulator[strategy.__name__]["holdings"][ticker] = {"quantity": qty}
-                        
-                        trading_simulator[strategy.__name__]["holdings"][ticker]["price"] = current_price
-                        trading_simulator[strategy.__name__]["total_trades"] += 1
-                           
-                     elif decision == "sell" and trading_simulator[strategy.__name__]["holdings"].get(ticker, {}).get("quantity", 0) >= qty:
-                        trading_simulator[strategy.__name__]["amount_cash"] += qty * current_price
-                        if current_price > trading_simulator[strategy.__name__]["holdings"][ticker]["price"]:
-                           trading_simulator[strategy.__name__]["successful_trades"] += 1
-                           points[strategy.__name__] = points.get(strategy.__name__, 0) + time_delta * profit_profit_time_d1
-                        elif current_price == trading_simulator[strategy.__name__]["holdings"][ticker]["price"]:
-                           trading_simulator[strategy.__name__]["neutral_trades"] += 1
-                        else:
-                           trading_simulator[strategy.__name__]["failed_trades"] += 1
-                           points[strategy.__name__] = points.get(strategy.__name__, 0) - time_delta * loss_profit_time_d1
-                        trading_simulator[strategy.__name__]["holdings"][ticker]["quantity"] -= qty
-                        if trading_simulator[strategy.__name__]["holdings"][ticker]["quantity"] == 0:
-                           del trading_simulator[strategy.__name__]["holdings"][ticker]
-                        elif trading_simulator[strategy.__name__]["holdings"][ticker]["quantity"] < 0:
-                           Exception("Quantity cannot be negative")
-                        trading_simulator[strategy.__name__]["total_trades"] += 1
-         active_count = local_update_portfolio_values(current_date) 
-         """
-         log history of trading_simulator and points
-         """
-         logging.info(f"Trading simulator: {trading_simulator}")
-         logging.info(f"Points: {points}")
-         logging.info(f"Date: {current_date.strftime('%Y-%m-%d')}")
-         logging.info(f"time_delta: {time_delta}")
-         logging.info(f"Active count: {active_count}")
-         logging.info("-------------------------------------------------")
+               time_delta = mongo_client.trading_simulator.time_delta.find_one({})['time_delta']
+               mongo_client.trading_simulator.time_delta.update_one({}, {"$inc": {"time_delta": time_delta_balanced * time_delta}})
          
-         """
-         Update time_delta based on the mode
-         """
-         if time_delta_mode == 'additive':
-               time_delta += time_delta_increment
-         elif time_delta_mode == 'multiplicative':
-               time_delta *= time_delta_multiplicative
-         elif time_delta_mode == 'balanced':
-               time_delta += time_delta_balanced * time_delta
+            #Update ranks
+            update_portfolio_values(mongo_client)
+            # We keep reusing the same mongo client and never close to reduce the number within the connection pool
 
-
-         current_date += timedelta(days=1)
-         time.sleep(10)
-            
-      results = {
-            "trading_simulator": trading_simulator,
-            "points": points,
-            "date": current_date.strftime('%Y-%m-%d'),
-            "time_delta": time_delta
-         }
-         
-      with open('training_results.json', 'w') as json_file:
-         json.dump(results, json_file, indent=4)
-
-      """
-      output onto console top 10 strategies with highest portfolio values and top 10 strategies with highest points
-      """
-      top_portfolio_values = sorted(trading_simulator.items(), key=lambda x: x[1]["portfolio_value"], reverse=True)[:10]
-      top_points = sorted(trading_simulator.items(), key=lambda x: x[1]["points"], reverse=True)[:10]
-      print("Top 10 strategies with highest portfolio values")
-      for strategy, value in top_portfolio_values:
-         print(f"{strategy} - {value['portfolio_value']}")
-      print("Top 10 strategies with highest points")
-      for strategy, value in top_points:
-         print(f"{strategy} - {value['points']}")
-   elif rank_mode == 'test':
-      return None
+            update_ranks(mongo_client)
+         time.sleep(60)  
+      else:  
+         logging.error("An error occurred while checking market status.")  
+         time.sleep(60)
+      mongo_client.close()
+   
    
   
 if __name__ == "__main__": 

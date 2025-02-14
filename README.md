@@ -80,6 +80,16 @@ This ensures that strategies with better recent performance have a greater influ
 - Downloads NASDAQ-100 tickers and stores them in MongoDB.
 - Updates algorithm scores and rankings every 120 seconds (adjustable based on user).
 
+### 🏋️ training_client.py
+
+**Objective**: Allows users to train a simulator from scratch, test the simulator, and update their simulator from local to database.
+
+**Features**:
+
+- Training using parameters given by control.py
+- Testing using parameters given by control.py
+- Option to push trained rank model into MongoDB
+
 ### 📜 strategies/*
 
 **Objective**: Defines various trading strategies. Houses strategies like mean reversion, momentum, and arbitrage.
@@ -98,10 +108,12 @@ This ensures that strategies with better recent performance have a greater influ
 **Features**:
 
 - **client_helper.py**: Contains common functions for client operations in both ranking and trading.
+- **train_client_helper.py**: Contains utility functions for training and testing.
 
 ### 💡 utils/*
 
 **Objective**: Contains utility functions for data processing and analysis as well as other miscellaneous functions. These functions are not necessarily being used currently in trading or ranking but stored for development purposes.
+
 **Features**:
 
 - **check_strategy_scores.py**: Checks the scores of the strategies and prints them out.
@@ -169,16 +181,61 @@ pip install -r requirements.txt
 
 ## ⚡ Usage
 
-To run the systemt, execute on two separate terminals:
+- To run the trading and ranking system, execute on two separate terminals:
 
 ```bash
 python ranking_client.py
 python trading_client.py
 ```
 
+- To train using training_client.py:
+
+1. First change the mode in control.py:
+```bash
+mode = 'train'
+```
+
+2. Adjust parameters according to your specifications in control.py
+
+3. Execute on terminal:
+
+```bash
+python training_client.py
+```
+
+- To test using training_client.py:
+
+1. First change the mode in control.py:
+```bash
+mode = 'test'
+```
+
+2. Adjust parameters according to your specifications in control.py. Advice is to not overlap your training dates and testing dates.
+
+3. Execute on terminal:
+
+```bash
+python training_client.py
+```
+
+- To push your model into MongoDB:
+
+1. First change the mode in control.py:
+```bash
+mode = 'push'
+```
+
+2. Make sure you have tested your model and confirm you would like to replace your existing model in MongoDB with your new one.
+
+3. Execute on terminal:
+
+```bash
+python training_client.py
+```
+
 ## ⚠️ IMPORTANT
 
-For people looking to do live trading, I suggest training via running ranking_client.py for at least two weeks before running the trading system altogether. This way, you're running with a client that has been trained to a certain extent (with strategies ranked) and is ready to go. Otherwise, you will most likely be buying random stocks.
+For people looking to do live trading, I suggest training via running ranking_client.py for at least two weeks before running the trading system altogether. Or train using training_client.py before executing live trades. This way, you're running with a client that has been trained to a certain extent (with strategies ranked) and is ready to go. Otherwise, you will most likely be buying random stocks.
 
 ## 📑 Logging
 

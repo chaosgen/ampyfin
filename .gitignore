@@ -3,3 +3,4 @@ config.py
 .env
 .vscode/
 **/__pycache__/
+*.json
