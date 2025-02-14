@@ -242,7 +242,8 @@ def push():
                     "neutral_trades": value["neutral_trades"],
                     "failed_trades": value["failed_trades"],
                     "portfolio_value": value["portfolio_value"],
-                    "last_updated": datetime.now()
+                    "last_updated": datetime.now(),
+                    "initialized_date": datetime.now()
                 }
             },
             upsert=True
@@ -253,7 +254,8 @@ def push():
             {
                 "$set": {
                     "total_points": value,
-                    "last_updated": datetime.now()
+                    "last_updated": datetime.now(),
+                    "initialized_date": datetime.now()
                 }
             },
             upsert=True
