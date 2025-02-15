@@ -28,7 +28,7 @@ logging.basicConfig(
 
 from control import mode, train_time_delta_mode, train_time_delta_increment, train_time_delta_multiplicative, train_time_delta_balanced, train_rank_liquidity_limit, train_rank_asset_limit
 from control import train_profit_price_change_ratio_d1, train_profit_profit_time_d1, train_profit_price_change_ratio_d2, train_profit_profit_time_d2, train_profit_profit_time_else
-from control import train_loss_price_change_ratio_d1, train_loss_price_change_ratio_d2, train_loss_profit_time_d1, train_loss_profit_time_d2, train_loss_profit_time_else
+from control import train_time_delta, train_loss_price_change_ratio_d1, train_loss_price_change_ratio_d2, train_loss_profit_time_d1, train_loss_profit_time_d2, train_loss_profit_time_else
 from control import period_start, period_end, train_tickers, train_stop_loss, train_take_profit, train_start_cash, train_trade_liquidity_limit, train_trade_asset_limit, train_suggestion_heap_limit
 import json
 from ranking_client import update_ranks
@@ -58,7 +58,7 @@ def train():
             "portfolio_value": 50000
         }
     ideal_period = {}
-    time_delta = 0.01
+    time_delta = train_time_delta
     mongo_client = MongoClient(mongo_url, tlsCAFile=ca)
     db = mongo_client.IndicatorsDatabase
     indicator_collection = db.Indicators

@@ -1,5 +1,5 @@
 # This file is simply to fine tune parameters and switch modes
-
+import sys
 # general parameters
 """
 time_delta_mode can be multiplicative, additive, or balanced. Additive results in less overfitting but could result in underfitting as time goes on
@@ -38,7 +38,7 @@ There will be an option to:
 'push' means pushing your trained bot to the database. This is only available for the ranking client.
 The default for mode is live to protect against accidental training
 """
-mode = 'live'
+mode = 'train'
 
 """
 training parameters - run purely on ranking_client.py
@@ -49,22 +49,24 @@ please keep in mind training takes quite a long time. Our team trained it on a 1
 so please understand the time it takes to train.
 
 """
-period_start = "2020-01-01"
-period_end = "2020-01-15"
+period_start = "2003-02-26"
+period_end = "2016-01-01"
 train_tickers = []
 
 """
 train_time_delta_mode can be multiplicative, additive, or balanced. Additive results in less overfitting but could result in underfitting as time goes on
 Multiplicative results in more overfitting but less underfitting as time goes on. Balanced results in a mix of both where time_delta is going to be a fifth of what the current timestamp is
 and added to time_Delta so it is less overfitting and less underfitting as time goes on.
-train_time_delta_increment is used for additive purpose
+train_time_delta_increment is used for additive purpose.
 train_time_delta_multiplicative is used for multiplicative purpose
-train_time_delta_balanced is used for balanced purpose - 0.2 means 0.8 is data influence and 0.2 is current influence
+train_time_delta_balanced is used for balanced purpose - 0.1 means 0.9 is data influence and 0.1 is current influence
+train time delta is the starting time delta for the training client
 """
+train_time_delta = sys.float_info.min
 train_time_delta_mode = 'balanced'
 train_time_delta_increment = 0.01
 train_time_delta_multiplicative = 1.01
-train_time_delta_balanced = 0.
+train_time_delta_balanced = 0.2
 
 """
 train suggestion_heap_limit - at what threshold of buy_weight limit should the ticker be considered for suggestion
