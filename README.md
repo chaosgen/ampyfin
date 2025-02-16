@@ -233,6 +233,9 @@ mode = 'push'
 python training_client.py
 ```
 
+Tutorial on how to train, test, and push:
+https://www.youtube.com/watch?v=lpoFWxcSbzU
+
 ## ⚠️ IMPORTANT
 
 For people looking to do live trading, I suggest training via running ranking_client.py for at least two weeks before running the trading system altogether. Or train using training_client.py before executing live trades. This way, you're running with a client that has been trained to a certain extent (with strategies ranked) and is ready to go. Otherwise, you will most likely be buying random stocks.
