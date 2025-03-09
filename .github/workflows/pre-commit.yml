@@ -20,8 +20,12 @@ jobs:
           python-version: '3.12'
 
       - name: Install pre-commit and dependencies
+<<<<<<< HEAD
         run: |
           pip install pre-commit black==25.1.0 isort==6.0.1 flake8==7.1.2
+=======
+        run: pip install pre-commit black==25.1.0 isort==6.0.1 flake8==7.1.2
+>>>>>>> 40cfe81a473cda2b5bfaf6eb1a873987c2764b23
 
       - name: Run pre-commit hooks
         run: pre-commit run --all-files
