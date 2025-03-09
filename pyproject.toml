@@ -8,5 +8,5 @@ ensure_newline_before_comments = true
 skip_gitignore = true
 force_grid_wrap = 0
 combine_as_imports = true
-known_first_party = ["your_project_name"]
+known_first_party = ["AmpyFin", "TradeSim"]
 sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"] 
