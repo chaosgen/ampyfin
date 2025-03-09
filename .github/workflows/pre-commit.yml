@@ -25,23 +25,16 @@ jobs:
         run: |
           pip install pre-commit black==25.1.0 isort==6.0.1 flake8==7.1.2
 
-      # Run pre-commit with continue-on-error to prevent failing when files are modified
       - name: Run pre-commit hooks
-        run: pre-commit run --all-files || echo "Pre-commit made some changes, continuing..."
-        continue-on-error: true
-
-      # Add these steps to auto-commit formatting changes
-      - name: Commit changes
-        if: github.event_name == 'push'
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add -A
-          git diff --quiet && git diff --staged --quiet || git commit -m "Auto-format code with pre-commit hooks"
-
-      - name: Push changes
-        if: github.event_name == 'push'
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.ref }}
+          # Run pre-commit and capture the output
+          OUTPUT=$(pre-commit run --all-files) || true
+          
+          # Check if any files were modified
+          if [[ $OUTPUT == *"Fixing"* ]]; then
+            echo "::warning::Pre-commit would make changes to some files. Please run pre-commit locally and commit the changes."
+            echo "$OUTPUT"
+            # Don't fail the workflow, just warn
+          else
+            echo "No files need formatting changes."
+          fi
