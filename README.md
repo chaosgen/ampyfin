@@ -178,6 +178,13 @@ pip install -r requirements.txt
 - Run the setup script `setup.py`:
 - After running the mongo setup script, the MongoDB setup for the rest will be completed on the first minute in trading for both ranking and trading.
 
+### 6️⃣ Set Up Weights & Biases
+- Sign up for Weights and Biases (https://wandb.ai/site/)
+- Login to wandb on terminal using the below command and enter the API key and press enter
+
+```bash
+wandb login
+```
 
 ## ⚡ Usage
 
@@ -188,7 +195,7 @@ python ranking_client.py
 python trading_client.py
 ```
 
-- To train:
+- To train & test:
 
 1. First change the mode in control.py:
 ```bash
@@ -198,21 +205,6 @@ mode = 'train'
 2. Adjust parameters according to your specifications in control.py
 
 3. Execute on terminal:
-
-```bash
-python TradeSim/main.py
-```
-
-- To test:
-
-1. First change the mode in control.py:
-```bash
-mode = 'test'
-```
-
-2. Adjust parameters according to your specifications in control.py. Advice is to not overlap your training dates and testing dates.
-
-3. Execute on terminal. This should generate a tearsheet which you can open on your browser. Tearsheet will be located in ./tearsheet directory:
 
 ```bash
 python TradeSim/main.py
