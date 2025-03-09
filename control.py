@@ -14,7 +14,7 @@ time_delta_multiplicative is used for multiplicative purpose
 time_delta_balanced is used for balanced purpose - 0.2 means 0.8 is data influence and 0.2 is current influence.
 This is used by both ranking and training clients
 """
-time_delta_mode = "balanced"
+time_delta_mode = "additive"
 time_delta_increment = 0.01
 time_delta_multiplicative = 1.01
 time_delta_balanced = 0.2
