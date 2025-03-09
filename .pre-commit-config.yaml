@@ -1,24 +1,27 @@
-repos:
-  - repo: https://github.com/psf/black
-    rev: 25.1.0
-    hooks:
-      - id: black
-        name: Black Code Formatter
-  
-  - repo: https://github.com/pycqa/isort
-    rev: 6.0.1
-    hooks:
-      - id: isort
-        name: isort (Import Sorter)
-        # Optional arguments. Setting the profile to "black" ensures isort cooperates with Black's format.
-        args: ["--profile", "black"]
-        
-  - repo: https://github.com/PyCQA/flake8
-    rev: 7.1.2
-    hooks:
-      - id: flake8
-        name: Flake8 Linter
-        args:
-          - "--max-line-length=160"
-          - "--ignore=E203,W503,E231,E402"
-        additional_dependencies: []
+name: Pre-Commit Linting
+
+on:
+  push:
+    branches: ['**']  # Run on all branches when pushing
+  pull_request:
+    branches: ['**']  # Run on all PRs
+    types: [opened, synchronize]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.x
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install pre-commit and dependencies
+        run: |
+          pip install pre-commit black isort flake8
+
+      - name: Run pre-commit hooks
+        run: pre-commit run --all-files
