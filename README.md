@@ -4,6 +4,11 @@
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+[![Status: Beta](https://img.shields.io/badge/Status-Beta-orange)](https://github.com/yeonholee50/AmpyFin)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/yeonholee50/AmpyFin/graphs/commit-activity)
+[![GitHub issues](https://img.shields.io/github/issues/yeonholee50/AmpyFin.svg)](https://github.com/yeonholee50/AmpyFin/issues)
+[![Made with Python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/)
 
 ## Introduction
 
@@ -202,6 +207,29 @@ This ensures the system has properly ranked strategies before making investment 
 ## Contributing
 
 Contributions are welcome! Please submit pull requests or report issues. All contributions should be made to the **test branch**. Direct commits to the **main branch** are not accepted.
+
+### Pre-commit Hooks
+
+This project uses pre-commit hooks to ensure code quality. Before pushing your changes, please run pre-commit locally:
+
+1. Install pre-commit if you haven't already:
+```bash
+pip install pre-commit
+```
+
+2. Install the git hooks:
+```bash
+pre-commit install
+```
+
+3. Run pre-commit on all files:
+```bash
+pre-commit run --all-files
+```
+
+4. Fix any issues identified by the pre-commit hooks before pushing your changes.
+
+Running pre-commit locally will make the PR process smoother and reduce the need for revision requests.
 
 ## License
 
