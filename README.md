@@ -1,243 +1,208 @@
-﻿
-# 🌟 AmpyFin Trading System
+﻿# AmpyFin Trading System
 
-## 🚀 Introduction
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
-Welcome to **AmpyFin**, an advanced AI-powered trading system designed for the NASDAQ-100. Imagine having expert traders working for you 24/7—AmpyFin makes this a reality.
+## Introduction
 
-## 📊 AmpyFin’s Data Collection Power
+AmpyFin is an advanced AI-powered trading system designed to trade within the NASDAQ-100. It leverages machine learning and algorithmic trading strategies to make data-driven investment decisions.
 
-### 🔍 Data Sources
+### Mission
 
-- **Financial Modeling Prep API**: Retrieves NASDAQ-100 tickers to gain crucial market insights.
-- **Polygon API**: Monitors real-time market conditions, ensuring that the system acts based on the most current data.
+The primary goal of AmpyFin as an open source project is to:
 
-### 💾 Data Storage
+- **Democratize Algorithmic Trading**: Make proven trading frameworks available for everyone to use freely
+- **Provide Transparency**: Offer insights into how machine learning can be applied to financial markets
+- **Fill a Gap**: Contribute to the open source community where there are few published frameworks for effective trading systems
+- **Enable Collaboration**: Create a platform for traders and developers to build upon and improve together
 
-All data and trading logs are securely stored in **MongoDB**, allowing fast access to historical trading information and supporting in-depth analysis.
+While there are many theoretical trading models in academic literature, AmpyFin aims to bridge the gap between theory and practice with a working implementation that the community can use, study, and enhance.
 
-### 🤖 Machine Learning at Work
+## Features
 
-At the core of AmpyFin are diverse algorithms optimized for different market conditions. Rather than relying on a single strategy or multiple strategies, AmpyFin relies on a ranked ensemble learning system that dynamically ranks each strategy and gives more influence in the final decision to strategies with better performance.
+### Data Collection
 
-### 📈 Trading Strategies
+- **yfinance**: Primary source for historical price data and technical indicators
+- **Financial Modeling Prep API**: Retrieves NASDAQ-100 tickers for market insights
+- **Polygon API**: Alternative source for real-time market data if needed
 
-Some of the strategies AmpyFin employs include:
+### Data Storage
 
-- **📊 Mean Reversion**: Predicts asset prices will return to their historical average.
-- **📈 Momentum**: Capitalizes on prevailing market trends.
-- **💱 Arbitrage**: Identifies and exploits price discrepancies between related assets.
-- **🧠 AI-Driven Custom Strategies**: Continuously refined through machine learning for enhanced performance.
+- **MongoDB**: Securely stores all data and trading logs for historical analysis
 
-These strategies work collaboratively, ensuring AmpyFin is always prepared for changing market dynamics.
+### Machine Learning
 
-### 🔗 How Dynamic Ranking Works
+AmpyFin uses a ranked ensemble learning system that dynamically evaluates each strategy's performance and adjusts their influence in the final decision accordingly.
 
-Managing multiple algorithms is simplified with AmpyFin’s dynamic ranking system, which ranks each algorithm based on performance.
+### Trading Strategies
 
-#### 🏆 Ranking System
+- **Mean Reversion**: Predicts asset prices will return to their historical average
+- **Momentum**: Capitalizes on prevailing market trends
+- **Arbitrage**: Identifies and exploits price discrepancies between related assets
+- **AI-Driven Custom Strategies**: Continuously refined through machine learning
 
-Each strategy starts with a base score of 0 and a mock balance of $50,000. The system evaluates their performance and assigns a weight based on the following function:
+### Dynamic Ranking System
 
-$$
-\left( \frac{e^e}{e^2} - 1 \right)^{2i}
-$$
+Each strategy is evaluated based on performance metrics and assigned a weight using a sophisticated ranking algorithm. The system adapts to changing market conditions by prioritizing high-performing strategies.
 
-Where \(i\) is the strategy's rank. Please keep in mind that the strategy's rank is inverse of its performance. So a strategy ranked 132 is actually performing the best while strategy ranked 1 is performing the worst currently.
+## Architecture
 
-#### ⏳ Time Delta Coefficient
+### Core Components
 
-This ensures that strategies with better recent performance have a greater influence on decision-making while maintaining balance by also accounting for old performance as well.
+| Component | Description |
+|-----------|-------------|
+| `control.py` | Configuration interface for trading parameters |
+| `trading_client.py` | Executes trades based on algorithmic decisions |
+| `ranking_client.py` | Evaluates and ranks trading strategies |
+| `TradeSim/main.py` | Training and testing environment for strategies |
+| `strategies/*` | Implementation of various trading algorithms |
+| `helper_files/*` | Utility functions for client operations |
+| `utils/*` | General utility functions for data processing |
 
-### 💡 Benefits of Dynamic Ranking
+## Installation
 
-- **📉 Quickly adapts to changing market conditions.**
-- **📊 Prioritizes high-performing algorithms.**
-- **⚖️ Balances risk while maximizing potential returns.**
+### Prerequisites
 
-## 📂 File Structure and Objectives
+- Python 3.8+
+- MongoDB
+- TA-Lib
 
-### 🕹️ control.py
+### Setup
 
-**Objective**: Designed to allow users to change parameters based on how they would like their version of Ampyfin to trade. Testing and training will also be supported options for both trading and ranking modes.
-
-### 🤝 trading_client.py
-
-**Objective**: Executes trades based on algorithmic decisions.
-
-**Features**:
-
-- Executes trades every 60 seconds by default (adjustable based on user).
-- Ensures a minimum spending balance of $15,000 (adjustable based on user) and maintains 30% liquidity (adjustable based on user).
-- Logs trades with details like timestamp, stock, and reasoning.
-
-### 🏆 ranking_client.py
-
-**Objective**: Runs the ranking system to evaluate trading strategies.
-
-**Features**:
-
-- Downloads NASDAQ-100 tickers and stores them in MongoDB.
-- Updates algorithm scores and rankings every 120 seconds (adjustable based on user).
-
-### 🏋️ TradeSim/main.py
-
-**Objective**: Allows users to train a simulator from scratch, test the simulator, and update their simulator from local to database.
-
-**Features**:
-
-- Training using parameters given by control.py
-- Testing using parameters given by control.py
-- Option to push trained rank model into MongoDB
-
-### 📜 strategies/*
-
-**Objective**: Defines various trading strategies. Houses strategies like mean reversion, momentum, and arbitrage.
-
-**Features**:
-
-- **trading_strategies_v1.py**: Archived first iteration of AmpyFin used 5 strategies. This file is not supported anymore but is a great reference material
-- **trading_strategies_v2.py**:  Archived second gen older strategies being used in the ranking system. Contains 50 strategies with a lot leaning towards momentum.
-- **trading_strategies_v2_1.py**: Archived second gen older strategies that complements the older strategies in trading_strategies_v2.py. Houses 10 more strategies. This is where newer strategies will be implemented until it caps at 50 strategies as well.
-- **talib_indicators.py**: Contains all the technical indicators used in the strategies. To visit the documentation for each technical indicator, please visit the following link: [Link to TA](https://ta-lib.org/). These indicators were not developed by me, but I have modified their use to fit the needs of AmpyFin. Each indicator is fine tuned with a specific period and historical data is either retrieved from MongoDB cache system or from yfinance.
-
-### 🔧 helper_files/*
-
-**Objective**: Helper Files to help with both trading client and ranking client. Houses functions for retrieving a Mongo Client, getting latest prices, current strategies implemented etc.
-
-**Features**:
-
-- **client_helper.py**: Contains common functions for client operations in both ranking and trading.
-- **train_client_helper.py**: Contains utility functions for training and testing.
-
-### 💡 utils/*
-
-**Objective**: Contains utility functions for data processing and analysis as well as other miscellaneous functions. These functions are not necessarily being used currently in trading or ranking but stored for development purposes.
-
-**Features**:
-
-- **check_strategy_scores.py**: Checks the scores of the strategies and prints them out.
-- **sell_all.py**: Sells all the stocks in the portfolio.
-- **sync_alpaca.py**: Syncs the Alpaca account with the MongoDB account.
-
-## ⚙️ Installation
-
-### 1️⃣ Clone the Repository
+1. **Clone the repository**
 
 ```bash
 git clone https://github.com/yeonholee50/AmpyFin.git
 cd AmpyFin
 ```
 
-### 2️⃣ Install Dependencies
+2. **Install dependencies**
 
-- Run the following command to install the required Python packages:
 ```bash
 pip install -r requirements.txt
 ```
 
-- We have recently migrated to using Ta-Lib for trading. Please follow the installation instructions here: 
+3. **Install TA-Lib**
 
-👉 [Ta-Lib Python Original](https://github.com/TA-Lib/ta-lib-python)
+TA-Lib is required for technical indicators. Installation options:
+- [TA-Lib Python Original](https://github.com/TA-Lib/ta-lib-python)
+- [TA-Lib Python Easy Installation](https://github.com/cgohlke/talib-build/releases)
 
-👉 [Ta-Lib Python Easy Installation](https://github.com/cgohlke/talib-build/releases)
+4. **Configure API keys**
 
-### 3️⃣ Configuration
+You need to sign up for the following services to obtain API keys:
 
-1. **Create `config.py`**:
-   - Copy `config_template.py` to `config.py` and enter your API keys and MongoDB credentials.
-    ```python
-    POLYGON_API_KEY = "your_polygon_api_key"
-    FINANCIAL_PREP_API_KEY = "your_fmp_api_key"
-    MONGO_DB_USER = "your_mongo_user"
-    MONGO_DB_PASS = "your_mongo_password"
-    API_KEY = "your_alpaca_api_key"
-    API_SECRET = "your_alpaca_secret_key"
-    BASE_URL = "https://paper-api.alpaca.markets"
-    mongo_url = "your mongo connection string"
-    ```
+- [Polygon.io](https://polygon.io/) - For market data
+- [Financial Modeling Prep](https://financialmodelingprep.com/) - For financial data
+- [Alpaca](https://alpaca.markets/) - For trading execution
+- [Weights & Biases](https://wandb.ai/) - For experiment tracking
 
-### 4️⃣ API Setup
+Create a `config.py` file based on the template:
 
-- Polygon API
-1. Sign up at [Polygon.io](https://polygon.io/) and get an API key.
-2. Add it to `config.py` as `POLYGON_API_KEY`.
-
-- Financial Modeling Prep API
-1. Sign up at [Financial Modeling Prep](https://financialmodelingprep.com/) and get an API key.
-2. Add it to `config.py` as `FINANCIAL_PREP_API_KEY`.
-
-- Alpaca API
-1. Sign up at [Alpaca](https://alpaca.markets/) and get API keys.
-2. Add them to `config.py` as `API_KEY` and `API_SECRET`.
-
-### 5️⃣ Set Up MongoDB
-
-- Sign up for a MongoDB cluster (e.g., via MongoDB Atlas).
-- Create a database for stock data storage and replace the `mongo_url` in 'config.py' with your connection string. Make sure to give yourself Network Access.
-- Run the setup script `setup.py`:
-- After running the mongo setup script, the MongoDB setup for the rest will be completed on the first minute in trading for both ranking and trading.
-
-### 6️⃣ Set Up Weights & Biases
-- Sign up for Weights and Biases (https://wandb.ai/site/)
-- Login to wandb on terminal using the below command and enter the API key and press enter
-
-```bash
-wandb login
+```python
+POLYGON_API_KEY = "your_polygon_api_key"
+FINANCIAL_PREP_API_KEY = "your_fmp_api_key"
+MONGO_DB_USER = "your_mongo_user"
+MONGO_DB_PASS = "your_mongo_password"
+API_KEY = "your_alpaca_api_key"
+API_SECRET = "your_alpaca_secret_key"
+BASE_URL = "https://paper-api.alpaca.markets"  # Paper trading (safe for testing)
+# BASE_URL = "https://api.alpaca.markets"      # Live trading (uses real money)
+mongo_url = "your_mongo_connection_string"
 ```
 
-## ⚡ Usage
+> ⚠️ **IMPORTANT**: The default configuration uses Alpaca's paper trading environment. To switch to live trading (using real money), change the BASE_URL to "https://api.alpaca.markets". Only do this once you've thoroughly tested your strategies and understand the risks involved.
 
-- To run the trading and ranking system, execute on two separate terminals:
+5. **Set up MongoDB**
+
+- Create a MongoDB cluster (e.g., via MongoDB Atlas)
+- Configure network access for your IP address
+- Update the connection string in `config.py`
+
+6. **Run the setup script**
+
+```bash
+python setup.py
+```
+
+This initializes the database structure required for AmpyFin.
+
+7. **Set up Weights & Biases**
+
+```bash
+wandb login 'wandb_api_key'
+```
+
+## Usage
+
+### Running the System
+
+Start the ranking and trading systems in separate terminals:
 
 ```bash
 python ranking_client.py
 python trading_client.py
 ```
 
-- To train & test:
+### Training and Testing
 
-1. First change the mode in control.py:
-```bash
+These are separate operations that can be performed with the TradeSim module:
+
+#### Training
+
+1. Set the mode in `control.py`:
+```python
 mode = 'train'
 ```
 
-2. Adjust parameters according to your specifications in control.py
-
-3. Execute on terminal:
-
+2. Run the training module:
 ```bash
 python TradeSim/main.py
 ```
 
-- To push your model into MongoDB:
+#### Testing
 
-1. First change the mode in control.py:
+1. Set the mode in `control.py`:
+```python
+mode = 'test'
+```
+
+2. Run the testing module:
 ```bash
+python TradeSim/main.py
+```
+
+### Deploying a Model
+
+1. Set the mode in `control.py`:
+```python
 mode = 'push'
 ```
 
-2. Make sure you have tested your model and confirm you would like to replace your existing model in MongoDB with your new one.
-
-3. Execute on terminal:
-
+2. Push your model to MongoDB:
 ```bash
 python TradeSim/main.py
 ```
 
-## ⚠️ IMPORTANT
+## Important Notes
 
-For people looking to do live trading, I suggest training via running ranking_client.py for at least two weeks before running the trading system altogether. Or train using TradeSim directory and push changes into MongoDB before executing live trades. This way, you're running with a client that has been trained to a certain extent (with strategies ranked) and is ready to go. Otherwise, you will most likely be buying random stocks.
+For live trading, it's recommended to:
+1. Train the system by running `ranking_client.py` for at least two weeks, or
+2. Train using the TradeSim module and push changes to MongoDB before executing trades
 
-## 📑 Logging
+This ensures the system has properly ranked strategies before making investment decisions.
 
-- **system.log**: Tracks major events like API errors and MongoDB operations.
-- **rank_system.log**: Logs all ranking-related events and updates.
+## Logging
 
-## 🛠️ Contributing
+- `system.log`: Tracks major system events and errors
+- `rank_system.log`: Records ranking-related events and updates
 
-Contributions are welcome! 🎉 Feel free to submit pull requests or report issues. All contributions should be made on the **test branch**. Please avoid committing directly to the **main branch**.
+## Contributing
 
-## 📜 License
+Contributions are welcome! Please submit pull requests or report issues. All contributions should be made to the **test branch**. Direct commits to the **main branch** are not accepted.
+
+## License
 
 This project is licensed under the MIT License. See the LICENSE file for details.

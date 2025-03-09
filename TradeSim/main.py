@@ -87,13 +87,6 @@ if __name__ == "__main__":
             logger,
         )
 
-        test(
-            ticker_price_history,
-            ideal_period,
-            mongo_client,
-            precomputed_decisions,
-            logger,
-        )
     elif mode == "test":
         test(
             ticker_price_history,
