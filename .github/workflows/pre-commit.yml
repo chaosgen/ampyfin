@@ -1,8 +1,10 @@
 name: Pre-Commit Linting
 
 on:
+  push:
+    branches: ['**']  # Runs on all branches when pushing
   pull_request:
-    branches: ['**']  # Run on pull requests targeting any branch
+    branches: ['**']  # Runs on all PRs
     types: [opened, synchronize]
 
 jobs:
@@ -15,10 +17,11 @@ jobs:
       - name: Set up Python 3.x
         uses: actions/setup-python@v4
         with:
-          python-version: '3.12'  
+          python-version: '3.12'
 
-      - name: Install pre-commit
-        run: pip install pre-commit
+      - name: Install pre-commit and dependencies
+        run: |
+          pip install pre-commit black isort flake8
 
       - name: Run pre-commit hooks
         run: pre-commit run --all-files
