@@ -1,9 +1,8 @@
 import logging
 from datetime import datetime
 
-from pymongo import MongoClient
-
 from config import mongo_url
+from pymongo import MongoClient
 
 logging.basicConfig(
     level=logging.INFO,

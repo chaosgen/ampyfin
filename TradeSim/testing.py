@@ -6,11 +6,11 @@ from datetime import datetime, timedelta
 
 import certifi
 import pandas as pd
+from config import FINANCIAL_PREP_API_KEY, mongo_url
 from pymongo import MongoClient
 from variables import config_dict
 
 import wandb
-from config import FINANCIAL_PREP_API_KEY, mongo_url
 from control import (
     benchmark_asset,
     test_period_end,

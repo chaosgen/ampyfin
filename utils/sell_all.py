@@ -1,7 +1,6 @@
 import logging
 
 from alpaca.trading.client import TradingClient
-
 from config import API_KEY, API_SECRET
 
 logging.basicConfig(

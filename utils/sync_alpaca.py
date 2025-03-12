@@ -2,9 +2,8 @@ import logging
 
 import certifi
 from alpaca.trading.client import TradingClient
-from pymongo import MongoClient
-
 from config import API_KEY, API_SECRET, mongo_url
+from pymongo import MongoClient
 
 logging.basicConfig(
     level=logging.INFO,
