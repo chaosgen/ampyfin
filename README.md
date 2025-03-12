@@ -24,6 +24,10 @@ The primary goal of AmpyFin as an open source project is to:
 
 While there are many theoretical trading models in academic literature, AmpyFin aims to bridge the gap between theory and practice with a working implementation that the community can use, study, and enhance.
 
+## Tutorial Playlist
+
+For a comprehensive guide on how to use AmpyFin, check out our [YouTube tutorial playlist](https://www.youtube.com/playlist?list=PL7hzGb_OBFXaB7VGaXXiJk5uq2CXQqi-O).
+
 ## Features
 
 ### Data Collection
