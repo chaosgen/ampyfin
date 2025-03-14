@@ -5,10 +5,10 @@ import sys
 import time
 from datetime import datetime, timedelta
 
+from config import FINANCIAL_PREP_API_KEY
 from variables import config_dict
 
 import wandb
-from config import FINANCIAL_PREP_API_KEY
 
 # Add the parent directory to the Python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
