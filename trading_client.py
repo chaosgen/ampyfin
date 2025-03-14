@@ -8,6 +8,9 @@ import certifi
 from alpaca.data.historical.stock import StockHistoricalDataClient
 from alpaca.trading.client import TradingClient
 from alpaca.trading.enums import OrderSide
+from polygon import RESTClient
+from pymongo import MongoClient
+
 from config import (
     API_KEY,
     API_SECRET,
@@ -15,9 +18,6 @@ from config import (
     POLYGON_API_KEY,
     mongo_url,
 )
-from polygon import RESTClient
-from pymongo import MongoClient
-
 from control import suggestion_heap_limit, trade_asset_limit, trade_liquidity_limit
 from helper_files.client_helper import (
     get_latest_price,

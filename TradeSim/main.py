@@ -3,9 +3,6 @@ import os
 import sys
 
 import certifi
-
-# Local module imports after standard/third-party imports
-from config import FINANCIAL_PREP_API_KEY, mongo_url
 from push import push
 
 # from push import push
@@ -15,6 +12,9 @@ from training import train
 from variables import config_dict
 
 import wandb
+
+# Local module imports after standard/third-party imports
+from config import FINANCIAL_PREP_API_KEY, mongo_url
 from control import mode, test_period_end, train_period_start, train_tickers
 from helper_files.client_helper import get_ndaq_tickers, strategies
 from TradeSim.utils import initialize_simulation, precompute_strategy_decisions

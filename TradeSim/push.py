@@ -3,10 +3,10 @@ import os
 from datetime import datetime
 
 import certifi
-from config import mongo_url
 from pymongo import MongoClient
 from variables import config_dict
 
+from config import mongo_url
 from control import experiment_name
 from ranking_client import update_ranks
 

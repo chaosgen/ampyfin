@@ -5,9 +5,9 @@ import time
 from datetime import datetime
 
 import certifi
-from config import FINANCIAL_PREP_API_KEY, mongo_url
 from pymongo import MongoClient
 
+from config import FINANCIAL_PREP_API_KEY, mongo_url
 from control import (
     loss_price_change_ratio_d1,
     loss_price_change_ratio_d2,

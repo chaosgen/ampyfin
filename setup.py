@@ -2,9 +2,9 @@ import math
 from datetime import datetime
 
 from alpaca.trading.client import TradingClient
-from config import API_KEY, API_SECRET, mongo_url
 from pymongo import MongoClient, errors
 
+from config import API_KEY, API_SECRET, mongo_url
 from helper_files.client_helper import get_latest_price, strategies
 
 indicator_periods = {
