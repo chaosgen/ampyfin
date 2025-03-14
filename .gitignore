@@ -5,3 +5,4 @@ config.py
 **/__pycache__/
 *.json
 **/.DS_Store
+.qodo
